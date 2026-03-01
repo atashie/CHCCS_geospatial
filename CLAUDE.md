@@ -40,6 +40,7 @@ CHCCS_geospatial/
 │   ├── flood_map.py                      # FEMA flood plain × school properties
 │   ├── childcare_geocode.py              # Childcare proximity analysis
 │   ├── property_data.py                  # Orange County parcel processing
+│   ├── affordable_housing.py             # Affordable housing data download & assessment
 │   ├── data_processing.py                # Shared data loading utilities
 │   └── maps.py                           # Map visualizations (TODO: needs restructuring)
 ├── data/
@@ -83,6 +84,10 @@ python src/childcare_geocode.py
 
 # Process Orange County parcel data
 python src/property_data.py
+
+# Download & assess affordable housing data
+python src/affordable_housing.py
+python src/affordable_housing.py --cache-only  # cached data only
 ```
 
 ---
@@ -99,12 +104,11 @@ python src/property_data.py
 | School desert grid | `data/processed/school_desert_grid.csv` | Computed (Dijkstra) |
 | Pollution scores | `data/processed/road_pollution_scores.csv` | Computed (TRAP model) |
 | Zone demographics | `data/processed/census_school_demographics.csv` | Computed (dasymetric) |
+| Affordable housing | `data/cache/affordable_housing.gpkg` | Town of Chapel Hill ArcGIS (2025) |
 
 ---
 
 ## Known TODOs
 
-- **`maps.py`**: Needs complete restructuring — currently school-specific. Must be generalized to support any school or all schools equally.
 - **`data_processing.py`**: Contains non-geospatial functions. Should be slimmed to geospatial utilities only.
 - **Cross-module constants**: Consider a shared `config.py` for `CHAPEL_HILL_CENTER`, `CRS_WGS84`, `CRS_UTM17N`, `SCHOOL_CSV`.
-- **`data/processed/ROAD_POLLUTION.md`**: Auto-generated — will be regenerated with neutral framing when `road_pollution.py` is next run.
