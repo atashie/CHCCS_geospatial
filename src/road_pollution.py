@@ -8,6 +8,8 @@ mitigation analysis.
 Methodology:
 - Road Pollution Index uses exponential decay from road segments, weighted by
   road classification as a proxy for traffic volume (NOT actual AADT counts)
+- Road network: OSM via osmnx, network_type="drive_service" (includes service
+  roads), county boundary buffered by max analysis radius for edge coverage
 - Tree canopy mitigation using ESA WorldCover V2 2021 (10m), based on literature
   meta-analyses of urban vegetation air quality effects (NOT Chapel Hill-specific)
 - Index is RELATIVE/COMPARATIVE, not an absolute health risk assessment
@@ -55,7 +57,8 @@ ASSETS_CHARTS = PROJECT_ROOT / "assets" / "charts"
 ASSETS_MAPS = PROJECT_ROOT / "assets" / "maps"
 
 SCHOOL_CSV = DATA_CACHE / "nces_school_locations.csv"
-ROAD_CACHE = DATA_CACHE / "osm_roads_orange_county.gpkg"
+ROAD_CACHE = DATA_CACHE / "osm_roads_orange_county_buffered.gpkg"
+AADT_CACHE = DATA_CACHE / "ncdot_aadt_orange_county.gpkg"
 LULC_CACHE = DATA_CACHE / "esa_worldcover_orange_county.tif"
 ASSETS_MAPS_DEBUG = ASSETS_MAPS / "debug"
 
@@ -67,6 +70,8 @@ ASSETS_MAPS_DEBUG = ASSETS_MAPS / "debug"
 LAMBDA = 0.003
 
 # Road-class AADT proxy weights (NOT actual traffic counts)
+# "unclassified" in OSM = minor public through-roads (below tertiary, above residential)
+# "service" = parking-lot access roads, alleys, etc. (low-speed, low-volume)
 ROAD_WEIGHTS = {
     "motorway": 1.000,
     "motorway_link": 0.800,
@@ -78,8 +83,17 @@ ROAD_WEIGHTS = {
     "secondary_link": 0.120,
     "tertiary": 0.060,
     "tertiary_link": 0.048,
+    "unclassified": 0.020,
     "residential": 0.010,
+    "service": 0.005,
     "living_street": 0.005,
+}
+
+# Service road subtype weight overrides (applied on top of base "service" weight)
+SERVICE_SUBTYPE_WEIGHTS = {
+    "driveway": 0.002,
+    "alley": 0.003,
+    "drive-through": 0.001,
 }
 
 # Tree canopy mitigation: alpha * canopy_cover
@@ -107,6 +121,15 @@ CRS_UTM17N = "EPSG:32617"
 # Orange County, NC bounding box (WGS84)
 ORANGE_COUNTY_BBOX = (-79.55, 35.73, -78.90, 36.25)
 
+# NCDOT AADT (Annual Average Daily Traffic) integration
+AADT_URL = (
+    "https://services.arcgis.com/NuWFvHYDMVmmxMeM/ArcGIS/rest/services/"
+    "NCDOT_AADT_Stations/FeatureServer/0/query"
+)
+AADT_SNAP_DISTANCE_M = 50     # max meters to snap AADT station to OSM road
+AADT_MOTORWAY_REFERENCE = 50000  # AADT for weight=1.0 baseline
+AADT_PAGE_SIZE = 1000
+
 # Chart styling
 NEUTRAL_COLOR = "#C0C0C0"
 BAR_COLOR = "#3388ff"
@@ -126,7 +149,9 @@ ROAD_COLORS = {
     "primary": "#377eb8", "primary_link": "#377eb8",
     "secondary": "#4daf4a", "secondary_link": "#4daf4a",
     "tertiary": "#984ea3", "tertiary_link": "#984ea3",
+    "unclassified": "#b07d2b",
     "residential": "#999999", "living_street": "#cccccc",
+    "service": "#dddddd",
 }
 ROAD_LINE_WIDTHS = {
     "motorway": 4, "motorway_link": 3,
@@ -134,7 +159,9 @@ ROAD_LINE_WIDTHS = {
     "primary": 3, "primary_link": 2,
     "secondary": 2.5, "secondary_link": 1.5,
     "tertiary": 2, "tertiary_link": 1.5,
+    "unclassified": 1.5,
     "residential": 1.5, "living_street": 1,
+    "service": 0.75,
 }
 
 
@@ -306,8 +333,16 @@ def load_schools() -> gpd.GeoDataFrame:
 # ---------------------------------------------------------------------------
 def download_road_network(cache_only: bool = False) -> gpd.GeoDataFrame:
     """
-    Download road network for Orange County via osmnx and cache as GeoPackage.
-    Returns a GeoDataFrame of road edges.
+    Download road network for Orange County (+ buffer) via osmnx.
+
+    Uses network_type="drive_service" to include service roads (parking lot
+    access, alleys, etc.) in addition to all drivable through-roads.
+
+    The county boundary is buffered by max(RADII) so that schools near the
+    county edge (e.g., Rashkis Elementary, ~60 m from border) still capture
+    all road segments within the full analysis radius.
+
+    Returns a GeoDataFrame of road edges cached as GeoPackage.
     """
     if ROAD_CACHE.exists():
         _progress(f"Loading cached roads from {ROAD_CACHE}")
@@ -322,16 +357,28 @@ def download_road_network(cache_only: bool = False) -> gpd.GeoDataFrame:
     _progress("Downloading Orange County road network from OpenStreetMap ...")
     import osmnx as ox
 
-    # Download by county name
-    G = ox.graph_from_place(
-        "Orange County, North Carolina, USA",
-        network_type="drive",
+    # Get county boundary and buffer by max analysis radius so that schools
+    # near the county edge still capture all roads within the analysis radius.
+    buffer_m = max(RADII)
+    _progress(f"Buffering county boundary by {buffer_m} m for edge coverage ...")
+    county = ox.geocode_to_gdf("Orange County, North Carolina, USA")
+    county_utm = county.to_crs(CRS_UTM17N)
+    buffered_utm = county_utm.geometry.iloc[0].buffer(buffer_m)
+    buffered_wgs = gpd.GeoDataFrame(
+        geometry=[buffered_utm], crs=CRS_UTM17N,
+    ).to_crs(CRS_WGS84).geometry.iloc[0]
+
+    # Download with drive_service to include service roads (parking lot
+    # access, alleys) but still exclude parking aisles and private roads.
+    G = ox.graph_from_polygon(
+        buffered_wgs,
+        network_type="drive_service",
         simplify=True,
     )
     edges = ox.graph_to_gdfs(G, nodes=False, edges=True)
 
-    # Keep relevant columns
-    keep_cols = ["geometry", "highway", "name", "length"]
+    # Keep relevant columns — include "service" for subtype weights
+    keep_cols = ["geometry", "highway", "name", "length", "service"]
     available = [c for c in keep_cols if c in edges.columns]
     edges = edges[available].copy()
 
@@ -342,6 +389,8 @@ def download_road_network(cache_only: bool = False) -> gpd.GeoDataFrame:
         return val
 
     edges["highway"] = edges["highway"].apply(_first)
+    if "service" in edges.columns:
+        edges["service"] = edges["service"].apply(_first)
 
     edges = edges.to_crs(CRS_WGS84)
     edges.to_file(ROAD_CACHE, driver="GPKG")
@@ -350,16 +399,273 @@ def download_road_network(cache_only: bool = False) -> gpd.GeoDataFrame:
 
 
 # ---------------------------------------------------------------------------
+# 2b. Download NCDOT AADT stations (Orange County)
+# ---------------------------------------------------------------------------
+def download_ncdot_aadt(cache_only: bool = False) -> gpd.GeoDataFrame:
+    """
+    Download NCDOT AADT station data for Orange County via ArcGIS REST API.
+
+    Paginates through the feature service, extracts the most recent non-blank
+    AADT year value (2022 back to 2002), and caches as GeoPackage.
+
+    Returns a GeoDataFrame with columns:
+        location_id, route, route_class, location_desc, aadt, aadt_year, geometry
+    """
+    if AADT_CACHE.exists():
+        _progress(f"Loading cached AADT data from {AADT_CACHE}")
+        return gpd.read_file(AADT_CACHE)
+
+    if cache_only:
+        raise FileNotFoundError(
+            f"AADT cache not found at {AADT_CACHE}. "
+            "Run without --cache-only to download."
+        )
+
+    import requests
+
+    _progress("Downloading NCDOT AADT stations for Orange County ...")
+
+    all_features: list[dict] = []
+    offset = 0
+
+    while True:
+        params = {
+            "where": "COUNTY='ORANGE'",
+            "outFields": "*",
+            "outSR": "4326",
+            "returnGeometry": "true",
+            "f": "json",
+            "resultRecordCount": AADT_PAGE_SIZE,
+            "resultOffset": offset,
+        }
+        r = requests.get(AADT_URL, params=params, timeout=60)
+        r.raise_for_status()
+        data = r.json()
+
+        if "error" in data:
+            raise RuntimeError(f"NCDOT ArcGIS API error: {data['error']}")
+
+        features = data.get("features", [])
+        if not features:
+            break
+
+        all_features.extend(features)
+        _progress(f"  Fetched {len(all_features)} AADT stations so far ...")
+
+        if len(features) < AADT_PAGE_SIZE:
+            break
+        offset += AADT_PAGE_SIZE
+
+    _progress(f"Downloaded {len(all_features)} total AADT stations")
+
+    # Extract most recent AADT value for each station
+    aadt_years = [f"AADT_{y}" for y in range(2022, 2001, -1)]
+
+    rows = []
+    skipped_no_geom = 0
+    skipped_no_aadt = 0
+
+    for feat in all_features:
+        attrs = feat.get("attributes", {})
+        geom = feat.get("geometry")
+
+        if not geom or geom.get("x") is None or geom.get("y") is None:
+            skipped_no_geom += 1
+            continue
+
+        # Find most recent non-blank AADT value
+        aadt_val = None
+        aadt_year = None
+        for year_col in aadt_years:
+            raw_val = attrs.get(year_col, "")
+            if raw_val is None:
+                continue
+            raw_str = str(raw_val).strip().replace(",", "")
+            if raw_str and raw_str != "0":
+                try:
+                    aadt_val = int(float(raw_str))
+                    aadt_year = int(year_col.split("_")[1])
+                    break
+                except (ValueError, TypeError):
+                    continue
+
+        if aadt_val is None or aadt_val <= 0:
+            skipped_no_aadt += 1
+            continue
+
+        rows.append({
+            "location_id": str(attrs.get("LocationID", "")),
+            "route": str(attrs.get("ROUTE", "")),
+            "route_class": attrs.get("RTE_CLS"),
+            "location_desc": str(attrs.get("LOCATION", "")),
+            "aadt": aadt_val,
+            "aadt_year": aadt_year,
+            "geometry": Point(geom["x"], geom["y"]),
+        })
+
+    if skipped_no_geom:
+        _progress(f"Skipped {skipped_no_geom} stations with no geometry")
+    if skipped_no_aadt:
+        _progress(f"Skipped {skipped_no_aadt} stations with no valid AADT value")
+
+    gdf = gpd.GeoDataFrame(rows, crs=CRS_WGS84)
+    _progress(f"Built GeoDataFrame with {len(gdf)} AADT stations")
+
+    # Summary statistics
+    _progress(f"  AADT range: {gdf['aadt'].min():,} - {gdf['aadt'].max():,}")
+    _progress(f"  AADT years: {gdf['aadt_year'].min()} - {gdf['aadt_year'].max()}")
+
+    DATA_CACHE.mkdir(parents=True, exist_ok=True)
+    gdf.to_file(AADT_CACHE, driver="GPKG")
+    _progress(f"Cached {len(gdf)} AADT stations to {AADT_CACHE}")
+
+    return gdf
+
+
+# ---------------------------------------------------------------------------
 # 3. Filter & prepare roads
 # ---------------------------------------------------------------------------
 def filter_and_prepare_roads(roads: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
-    """Filter to relevant road types and add pollution weight column."""
+    """Filter to relevant road types and add pollution weight column.
+
+    Service roads receive subtype-specific weights (driveways, alleys get
+    lower weights than untagged service roads like parking-lot access roads).
+    Road types not in ROAD_WEIGHTS are logged before being dropped.
+    """
     relevant = set(ROAD_WEIGHTS.keys())
     mask = roads["highway"].isin(relevant)
+
+    # Log any road types being dropped so silent data loss is visible
+    dropped = roads.loc[~mask]
+    if len(dropped) > 0:
+        dropped_types = dropped["highway"].value_counts().to_dict()
+        _progress(
+            f"Dropping {len(dropped)} road segments with unweighted types: "
+            f"{dropped_types}"
+        )
+
     filtered = roads.loc[mask].copy()
+
+    # Assign base weight from road class
     filtered["weight"] = filtered["highway"].map(ROAD_WEIGHTS)
-    _progress(f"Filtered to {len(filtered)} road segments with known types")
+
+    # Override service road weights with subtype-specific values
+    if "service" in filtered.columns:
+        for subtype, weight in SERVICE_SUBTYPE_WEIGHTS.items():
+            subtype_mask = (filtered["highway"] == "service") & (
+                filtered["service"] == subtype
+            )
+            filtered.loc[subtype_mask, "weight"] = weight
+
+    type_summary = filtered.groupby("highway")["weight"].agg(["count", "mean"])
+    _progress(f"Prepared {len(filtered)} road segments:")
+    for hw, row in type_summary.sort_values("mean", ascending=False).iterrows():
+        _progress(f"  {hw}: {int(row['count'])} segments (avg weight={row['mean']:.3f})")
+
     return filtered
+
+
+# ---------------------------------------------------------------------------
+# 3b. Apply NCDOT AADT weight overrides
+# ---------------------------------------------------------------------------
+def apply_aadt_overrides(
+    roads: gpd.GeoDataFrame,
+    aadt_stations: gpd.GeoDataFrame,
+) -> gpd.GeoDataFrame:
+    """Override proxy road weights with NCDOT AADT-derived weights where available.
+
+    For each AADT station, finds the nearest OSM road segment within
+    AADT_SNAP_DISTANCE_M and replaces its proxy weight with
+    aadt / AADT_MOTORWAY_REFERENCE, clipped to [0.001, 2.0].
+
+    Adds a 'weight_source' column: "aadt" or "proxy".
+
+    Logs summary statistics and large discrepancies for diagnostics.
+    """
+    if len(aadt_stations) == 0:
+        _progress("No AADT stations available -- keeping all proxy weights")
+        roads["weight_source"] = "proxy"
+        return roads
+
+    # Project both to UTM for distance computation
+    roads_utm = roads.to_crs(CRS_UTM17N)
+    aadt_utm = aadt_stations.to_crs(CRS_UTM17N)
+
+    # Find nearest road for each AADT station
+    joined = gpd.sjoin_nearest(
+        aadt_utm,
+        roads_utm,
+        how="inner",
+        max_distance=AADT_SNAP_DISTANCE_M,
+        distance_col="snap_distance",
+    )
+
+    _progress(
+        f"AADT snap: {len(joined)} of {len(aadt_stations)} stations matched "
+        f"to OSM roads within {AADT_SNAP_DISTANCE_M}m"
+    )
+
+    if len(joined) == 0:
+        _progress("No AADT stations matched -- keeping all proxy weights")
+        roads["weight_source"] = "proxy"
+        return roads
+
+    # Initialize weight_source column
+    roads["weight_source"] = "proxy"
+
+    # Compute AADT-derived weights and apply overrides
+    overridden = 0
+    discrepancies = []
+
+    for _, match in joined.iterrows():
+        road_idx = match["index_right"]
+        aadt_val = match["aadt"]
+        aadt_weight = np.clip(aadt_val / AADT_MOTORWAY_REFERENCE, 0.001, 2.0)
+        proxy_weight = roads.loc[road_idx, "weight"]
+
+        # Log large discrepancies (AADT weight differs from proxy by >2x)
+        if proxy_weight > 0:
+            ratio = aadt_weight / proxy_weight
+            if ratio > 2.0 or ratio < 0.5:
+                discrepancies.append({
+                    "road_idx": road_idx,
+                    "highway": roads.loc[road_idx, "highway"],
+                    "name": roads.loc[road_idx].get("name", ""),
+                    "route": match.get("route", ""),
+                    "aadt": aadt_val,
+                    "aadt_weight": round(aadt_weight, 4),
+                    "proxy_weight": round(proxy_weight, 4),
+                    "ratio": round(ratio, 2),
+                })
+
+        roads.loc[road_idx, "weight"] = aadt_weight
+        roads.loc[road_idx, "weight_source"] = "aadt"
+        overridden += 1
+
+    # Deduplicate: count unique road indices overridden
+    unique_overridden = roads[roads["weight_source"] == "aadt"].shape[0]
+    total_roads = len(roads)
+
+    _progress(
+        f"AADT overrides applied: {unique_overridden} road segments "
+        f"({unique_overridden / total_roads * 100:.1f}%) use measured AADT, "
+        f"{total_roads - unique_overridden} ({(total_roads - unique_overridden) / total_roads * 100:.1f}%) "
+        f"use proxy weights"
+    )
+
+    if discrepancies:
+        _progress(f"Large discrepancies (AADT vs proxy >2x): {len(discrepancies)}")
+        for d in discrepancies[:10]:  # Show first 10
+            name = d["name"] if d["name"] and not pd.isna(d["name"]) else d["route"]
+            _progress(
+                f"  {d['highway']} '{name}': "
+                f"AADT={d['aadt']:,} -> weight={d['aadt_weight']:.4f} "
+                f"(proxy was {d['proxy_weight']:.4f}, {d['ratio']:.1f}x diff)"
+            )
+        if len(discrepancies) > 10:
+            _progress(f"  ... and {len(discrepancies) - 10} more")
+
+    return roads
 
 
 # ---------------------------------------------------------------------------
@@ -815,7 +1121,7 @@ def save_results_csv(df: pd.DataFrame):
 # ---------------------------------------------------------------------------
 # 13. Generate analysis markdown
 # ---------------------------------------------------------------------------
-def generate_analysis_markdown(df: pd.DataFrame):
+def generate_analysis_markdown(df: pd.DataFrame, roads: gpd.GeoDataFrame = None):
     """Write comprehensive analysis writeup to markdown file."""
     out = DATA_PROCESSED / "ROAD_POLLUTION.md"
 
@@ -847,13 +1153,19 @@ def generate_analysis_markdown(df: pd.DataFrame):
     lines.append("")
     lines.append("**What the numbers mean in practice:**")
     lines.append("")
-    lines.append("- Schools near multiple major roads (e.g., Glenwood at 19.3) score highest")
-    lines.append("- Schools on busy corridors (e.g., FPG at 17.6) also score high")
-    lines.append("- Schools set back from major roads score much lower (e.g., Ephesus at 1.7)")
-    lines.append("- Schools surrounded by neighborhood streets score lowest (e.g., Rashkis at 0.18)")
+    sorted_df = df.sort_values("raw_500m", ascending=False)
+    highest = sorted_df.iloc[0]
+    mid_high = sorted_df.iloc[1]
+    mid_low = sorted_df.iloc[-2]
+    lowest = sorted_df.iloc[-1]
+    lines.append(f"- Schools near multiple major roads (e.g., {highest['school']} at {highest['raw_500m']:.1f}) score highest")
+    lines.append(f"- Schools on busy corridors (e.g., {mid_high['school']} at {mid_high['raw_500m']:.1f}) also score high")
+    lines.append(f"- Schools set back from major roads score much lower (e.g., {mid_low['school']} at {mid_low['raw_500m']:.1f})")
+    lines.append(f"- Schools surrounded by neighborhood streets score lowest (e.g., {lowest['school']} at {lowest['raw_500m']:.1f})")
     lines.append("")
-    lines.append("The index is **comparative, not a health measurement**. A score of 19 doesn't mean")
-    lines.append('"unhealthy air" — it means that school has roughly 107x more traffic-generated pollution')
+    ratio = highest['raw_500m'] / lowest['raw_500m'] if lowest['raw_500m'] > 0 else 0
+    lines.append(f"The index is **comparative, not a health measurement**. A score of {highest['raw_500m']:.0f} doesn't mean")
+    lines.append(f'"unhealthy air" — it means that school has roughly {ratio:.0f}x more traffic-generated pollution')
     lines.append("pressure than the lowest-scoring school. The actual air quality at any")
     lines.append("school depends on wind, terrain, buildings, and other factors this model doesn't capture.")
     lines.append("")
@@ -893,11 +1205,77 @@ def generate_analysis_markdown(df: pd.DataFrame):
     lines.append("| primary | ~15,000 | 0.300 |")
     lines.append("| secondary | ~7,500 | 0.150 |")
     lines.append("| tertiary | ~3,000 | 0.060 |")
+    lines.append("| unclassified | ~1,000 | 0.020 |")
     lines.append("| residential | ~500 | 0.010 |")
+    lines.append("| service (untagged) | ~250 | 0.005 |")
+    lines.append("| service (alley) | ~150 | 0.003 |")
+    lines.append("| service (driveway) | ~100 | 0.002 |")
+    lines.append("| living_street | ~250 | 0.005 |")
     lines.append("")
-    lines.append("**IMPORTANT:** These weights are proxies based on typical AADT by road class, ")
-    lines.append("NOT actual traffic count data for these specific roads. Actual AADT data from ")
-    lines.append("NCDOT would improve accuracy.")
+    lines.append("**IMPORTANT:** These proxy weights are used as defaults. Where available,")
+    lines.append("actual NCDOT AADT counts override these proxies (see AADT Data Integration below).")
+    lines.append("")
+
+    # --- AADT Data Integration section ---
+    has_aadt = roads is not None and "weight_source" in roads.columns
+    aadt_count = 0
+    proxy_count = 0
+    if has_aadt:
+        aadt_count = int((roads["weight_source"] == "aadt").sum())
+        proxy_count = int((roads["weight_source"] == "proxy").sum())
+
+    lines.append("### AADT Data Integration")
+    lines.append("")
+    if has_aadt and aadt_count > 0:
+        total = aadt_count + proxy_count
+        lines.append(f"This analysis integrates **NCDOT Annual Average Daily Traffic (AADT)** data")
+        lines.append(f"from {aadt_count + proxy_count:,} road segments:")
+        lines.append("")
+        lines.append(f"- **{aadt_count:,} segments ({aadt_count / total * 100:.1f}%)** use measured AADT")
+        lines.append(f"  counts from NCDOT monitoring stations (snapped within {AADT_SNAP_DISTANCE_M}m)")
+        lines.append(f"- **{proxy_count:,} segments ({proxy_count / total * 100:.1f}%)** use road-class")
+        lines.append(f"  proxy weights (no nearby AADT station)")
+        lines.append("")
+        lines.append("**Data source:** NCDOT AADT Stations — Orange County, NC")
+        lines.append("([ArcGIS Feature Service](https://services.arcgis.com/NuWFvHYDMVmmxMeM/ArcGIS/rest/services/NCDOT_AADT_Stations/FeatureServer/0))")
+        lines.append("")
+        lines.append("**Weight derivation:** `weight = AADT / 50,000` (clipped to [0.001, 2.0]),")
+        lines.append("where 50,000 is the reference AADT for a motorway (weight = 1.0).")
+        lines.append("")
+
+        # Load AADT cache for per-school table if available
+        try:
+            aadt_gdf = gpd.read_file(AADT_CACHE)
+            lines.append("**AADT values for major roads (top stations by traffic volume):**")
+            lines.append("")
+            lines.append("| Route | Location | AADT | Year | Weight |")
+            lines.append("|-------|----------|------|------|--------|")
+            top_aadt = aadt_gdf.nlargest(15, "aadt")
+            for _, station in top_aadt.iterrows():
+                w = np.clip(station["aadt"] / AADT_MOTORWAY_REFERENCE, 0.001, 2.0)
+                lines.append(
+                    f"| {station['route']} | {station['location_desc']} | "
+                    f"{station['aadt']:,} | {station['aadt_year']} | {w:.4f} |"
+                )
+            lines.append("")
+        except Exception:
+            pass
+    else:
+        lines.append("NCDOT AADT data was not available for this analysis run.")
+        lines.append("All road weights use road-class proxy values (see table above).")
+        lines.append("")
+        lines.append("To enable AADT integration, run without `--cache-only` to download")
+        lines.append("NCDOT station data from the ArcGIS Feature Service.")
+        lines.append("")
+
+    lines.append("### Road Network Coverage")
+    lines.append("")
+    lines.append("Road data is downloaded from OpenStreetMap using `network_type='drive_service'`,")
+    lines.append("which includes all drivable through-roads plus service roads (parking-lot access,")
+    lines.append("alleys) but excludes parking aisles and private roads. The Orange County boundary")
+    lines.append(f"is buffered by {max(RADII)} m (the maximum analysis radius) to ensure complete")
+    lines.append("coverage for schools near the county border (e.g., Rashkis Elementary, ~60 m from")
+    lines.append("the Orange–Durham county line).")
     lines.append("")
     lines.append("### Tree Canopy Mitigation")
     lines.append("")
@@ -1007,17 +1385,33 @@ def generate_analysis_markdown(df: pd.DataFrame):
     lines.append("")
     lines.append("## Limitations")
     lines.append("")
-    lines.append("1. **Road weights are proxies**, not actual AADT traffic counts.")
-    lines.append("   Real traffic volumes may differ significantly from class-based estimates.")
+    if has_aadt and aadt_count > 0:
+        lines.append(f"1. **Partial AADT coverage.** Only {aadt_count:,} of {aadt_count + proxy_count:,}")
+        lines.append(f"   road segments ({aadt_count / (aadt_count + proxy_count) * 100:.0f}%) use measured")
+        lines.append("   NCDOT traffic counts. The remaining segments use road-class proxy weights.")
+        lines.append("   AADT stations are concentrated on major/secondary roads; residential and service")
+        lines.append("   roads still rely on proxy estimates.")
+    else:
+        lines.append("1. **Road weights are proxies**, not actual AADT traffic counts.")
+        lines.append("   Real traffic volumes may differ significantly from class-based estimates.")
     lines.append("2. **The pollution index is relative/comparative**, not an absolute health risk")
     lines.append("   assessment. It should not be interpreted as pollutant concentrations.")
-    lines.append("3. **Tree canopy mitigation factors** are from literature meta-analyses, not")
+    lines.append("3. **Service road weights are approximate.** OSM `highway=service` covers a")
+    lines.append("   broad category (parking-lot access, alleys, driveways). The weights assigned")
+    lines.append("   (0.002–0.005) are low-confidence estimates. These roads individually contribute")
+    lines.append("   little, but schools near commercial areas (e.g., Scroggs near Southern Village)")
+    lines.append("   have many of them, producing a non-trivial cumulative effect.")
+    lines.append("4. **Tree canopy mitigation factors** are from literature meta-analyses, not")
     lines.append("   Chapel Hill-specific measurements. Local conditions (species, density,")
     lines.append("   seasonality) may differ.")
-    lines.append("4. **Wind patterns, terrain, and building effects** are not modeled. These")
+    lines.append("5. **Wind patterns, terrain, and building effects** are not modeled. These")
     lines.append("   factors significantly influence actual pollutant dispersion.")
-    lines.append("5. **Temporal variation** (rush hour, seasonal) is not captured.")
-    lines.append("6. **CRITICAL: ESA WorldCover urban canopy limitation.** The ESA WorldCover 10m")
+    lines.append("6. **Temporal variation** (rush hour, seasonal) is not captured.")
+    lines.append("7. **Linear summation assumption.** The model sums pollution contributions from")
+    lines.append("   all road segments (P = ΣP_i). This treats pollution as perfectly additive. In")
+    lines.append("   practice, atmospheric chemistry is more complex, but for a comparative index")
+    lines.append("   this is a reasonable first-order approximation.")
+    lines.append("8. **CRITICAL: ESA WorldCover urban canopy limitation.** The ESA WorldCover 10m")
     lines.append("   land cover classifies each pixel into a single dominant class. In suburban")
     lines.append("   areas like Chapel Hill (which has ~55% city-wide tree canopy per American")
     lines.append("   Forests estimates), neighborhoods with scattered trees along streets and in")
@@ -1861,7 +2255,9 @@ def generate_debug_maps(
     # Legend
     legend_items = [
         ("motorway", "#e41a1c"), ("trunk", "#ff7f00"), ("primary", "#377eb8"),
-        ("secondary", "#4daf4a"), ("tertiary", "#984ea3"), ("residential", "#999999"),
+        ("secondary", "#4daf4a"), ("tertiary", "#984ea3"),
+        ("unclassified", "#b07d2b"), ("residential", "#999999"),
+        ("service", "#dddddd"),
     ]
     legend_html = '<div style="position:fixed;bottom:30px;left:10px;z-index:1000;background:white;padding:10px;border-radius:5px;box-shadow:2px 2px 5px rgba(0,0,0,0.3);font-size:12px;">'
     legend_html += "<b>Road Class</b><br>"
@@ -2006,6 +2402,179 @@ def generate_debug_maps(
 
 
 # ---------------------------------------------------------------------------
+# Road network diagnostic
+# ---------------------------------------------------------------------------
+def diagnose_road_network(schools: gpd.GeoDataFrame, roads: gpd.GeoDataFrame):
+    """
+    Compare drive_service network against all-highway network near each school.
+
+    Downloads a comparison network with custom_filter='["highway"]' (all highway
+    tags) within a 1200m buffer of each school, then reports:
+    - Segment counts and total length by highway class (drive_service vs all)
+    - Excluded road types within 500m and 1000m of each school
+    - Estimated score impact of excluded roads
+
+    Writes results to data/processed/road_network_diagnostic.md.
+    Only runs when --diagnose-roads flag is passed.
+    """
+    import osmnx as ox
+    from datetime import datetime
+
+    _progress("Starting road network diagnostic ...")
+
+    schools_utm = schools.to_crs(CRS_UTM17N)
+    roads_utm = roads.to_crs(CRS_UTM17N)
+
+    lines = []
+    lines.append("# Road Network Diagnostic Report")
+    lines.append("")
+    lines.append(f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+    lines.append(f"**Method:** Compare `drive_service` (analysis network) vs all `highway` tags")
+    lines.append("")
+    lines.append("This diagnostic downloads an unrestricted road network (all OSM `highway` tags)")
+    lines.append("within 1200m of each school and compares it against the `drive_service` network")
+    lines.append("used in the TRAP analysis. The goal is to quantify what road types are excluded")
+    lines.append("and whether they could meaningfully affect pollution scores.")
+    lines.append("")
+    lines.append("---")
+    lines.append("")
+
+    # Overall summary of the drive_service network
+    lines.append("## Drive-Service Network Summary")
+    lines.append("")
+    if "highway" in roads.columns:
+        type_counts = roads["highway"].value_counts()
+        lines.append("| Highway Type | Segments |")
+        lines.append("|-------------|----------|")
+        for hw_type, count in type_counts.items():
+            lines.append(f"| {hw_type} | {count:,} |")
+    lines.append("")
+    lines.append(f"**Total segments in analysis:** {len(roads):,}")
+    lines.append("")
+    lines.append("---")
+    lines.append("")
+
+    # Per-school diagnostic
+    lines.append("## Per-School Comparison")
+    lines.append("")
+
+    for idx, (_, school) in enumerate(schools.iterrows()):
+        name = school["school"]
+        _progress(f"  [{idx+1}/{len(schools)}] Diagnosing {name} ...")
+
+        school_wgs = school.geometry
+        school_utm_pt = schools_utm.iloc[idx].geometry
+
+        # Download all-highway network within 1200m
+        try:
+            G_all = ox.graph_from_point(
+                (school_wgs.y, school_wgs.x),
+                dist=1200,
+                custom_filter='["highway"]',
+                simplify=True,
+            )
+            all_edges = ox.graph_to_gdfs(G_all, nodes=False, edges=True)
+
+            # Flatten highway column
+            def _first(val):
+                return val[0] if isinstance(val, list) else val
+
+            all_edges["highway"] = all_edges["highway"].apply(_first)
+            all_edges_utm = all_edges.to_crs(CRS_UTM17N)
+        except Exception as e:
+            lines.append(f"### {name}")
+            lines.append("")
+            lines.append(f"*Could not download comparison network: {e}*")
+            lines.append("")
+            continue
+
+        lines.append(f"### {name}")
+        lines.append("")
+
+        for radius in [500, 1000]:
+            # Filter both networks to this radius from school
+            from shapely.geometry import Point as ShapelyPoint
+            buffer = school_utm_pt.buffer(radius)
+
+            # drive_service roads within radius
+            ds_near = roads_utm[roads_utm.geometry.intersects(buffer)]
+            ds_types = ds_near["highway"].value_counts() if len(ds_near) > 0 else pd.Series(dtype=int)
+
+            # All-highway roads within radius
+            all_near = all_edges_utm[all_edges_utm.geometry.intersects(buffer)]
+            all_types = all_near["highway"].value_counts() if len(all_near) > 0 else pd.Series(dtype=int)
+
+            # Find excluded types
+            all_type_set = set(all_types.index) if len(all_types) > 0 else set()
+            ds_type_set = set(ds_types.index) if len(ds_types) > 0 else set()
+            excluded_types = all_type_set - ds_type_set
+
+            # Also count segments in all_types that don't appear in ds_types
+            excluded_segments = sum(
+                all_types.get(t, 0) for t in excluded_types
+            )
+
+            lines.append(f"**{radius}m radius:**")
+            lines.append(f"- Drive-service segments: {len(ds_near)}")
+            lines.append(f"- All-highway segments: {len(all_near)}")
+            lines.append(f"- Excluded types: {sorted(excluded_types) if excluded_types else 'none'}")
+            lines.append(f"- Excluded segments: {excluded_segments}")
+
+            if excluded_types and len(all_near) > 0:
+                lines.append("")
+                lines.append(f"  | Excluded Type | Segments | Avg Length (m) |")
+                lines.append(f"  |--------------|----------|----------------|")
+                for etype in sorted(excluded_types):
+                    et_mask = all_near["highway"] == etype
+                    et_segs = all_near[et_mask]
+                    avg_len = et_segs.geometry.length.mean()
+                    lines.append(f"  | {etype} | {len(et_segs)} | {avg_len:.0f} |")
+
+            # Estimate score impact of excluded roads
+            # Use weight=0 (excluded) vs hypothetical residential weight (0.01)
+            if excluded_segments > 0:
+                # Conservative: assume excluded roads are pedestrian/cycle
+                # with negligible motor traffic. Even if we assigned them
+                # residential weight (0.01), estimate the max contribution
+                hypothetical_contribution = 0.0
+                for etype in excluded_types:
+                    et_mask = all_near["highway"] == etype
+                    et_segs = all_near[et_mask]
+                    for _, seg in et_segs.iterrows():
+                        centroid = seg.geometry.centroid
+                        dist = school_utm_pt.distance(centroid)
+                        # Use minimal weight (residential = 0.01)
+                        hypothetical_contribution += 0.01 * np.exp(-LAMBDA * dist)
+
+                lines.append(
+                    f"- **Estimated max impact if excluded roads were residential-weighted:** "
+                    f"{hypothetical_contribution:.4f}"
+                )
+            lines.append("")
+
+        lines.append("")
+
+    # Summary
+    lines.append("---")
+    lines.append("")
+    lines.append("## Interpretation")
+    lines.append("")
+    lines.append("Excluded road types (footway, cycleway, path, pedestrian, steps, track, etc.)")
+    lines.append("are non-motor-vehicle roads that do not generate significant traffic-related")
+    lines.append("air pollution. Their exclusion from the TRAP analysis is methodologically correct.")
+    lines.append("")
+    lines.append("The 'estimated max impact' assumes all excluded roads carry residential-level")
+    lines.append("traffic (weight=0.01), which is a substantial overestimate for pedestrian paths")
+    lines.append("and cycleways. The actual impact of excluding these roads is effectively zero")
+    lines.append("for pollution modeling purposes.")
+    lines.append("")
+
+    out = DATA_PROCESSED / "road_network_diagnostic.md"
+    out.write_text("\n".join(lines), encoding="utf-8")
+    _progress(f"Wrote diagnostic report to {out}")
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 def main():
@@ -2026,6 +2595,10 @@ def main():
         "--debug-maps", action="store_true",
         help="Generate intermediate debug maps for visual verification",
     )
+    parser.add_argument(
+        "--diagnose-roads", action="store_true",
+        help="Generate road network diagnostic report comparing drive_service vs all-highway networks",
+    )
     args = parser.parse_args()
 
     print("=" * 60)
@@ -2036,51 +2609,61 @@ def main():
     ensure_directories()
 
     # 1. Download / load school locations (NCES)
-    print("\n[1/9] Loading school locations ...")
+    print("\n[1/10] Loading school locations ...")
     download_school_locations(cache_only=args.cache_only)
     schools = load_schools()
     print(f"  Loaded {len(schools)} schools")
 
     # 2. Download road network
-    print("\n[2/9] Loading road network ...")
+    print("\n[2/10] Loading road network ...")
     roads_raw = download_road_network(cache_only=args.cache_only)
 
     # 3. Filter and prepare
-    print("\n[3/9] Filtering roads ...")
+    print("\n[3/10] Filtering roads ...")
     roads = filter_and_prepare_roads(roads_raw)
 
+    # 3b. Apply NCDOT AADT overrides
+    print("\n[4/10] Applying NCDOT AADT weight overrides ...")
+    try:
+        aadt_stations = download_ncdot_aadt(cache_only=args.cache_only)
+        roads = apply_aadt_overrides(roads, aadt_stations)
+    except Exception as e:
+        _progress(f"AADT override skipped: {e}")
+        _progress("Continuing with proxy weights only.")
+        roads["weight_source"] = "proxy"
+
     # 4. Discretize
-    print("\n[4/9] Discretizing roads into sub-segments ...")
+    print("\n[5/10] Discretizing roads into sub-segments ...")
     road_points = discretize_roads(roads)
 
     # 5. Download LULC
-    print("\n[5/9] Loading land cover data ...")
+    print("\n[6/10] Loading land cover data ...")
     lulc_path = download_esa_worldcover(cache_only=args.cache_only)
 
     # 6. Run school analysis
-    print("\n[6/9] Analyzing pollution exposure for each school ...")
+    print("\n[7/10] Analyzing pollution exposure for each school ...")
     df = run_school_analysis(schools, road_points, lulc_path)
     df = normalize_and_rank(df)
 
     # 7. Save outputs
-    print("\n[7/9] Saving results ...")
+    print("\n[8/10] Saving results ...")
     save_results_csv(df)
-    generate_analysis_markdown(df)
+    generate_analysis_markdown(df, roads)
     create_pollution_chart(df)
 
     # 8. County-wide grid and maps
     raw_grid, net_grid, bounds = None, None, None
     if not args.skip_grid:
-        print("\n[8/9] Generating county-wide pollution maps ...")
+        print("\n[9/10] Generating county-wide pollution maps ...")
         raw_grid, net_grid, bounds = generate_county_grid(
             road_points, roads, lulc_path, resolution=args.grid_resolution
         )
         create_county_maps(raw_grid, net_grid, bounds, df, roads_gdf=roads)
     else:
-        print("\n[8/9] Skipping county grid (--skip-grid)")
+        print("\n[9/10] Skipping county grid (--skip-grid)")
 
     # 9. Additional standard maps
-    print("\n[9/9] Generating additional maps ...")
+    print("\n[10/10] Generating additional maps ...")
     create_tree_canopy_map(lulc_path, schools)
     if raw_grid is not None:
         create_combined_map(raw_grid, net_grid, lulc_path, bounds, df, roads_gdf=roads)
@@ -2092,6 +2675,11 @@ def main():
             schools, roads, road_points, lulc_path, df,
             raw_grid=raw_grid, net_grid=net_grid, bounds=bounds,
         )
+
+    # Road network diagnostic (if requested)
+    if args.diagnose_roads:
+        print("\n[DIAGNOSTIC] Generating road network diagnostic ...")
+        diagnose_road_network(schools, roads)
 
     # Summary
     print("\n" + "=" * 60)
@@ -2108,6 +2696,8 @@ def main():
     print(f"  Map:   {ASSETS_MAPS / 'tree_canopy_map.html'}")
     if args.debug_maps:
         print(f"  Debug: {ASSETS_MAPS_DEBUG / 'debug_*.html'}")
+    if args.diagnose_roads:
+        print(f"  Diag:  {DATA_PROCESSED / 'road_network_diagnostic.md'}")
 
     # Print quick summary
     print("\nQuick summary (500m radius, net pollution):")

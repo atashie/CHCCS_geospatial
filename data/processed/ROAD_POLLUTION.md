@@ -22,15 +22,14 @@ is a school exposed to based on nearby roads?**
 
 **What the numbers mean in practice:**
 
-- Glenwood (19.3) sits near multiple major roads — it gets hit from many directions
-- FPG (17.6) is similar — right next to Glen Lennox and busy corridors
-- Ephesus (1.7) is relatively sheltered — near 15-501 but not immediately adjacent,
-  and most surrounding roads are residential
-- Rashkis (0.18) is essentially surrounded by nothing but neighborhood streets
+- Schools near multiple major roads (e.g., Frank Porter Graham Bilingue at 15.2) score highest
+- Schools on busy corridors (e.g., Glenwood Elementary at 15.0) also score high
+- Schools set back from major roads score much lower (e.g., Rashkis Elementary at 1.0)
+- Schools surrounded by neighborhood streets score lowest (e.g., Seawell Elementary at 0.7)
 
-The index is **comparative, not a health measurement**. A score of 19 doesn't mean
-"unhealthy air" — it means Glenwood has roughly 11x more traffic-generated pollution
-pressure than Ephesus, and 107x more than Rashkis. The actual air quality at any
+The index is **comparative, not a health measurement**. A score of 15 doesn't mean
+"unhealthy air" — it means that school has roughly 21x more traffic-generated pollution
+pressure than the lowest-scoring school. The actual air quality at any
 school depends on wind, terrain, buildings, and other factors this model doesn't capture.
 
 ---
@@ -69,11 +68,60 @@ epidemiological models when actual traffic count data is unavailable (Hoek et al
 | primary | ~15,000 | 0.300 |
 | secondary | ~7,500 | 0.150 |
 | tertiary | ~3,000 | 0.060 |
+| unclassified | ~1,000 | 0.020 |
 | residential | ~500 | 0.010 |
+| service (untagged) | ~250 | 0.005 |
+| service (alley) | ~150 | 0.003 |
+| service (driveway) | ~100 | 0.002 |
+| living_street | ~250 | 0.005 |
 
-**IMPORTANT:** These weights are proxies based on typical AADT by road class, 
-NOT actual traffic count data for these specific roads. Actual AADT data from 
-NCDOT would improve accuracy.
+**IMPORTANT:** These proxy weights are used as defaults. Where available,
+actual NCDOT AADT counts override these proxies (see AADT Data Integration below).
+
+### AADT Data Integration
+
+This analysis integrates **NCDOT Annual Average Daily Traffic (AADT)** data
+from 57,898 road segments:
+
+- **697 segments (1.2%)** use measured AADT
+  counts from NCDOT monitoring stations (snapped within 50m)
+- **57,201 segments (98.8%)** use road-class
+  proxy weights (no nearby AADT station)
+
+**Data source:** NCDOT AADT Stations — Orange County, NC
+([ArcGIS Feature Service](https://services.arcgis.com/NuWFvHYDMVmmxMeM/ArcGIS/rest/services/NCDOT_AADT_Stations/FeatureServer/0))
+
+**Weight derivation:** `weight = AADT / 50,000` (clipped to [0.001, 2.0]),
+where 50,000 is the reference AADT for a motorway (weight = 1.0).
+
+**AADT values for major roads (top stations by traffic volume):**
+
+| Route | Location | AADT | Year | Weight |
+|-------|----------|------|------|--------|
+| I-85 | BETWEEN EXIT 160 AND EXIT 161 | 99,000 | 2020 | 1.9800 |
+| I-85 | BETWEEN EXIT 157 AND EXIT 160 | 95,500 | 2020 | 1.9100 |
+| I-85 | BETWEEN EXIT 161 AND EXIT 163 | 95,000 | 2020 | 1.9000 |
+| I-40 | BETWEEN EXIT 266 AND EXIT 270 | 63,500 | 2020 | 1.2700 |
+| I-40 | BETWEEN EXIT 263 AND EXIT 266 | 59,000 | 2020 | 1.1800 |
+| I-40 | BETWEEN EXIT 261 AND EXIT 263 | 56,500 | 2020 | 1.1300 |
+| I-40 | BETWEEN EXIT 260 (I-85) AND EXIT 261 | 50,500 | 2020 | 1.0100 |
+| US 15-501 | SOUTH OF NC 54 | 49,500 | 2021 | 0.9900 |
+| I-85 | BETWEEN EXIT 164 AND EXIT 165 | 47,000 | 2020 | 0.9400 |
+| I-85 | BETWEEN EXIT 165 AND EXIT 170 | 46,000 | 2020 | 0.9200 |
+| I-85 | BETWEEN EXIT 163 AND EXIT 164 | 44,000 | 2020 | 0.8800 |
+| US 15-501 | SOUTH OF WINTER RD | 41,500 | 2021 | 0.8300 |
+| NC 54 | EAST OF FINLEY GOLF COURSE RD | 41,000 | 2021 | 0.8200 |
+| US 15-501 | SOUTH OF SR 1734 | 41,000 | 2021 | 0.8200 |
+| NC 54 | EAST OF US 15-501 | 40,000 | 2021 | 0.8000 |
+
+### Road Network Coverage
+
+Road data is downloaded from OpenStreetMap using `network_type='drive_service'`,
+which includes all drivable through-roads plus service roads (parking-lot access,
+alleys) but excludes parking aisles and private roads. The Orange County boundary
+is buffered by 1000 m (the maximum analysis radius) to ensure complete
+coverage for schools near the county border (e.g., Rashkis Elementary, ~60 m from
+the Orange–Durham county line).
 
 ### Tree Canopy Mitigation
 
@@ -92,52 +140,37 @@ P_net = P_raw * (1 - f_mitigation)
 
 | Rank | School | Raw Index | Canopy % | Mitigation % | Net Index | Net (Normalized) |
 |------|--------|-----------|----------|-------------|-----------|-----------------|
-| 1 | Glenwood Elementary | 19.29 | 61.0% | 34.2% | 12.70 | 100.0 |
-| 2 | Frank Porter Graham Bilingue | 17.61 | 72.4% | 40.6% | 10.47 | 82.4 |
-| 3 | Scroggs Elementary | 4.68 | 65.9% | 36.9% | 2.95 | 23.3 |
-| 4 | Carrboro Elementary | 4.42 | 76.0% | 42.6% | 2.54 | 20.0 |
-| 5 | McDougle Elementary | 3.13 | 72.6% | 40.7% | 1.86 | 14.6 |
-| 6 | Morris Grove Elementary | 3.72 | 91.1% | 51.0% | 1.82 | 14.4 |
-| 7 | Estes Hills Elementary | 2.93 | 93.5% | 52.3% | 1.40 | 11.0 |
-| 8 |  **Ephesus Elementary** | 1.72 | 81.7% | 45.8% | 0.93 | 7.3 |
-| 9 | New FPG Location | 1.34 | 80.9% | 45.3% | 0.73 | 5.8 |
-| 10 | Northside Elementary | 1.17 | 84.3% | 47.2% | 0.62 | 4.9 |
-| 11 | Seawell Elementary | 0.79 | 82.1% | 46.0% | 0.43 | 3.4 |
-| 12 | Rashkis Elementary | 0.18 | 71.1% | 39.8% | 0.11 | 0.8 |
+| 1 | Glenwood Elementary | 15.02 | 61.0% | 34.2% | 9.89 | 100.0 |
+| 2 | Frank Porter Graham Bilingue | 15.16 | 72.4% | 40.6% | 9.01 | 91.1 |
+| 3 | Carrboro Elementary | 6.21 | 76.0% | 42.6% | 3.57 | 36.1 |
+| 4 | Scroggs Elementary | 4.84 | 65.9% | 36.9% | 3.05 | 30.9 |
+| 5 | McDougle Elementary | 3.65 | 72.6% | 40.7% | 2.17 | 21.9 |
+| 6 | Morris Grove Elementary | 3.63 | 91.1% | 51.0% | 1.78 | 18.0 |
+| 7 | Estes Hills Elementary | 3.16 | 93.5% | 52.3% | 1.51 | 15.3 |
+| 8 | Ephesus Elementary | 2.33 | 81.7% | 45.8% | 1.27 | 12.8 |
+| 9 | New FPG Location | 1.50 | 80.9% | 45.3% | 0.82 | 8.3 |
+| 10 | Northside Elementary | 1.43 | 84.3% | 47.2% | 0.75 | 7.6 |
+| 11 | Rashkis Elementary | 1.00 | 71.1% | 39.8% | 0.60 | 6.1 |
+| 12 | Seawell Elementary | 0.71 | 82.1% | 46.0% | 0.38 | 3.9 |
 
 ## Results: 1000m Radius
 
 | Rank | School | Raw Index | Canopy % | Mitigation % | Net Index | Net (Normalized) |
 |------|--------|-----------|----------|-------------|-----------|-----------------|
-| 1 | Glenwood Elementary | 23.99 | 69.8% | 39.1% | 14.61 | 100.0 |
-| 2 | Frank Porter Graham Bilingue | 22.16 | 80.2% | 44.9% | 12.20 | 83.5 |
-| 3 | Scroggs Elementary | 8.78 | 83.2% | 46.6% | 4.69 | 32.1 |
-| 4 | Carrboro Elementary | 8.11 | 75.5% | 42.3% | 4.68 | 32.0 |
-| 5 | New FPG Location | 8.56 | 84.4% | 47.3% | 4.51 | 30.9 |
-| 6 |  **Ephesus Elementary** | 7.13 | 73.0% | 40.9% | 4.22 | 28.9 |
-| 7 | Northside Elementary | 5.56 | 67.9% | 38.0% | 3.45 | 23.6 |
-| 8 | McDougle Elementary | 4.42 | 80.4% | 45.0% | 2.43 | 16.6 |
-| 9 | Morris Grove Elementary | 5.01 | 93.6% | 52.4% | 2.38 | 16.3 |
-| 10 | Estes Hills Elementary | 4.19 | 92.5% | 51.8% | 2.02 | 13.8 |
-| 11 | Seawell Elementary | 2.03 | 85.3% | 47.8% | 1.06 | 7.2 |
-| 12 | Rashkis Elementary | 0.63 | 77.2% | 43.2% | 0.36 | 2.4 |
+| 1 | Glenwood Elementary | 20.35 | 69.8% | 39.1% | 12.39 | 100.0 |
+| 2 | Frank Porter Graham Bilingue | 19.98 | 80.2% | 44.9% | 11.00 | 88.8 |
+| 3 | Carrboro Elementary | 11.35 | 75.5% | 42.3% | 6.55 | 52.9 |
+| 4 | Ephesus Elementary | 8.25 | 73.0% | 40.9% | 4.88 | 39.4 |
+| 5 | Northside Elementary | 7.75 | 67.9% | 38.0% | 4.80 | 38.8 |
+| 6 | Scroggs Elementary | 8.96 | 83.2% | 46.6% | 4.79 | 38.6 |
+| 7 | New FPG Location | 8.30 | 84.4% | 47.3% | 4.38 | 35.3 |
+| 8 | McDougle Elementary | 5.01 | 80.4% | 45.0% | 2.75 | 22.2 |
+| 9 | Morris Grove Elementary | 4.88 | 93.6% | 52.4% | 2.32 | 18.7 |
+| 10 | Estes Hills Elementary | 4.42 | 92.5% | 51.8% | 2.13 | 17.2 |
+| 11 | Rashkis Elementary | 1.79 | 77.2% | 43.2% | 1.01 | 8.2 |
+| 12 | Seawell Elementary | 1.89 | 85.3% | 47.8% | 0.99 | 8.0 |
 
 ---
-
-## Ephesus Elementary Summary
-
-- **500m raw rank:** #8 of 12
-- **500m net rank (after canopy):** #8 of 12
-- **1000m raw rank:** #6 of 12
-- **1000m net rank (after canopy):** #6 of 12
-- **Tree canopy (500m):** 81.7%
-- **Tree canopy (1000m):** 73.0%
-
-### Context
-
-Ephesus is located on Ephesus Church Road (two-lane) but is east of NC 15-501 
-(Fordham Boulevard), a major 4-lane arterial classified as a 'trunk' road. 
-The proximity to 15-501 contributes to the school's pollution exposure score.
 
 ---
 
@@ -197,38 +230,6 @@ occurred within 250m, weakening to −0.002 at 1km, mirroring the exponential de
 our formula. Stenson et al. (2021) systematically reviewed 10 studies on TRAP and
 academic performance; 9 of 10 found a negative association.
 
-### Ephesus Context
-
-Ephesus ranks #8 of 12 in raw pollution exposure at 500m — in the lower third of
-district schools. This is a moderate position; schools like
-Glenwood (19.29) and FPG (17.61) face pollution indices roughly
-10x higher than Ephesus (1.72).
-However, at the 1000m radius, Ephesus rises to #5 due to proximity to the NC 15-501
-corridor. The proximity-based health literature above applies most strongly to the
-highest-ranked schools (Glenwood, FPG). These results should not be overstated —
-Ephesus is not among the most pollution-exposed schools in the district at the
-primary 500m radius.
-
-### Closure Consideration
-
-If Ephesus were closed, the 99 students currently walking to school would be bused,
-increasing their daily TRAP exposure during transit along arterial roads. Three lines
-of evidence establish this effect:
-
-1. **In-vehicle concentrations:** Karner et al. (2010) found that in-vehicle pollutant
-   concentrations on busy roads are 2–10× higher than ambient levels.
-2. **Busing exposure:** A Detroit study (PMC8715954) found that busing 15km along
-   urban roads resulted in ~340 µg/m³ daily NOₓ exposure versus ~60–100 µg/m³ for
-   walking to a local school — approximately 2–3× higher daily exposure.
-3. **Academic impact of bus emissions:** Austin et al. (2019) showed that reducing
-   school bus diesel exposure through fleet retrofits produced measurable gains in
-   English test scores and improved respiratory health (aerobic capacity).
-
-Converting 99 walkers to bus riders along NC 15-501 (a trunk road in our index)
-directly contradicts EPA School Siting Guidelines (2011) and EPA Near-Road Best
-Practices (2015), both of which recommend minimizing student commute pollution
-exposure. This argument applies regardless of Ephesus's relative pollution ranking.
-
 *For complete citations, evidence tier classification, and methodological notes, see*
 *`data/processed/TRAP_FULL_LITERATURE_REVIEW.md`.*
 
@@ -236,17 +237,29 @@ exposure. This argument applies regardless of Ephesus's relative pollution ranki
 
 ## Limitations
 
-1. **Road weights are proxies**, not actual AADT traffic counts.
-   Real traffic volumes may differ significantly from class-based estimates.
+1. **Partial AADT coverage.** Only 697 of 57,898
+   road segments (1%) use measured
+   NCDOT traffic counts. The remaining segments use road-class proxy weights.
+   AADT stations are concentrated on major/secondary roads; residential and service
+   roads still rely on proxy estimates.
 2. **The pollution index is relative/comparative**, not an absolute health risk
    assessment. It should not be interpreted as pollutant concentrations.
-3. **Tree canopy mitigation factors** are from literature meta-analyses, not
+3. **Service road weights are approximate.** OSM `highway=service` covers a
+   broad category (parking-lot access, alleys, driveways). The weights assigned
+   (0.002–0.005) are low-confidence estimates. These roads individually contribute
+   little, but schools near commercial areas (e.g., Scroggs near Southern Village)
+   have many of them, producing a non-trivial cumulative effect.
+4. **Tree canopy mitigation factors** are from literature meta-analyses, not
    Chapel Hill-specific measurements. Local conditions (species, density,
    seasonality) may differ.
-4. **Wind patterns, terrain, and building effects** are not modeled. These
+5. **Wind patterns, terrain, and building effects** are not modeled. These
    factors significantly influence actual pollutant dispersion.
-5. **Temporal variation** (rush hour, seasonal) is not captured.
-6. **CRITICAL: ESA WorldCover urban canopy limitation.** The ESA WorldCover 10m
+6. **Temporal variation** (rush hour, seasonal) is not captured.
+7. **Linear summation assumption.** The model sums pollution contributions from
+   all road segments (P = ΣP_i). This treats pollution as perfectly additive. In
+   practice, atmospheric chemistry is more complex, but for a comparative index
+   this is a reasonable first-order approximation.
+8. **CRITICAL: ESA WorldCover urban canopy limitation.** The ESA WorldCover 10m
    land cover classifies each pixel into a single dominant class. In suburban
    areas like Chapel Hill (which has ~55% city-wide tree canopy per American
    Forests estimates), neighborhoods with scattered trees along streets and in

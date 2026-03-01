@@ -67,8 +67,11 @@ CHCCS_geospatial/
 ## Commands
 
 ```bash
-# Run TRAP / tree canopy analysis (also downloads school locations)
+# Run TRAP / tree canopy analysis (also downloads school locations + AADT)
 python src/road_pollution.py
+
+# Run TRAP analysis with road network diagnostic report
+python src/road_pollution.py --diagnose-roads --skip-grid
 
 # Run school desert analysis (travel-time heatmaps + affected households)
 python src/school_desert.py
@@ -104,6 +107,7 @@ python src/affordable_housing.py --cache-only  # cached data only
 | School desert grid | `data/processed/school_desert_grid.csv` | Computed (Dijkstra) |
 | Pollution scores | `data/processed/road_pollution_scores.csv` | Computed (TRAP model) |
 | Zone demographics | `data/processed/census_school_demographics.csv` | Computed (dasymetric) |
+| NCDOT AADT stations | `data/cache/ncdot_aadt_orange_county.gpkg` | NCDOT ArcGIS (Orange County) |
 | Affordable housing | `data/cache/affordable_housing.gpkg` | Town of Chapel Hill ArcGIS (2025) |
 
 ---
