@@ -41,6 +41,7 @@ CHCCS_geospatial/
 │   ├── childcare_geocode.py              # Childcare proximity analysis
 │   ├── property_data.py                  # Orange County parcel processing
 │   ├── affordable_housing.py             # Affordable housing data download & assessment
+│   ├── environmental_map.py              # Consolidated environmental map (TRAP + flood + UHI)
 │   ├── data_processing.py                # Shared data loading utilities
 │   └── maps.py                           # Map visualizations (TODO: needs restructuring)
 ├── data/
@@ -53,6 +54,7 @@ CHCCS_geospatial/
 │   ├── maps/                   # Interactive HTML maps + static images
 │   └── charts/                 # Comparison charts
 ├── docs/                       # Methodology and limitations
+│   ├── ENVIRONMENTAL_ANALYSIS_README.md  # Consolidated env analysis (TRAP + flood + UHI + canopy)
 │   ├── SCHOOL_DESERT_ANALYSIS_AND_LIMITATIONS.md
 │   ├── SOCIOECONOMIC_ANALYSIS_AND_LIMITATIONS.md
 │   ├── IMPLEMENTATION_NOTES.md
@@ -91,6 +93,10 @@ python src/property_data.py
 # Download & assess affordable housing data
 python src/affordable_housing.py
 python src/affordable_housing.py --cache-only  # cached data only
+
+# Generate consolidated environmental analysis map (TRAP + flood + UHI)
+python src/environmental_map.py
+python src/environmental_map.py --cache-only   # cached data only
 ```
 
 ---
@@ -109,6 +115,24 @@ python src/affordable_housing.py --cache-only  # cached data only
 | Zone demographics | `data/processed/census_school_demographics.csv` | Computed (dasymetric) |
 | NCDOT AADT stations | `data/cache/ncdot_aadt_orange_county.gpkg` | NCDOT ArcGIS (Orange County) |
 | Affordable housing | `data/cache/affordable_housing.gpkg` | Town of Chapel Hill ArcGIS (2025) |
+| UHI proxy scores | `data/processed/uhi_proxy_scores.csv` | Computed (ESA WorldCover proxy) |
+| TRAP grid cache | `data/cache/trap_grids.npz` | Computed (road_pollution grid) |
+| UHI grid cache | `data/cache/uhi_grid.npz` | Computed (ESA WorldCover proxy) |
+
+---
+
+## CRITICAL: Documentation Maintenance
+
+**All documentation must be fully updated whenever a substantial change is made to a workflow, dataset, or asset (map or chart).** This includes but is not limited to:
+
+- [`docs/ENVIRONMENTAL_ANALYSIS_README.md`](docs/ENVIRONMENTAL_ANALYSIS_README.md) — TRAP, flood, UHI proxy, tree canopy, consolidated map
+- [`docs/IMPLEMENTATION_NOTES.md`](docs/IMPLEMENTATION_NOTES.md) — Technical implementation details for all modules
+- [`docs/SCHOOL_DESERT_ANALYSIS_AND_LIMITATIONS.md`](docs/SCHOOL_DESERT_ANALYSIS_AND_LIMITATIONS.md) — School desert analysis
+- [`docs/SOCIOECONOMIC_ANALYSIS_AND_LIMITATIONS.md`](docs/SOCIOECONOMIC_ANALYSIS_AND_LIMITATIONS.md) — Socioeconomic analysis
+- [`docs/socioeconomic/SOCIOECONOMIC_ANALYSIS.md`](docs/socioeconomic/SOCIOECONOMIC_ANALYSIS.md) — Auto-generated socioeconomic methodology
+- [`data/processed/ROAD_POLLUTION.md`](data/processed/ROAD_POLLUTION.md) — TRAP analysis results and methodology
+
+If you change a formula, constant, data source, output file, or analysis pipeline, update every document that references the changed item. Stale documentation is worse than no documentation.
 
 ---
 
