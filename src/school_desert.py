@@ -144,25 +144,35 @@ MODE_RANGES = {
     "walk":  {"abs": (0, 60), "delta": (0, 30)},
 }
 
-# Closure scenarios
+# Closure scenarios — one per elementary school for equal treatment
 SCENARIOS = {
     "baseline": [],
+    "no_carrboro": ["Carrboro Elementary"],
     "no_ephesus": ["Ephesus Elementary"],
-    "no_glenwood": ["Glenwood Elementary"],
-    "no_fpg": ["Frank Porter Graham Bilingue"],
     "no_estes": ["Estes Hills Elementary"],
+    "no_fpg": ["Frank Porter Graham Bilingue"],
+    "no_glenwood": ["Glenwood Elementary"],
+    "no_mcdougle": ["McDougle Elementary"],
+    "no_morris_grove": ["Morris Grove Elementary"],
+    "no_northside": ["Northside Elementary"],
+    "no_rashkis": ["Rashkis Elementary"],
+    "no_scroggs": ["Scroggs Elementary"],
     "no_seawell": ["Seawell Elementary"],
-    "no_ephesus_glenwood": ["Ephesus Elementary", "Glenwood Elementary"],
 }
 
 SCENARIO_LABELS = {
     "baseline": "Baseline (All 11 Schools)",
+    "no_carrboro": "Close Carrboro",
     "no_ephesus": "Close Ephesus",
-    "no_glenwood": "Close Glenwood",
-    "no_fpg": "Close FPG Bilingüe",
     "no_estes": "Close Estes Hills",
+    "no_fpg": "Close FPG Bilingue",
+    "no_glenwood": "Close Glenwood",
+    "no_mcdougle": "Close McDougle",
+    "no_morris_grove": "Close Morris Grove",
+    "no_northside": "Close Northside",
+    "no_rashkis": "Close Rashkis",
+    "no_scroggs": "Close Scroggs",
     "no_seawell": "Close Seawell",
-    "no_ephesus_glenwood": "Close Ephesus + Glenwood",
 }
 
 MODE_LABELS = {"drive": "Drive", "bike": "Bike", "walk": "Walk"}

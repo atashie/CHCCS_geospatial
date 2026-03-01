@@ -186,7 +186,7 @@ plt.rcParams["font.sans-serif"] = ["Segoe UI", "Tahoma", "DejaVu Sans"]
 plt.style.use("seaborn-v0_8-whitegrid")
 
 # ENAME → project school name mapping
-# CHCCS.shp ENAME values use full names (e.g., "Ephesus Elementary")
+# CHCCS.shp ENAME values use full names (e.g., "Carrboro Elementary")
 # This map handles both full names and possible abbreviations.
 _ENAME_TO_SCHOOL = {
     "Carrboro Elementary": "Carrboro Elementary",
@@ -2762,11 +2762,10 @@ def main():
         print("\n  Per-Zone Summary:")
         print("  " + "-" * 80)
         for _, row in zone_demographics.iterrows():
-            eph = " <<<" if "ephesus" in row["school"].lower() else ""
             print(f"  {row['school']:35s}  Pop: {int(row['total_pop']):>6,}  "
                   f"Income: ${int(row['median_hh_income']):>7,}  "
                   f"Poverty: {row['pct_below_185_poverty']:>5.1f}%  "
-                  f"Minority: {row['pct_minority']:>5.1f}%{eph}")
+                  f"Minority: {row['pct_minority']:>5.1f}%")
 
     # ── 6a. Downscale ACS metrics to block level ─────────────────────
     blocks_clipped = clip_to_district(blocks, district)
