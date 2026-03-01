@@ -1,6 +1,6 @@
 # Traffic-Related Air Pollution (TRAP) and Children's Health & Learning: A Literature Review
 
-*Prepared for the CHCCS School Closure Analysis*
+*Prepared for the CHCCS District Geospatial Analysis*
 *Last updated: February 2026*
 
 ---
@@ -104,13 +104,13 @@ These studies measure academic or cognitive outcomes using proximity to roads as
 
 Heissel et al. (2022) is particularly important because the natural-experiment design (exploiting wind direction variation while holding distance constant) provides causal evidence that TRAP — not confounders correlated with road proximity — drives the academic effects.
 
-### Busing/Closure-Relevant Study
+### Busing vs. Walking Exposure Study
 
 | Study | Source | Design | Key Finding |
 |-------|--------|--------|-------------|
 | Detroit busing study | PMC8715954 | Exposure comparison | Busing 15km along urban roads resulted in ~340 µg/m³ daily NOₓ exposure; walking to a local school resulted in ~60–100 µg/m³ — approximately **2–3× higher exposure from busing** |
 
-This study is directly relevant to the school closure question: converting walkers to bus riders substantially increases their daily TRAP exposure.
+This study found that students who commute by bus along urban roads have higher daily TRAP exposure than students who walk to a nearby school.
 
 ### Systematic Reviews
 
@@ -207,7 +207,7 @@ These studies establish that TRAP pollutants cause harm to children's health and
 ### What Our Index CAN Inform
 
 - **Relative ranking** of 11 schools by traffic proximity (which schools face the most/least road exposure)
-- **The direction of exposure changes** from school closure and student redistribution (more busing = more in-transit exposure)
+- **The direction of exposure changes** when student commute modes or distances change (e.g., more busing = more in-transit exposure)
 - **Which schools would benefit most** from mitigation measures (HVAC filtration, vegetative barriers)
 
 ### What Our Index CANNOT Claim
@@ -215,23 +215,17 @@ These studies establish that TRAP pollutants cause harm to children's health and
 - Absolute health risk levels for any school
 - Specific pollutant concentrations (µg/m³) at any school
 - Direct prediction of asthma rates, test scores, or cognitive outcomes at any school
-- That Ephesus children currently face health risk from TRAP (Ephesus ranks #8/11 at 500m — lower third)
+- That children at any specific school face a particular health risk level (the index provides relative ranking, not absolute risk)
 
-### Ephesus-Specific Honest Framing
+### Commute Mode and TRAP Exposure
 
-- Ephesus ranks **#8 of 11** at 500m radius — in the lower third of district schools for TRAP exposure
-- The proximity-based health literature (Section 2) applies most strongly to the highest-ranked schools (Glenwood, FPG)
-- The closure/busing argument (Section 3, below) applies to Ephesus **regardless of its pollution ranking**
-
-### The Closure Paradox (Supported by Literature)
-
-Three studies together establish that closing a walkable school and busing students to a farther school increases their daily TRAP exposure — even if the destination school has better ambient air quality:
+Three studies together illustrate the relationship between commute mode and daily TRAP exposure:
 
 1. **Karner et al. (2010):** In-vehicle pollutant concentrations on busy roads are 2–10× ambient levels
 2. **Detroit busing study (PMC8715954):** Busing 15km along urban roads resulted in ~340 µg/m³ daily NOₓ exposure vs ~60–100 µg/m³ for walking to a local school — approximately 2–3× higher daily exposure
 3. **Austin et al. (2019):** Reducing school bus diesel exposure (via fleet retrofits) produced measurable gains in English test scores and respiratory health
 
-These findings mean that converting Ephesus's 99 current walkers to bus riders along arterial roads (including NC 15-501) would increase their daily TRAP exposure, directly contradicting EPA guidance to minimize student commute pollution exposure.
+These findings indicate that students who commute by bus along arterial roads generally experience higher daily TRAP exposure than students who walk to nearby schools. This is consistent with EPA guidance recommending minimized student commute pollution exposure.
 
 ---
 

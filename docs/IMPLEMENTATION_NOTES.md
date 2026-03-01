@@ -28,8 +28,8 @@ FEMA flood plain overlay on school property parcels showing flood exposure acros
 
 | File | Purpose |
 |------|---------|
-| `src/flood_map.py` | Standalone script: downloads FEMA data, identifies school parcels, computes overlaps, renders two-panel PNG |
-| `assets/maps/flood_school_properties.png` | Two-panel map: district overview + detail zoom |
+| `src/flood_map.py` | Standalone script: downloads FEMA data, identifies school parcels, computes overlaps, renders single-panel PNG |
+| `assets/maps/flood_school_properties.png` | Map of school properties with flood zone overlays |
 | `data/cache/fema_flood_zones.gpkg` | Cached FEMA flood zone polygons |
 
 ### Technical Notes
@@ -37,6 +37,7 @@ FEMA flood plain overlay on school property parcels showing flood exposure acros
 - FEMA API (`hazards.fema.gov/arcgis/...`) errors on large bounding boxes; solved by tiling into 3x3 sub-bboxes
 - Some FEMA polygons have invalid geometry; fixed with `make_valid()` before `unary_union`
 - School parcels are owned by various entities (school board, Orange County, Town of Chapel Hill); identified by spatial containment of NCES point rather than owner name filtering
+- Overlap areas are computed in UTM (EPSG:32617): both school properties and flood unions are reprojected to UTM, intersection geometry area is computed in square meters, then converted to acres (`m² / 4046.86`). This replaces the earlier approximate latitude-factor approach.
 
 ---
 
@@ -96,16 +97,9 @@ A residential parcel is **affected** if its nearest grid point has `delta_minute
 | `data/processed/school_desert_grid.csv` | ~340K rows: grid_id x scenario x mode with travel times and deltas |
 | `data/cache/school_desert_tiffs/` | GeoTIFF rasters for each scenario/mode/layer |
 
-### Affected Household Counts (Baseline)
+### Affected Household Counts
 
-| Scenario | Drive | Bike | Walk |
-|----------|-------|------|------|
-| Close Ephesus | 3,216 | 2,712 | 2,244 |
-| Close Glenwood | 838 | 551 | 909 |
-| Close FPG | 2,566 | 1,366 | 1,336 |
-| Close Estes Hills | 3,144 | 3,412 | 3,914 |
-| Close Seawell | 1,914 | 2,431 | 2,139 |
-| Close Ephesus + Glenwood | 4,054 | 3,263 | 3,153 |
+Affected household counts are computed per scenario when `school_desert.py` runs. The analysis now covers all 11 elementary schools with one closure scenario each. Run `python src/school_desert.py` to generate current counts.
 
 ---
 
@@ -136,10 +130,51 @@ Census-based demographic analysis of CHCCS elementary school attendance zones us
 
 ---
 
+## Environmental Analysis (Consolidated Map)
+
+### Overview
+
+Consolidated interactive map combining TRAP pollution, flood risk, tree canopy, and UHI proxy layers for all 11 CHCCS elementary schools. See [`docs/ENVIRONMENTAL_ANALYSIS_README.md`](ENVIRONMENTAL_ANALYSIS_README.md) for full methodology.
+
+### Key Outputs
+
+| File | Purpose |
+|------|---------|
+| `src/environmental_map.py` | Builds consolidated Folium map from cached grids and downloaded data |
+| `assets/maps/chccs_environmental_analysis.html` | Interactive map with 7 toggleable layers, dynamic legends, and aggregated school popups |
+| `data/processed/uhi_proxy_scores.csv` | Per-school UHI proxy scores at 500 m and 1000 m |
+| `data/cache/trap_grids.npz` | Cached TRAP raw and net grid arrays |
+| `data/cache/uhi_grid.npz` | Cached UHI proxy grid array |
+
+### Technical Notes
+
+- Raster layers (TRAP, UHI, tree canopy) are clipped to the district boundary polygon (with 200 m UTM buffer for edge smoothing) before rendering
+- Uses matplotlib perceptually-uniform colormaps: `YlOrRd` for TRAP, `RdYlBu_r` for UHI
+- School markers use fixed blue CircleMarkers (`#2196F3`, radius 6) matching the socioeconomic map style
+- Grid caching (`.npz` files) requires manual deletion to regenerate after input data changes
+
+---
+
+## Affordable Housing Data
+
+### Overview
+
+Downloads and assesses affordable housing locations from the Town of Chapel Hill ArcGIS REST API.
+
+### Key Outputs
+
+| File | Purpose |
+|------|---------|
+| `src/affordable_housing.py` | Downloads affordable housing data, assesses quality |
+| `data/cache/affordable_housing.gpkg` | Cached affordable housing locations |
+| `data/processed/AFFORDABLE_HOUSING_DATA.md` | Data quality assessment and summary |
+
+---
+
 ## Attribution
 
 This analysis was developed with assistance from Claude (Anthropic) for code generation, spatial analysis implementation, and documentation. All data comes from official public sources.
 
 ---
 
-*Last updated: February 2026*
+*Last updated: March 2026*

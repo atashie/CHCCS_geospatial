@@ -55,6 +55,7 @@ CHCCS_geospatial/
 │   └── charts/                 # Comparison charts
 ├── docs/                       # Methodology and limitations
 │   ├── ENVIRONMENTAL_ANALYSIS_README.md  # Consolidated env analysis (TRAP + flood + UHI + canopy)
+│   ├── GEOSPATIAL_ANALYSIS_GUIDELINES.md # CRS, spatial ops, and map visualization standards
 │   ├── SCHOOL_DESERT_ANALYSIS_AND_LIMITATIONS.md
 │   ├── SOCIOECONOMIC_ANALYSIS_AND_LIMITATIONS.md
 │   ├── IMPLEMENTATION_NOTES.md
@@ -126,6 +127,7 @@ python src/environmental_map.py --cache-only   # cached data only
 **All documentation must be fully updated whenever a substantial change is made to a workflow, dataset, or asset (map or chart).** This includes but is not limited to:
 
 - [`docs/ENVIRONMENTAL_ANALYSIS_README.md`](docs/ENVIRONMENTAL_ANALYSIS_README.md) — TRAP, flood, UHI proxy, tree canopy, consolidated map
+- [`docs/GEOSPATIAL_ANALYSIS_GUIDELINES.md`](docs/GEOSPATIAL_ANALYSIS_GUIDELINES.md) — CRS discipline, spatial operations, map visualization standards
 - [`docs/IMPLEMENTATION_NOTES.md`](docs/IMPLEMENTATION_NOTES.md) — Technical implementation details for all modules
 - [`docs/SCHOOL_DESERT_ANALYSIS_AND_LIMITATIONS.md`](docs/SCHOOL_DESERT_ANALYSIS_AND_LIMITATIONS.md) — School desert analysis
 - [`docs/SOCIOECONOMIC_ANALYSIS_AND_LIMITATIONS.md`](docs/SOCIOECONOMIC_ANALYSIS_AND_LIMITATIONS.md) — Socioeconomic analysis

@@ -478,7 +478,7 @@ Two exempt land-use code prefixes are included in `RESIDENTIAL_LUC_PREFIXES`:
 
 #### 18. No Connection to School Desert Analysis
 
-The socioeconomic analysis and school desert analysis (`src/school_desert.py`) are independent modules. There is no cross-referencing of demographics with travel-time impacts. The planned Stage 2 analysis — "What are the demographics of households whose travel time increases under each closure scenario?" — has not been implemented. This is the single most important analytical gap for the project's equity analysis.
+The socioeconomic analysis and school desert analysis (`src/school_desert.py`) are independent modules. There is no cross-referencing of demographics with travel-time impacts. The planned Stage 2 analysis — "What are the demographics of households whose travel time increases under each scenario?" — has not been implemented. This is the single most important analytical gap for the project's equity analysis.
 
 #### 19. Partial Walk Zone Overlay — Boundaries Only
 
@@ -571,7 +571,7 @@ Fetch the `*_M` (margin of error) variables alongside the `*_E` (estimate) varia
 ### Priority 4: Stage 2 Cross-Reference with School Desert
 **Impact:** HIGH | **Effort:** HIGH | **Addresses:** Limitations #18, #19
 
-Overlay Census demographics with school desert travel-time masks to answer: "What are the income, racial, and vehicle-access profiles of households whose travel time increases under each school closure scenario?" This is the analysis most directly relevant to equity analysis.
+Overlay Census demographics with school desert travel-time masks to answer: "What are the income, racial, and vehicle-access profiles of households whose travel time increases under each scenario?" This is the analysis most directly relevant to equity analysis.
 
 ### Priority 5: FPG Zone Handling
 **Impact:** LOW | **Effort:** LOW | **Addresses:** Limitation #11

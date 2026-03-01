@@ -2,8 +2,7 @@
 Flood Plain & School Property Map (Static PNG).
 
 Overlays FEMA 100-year and 500-year flood zones on elementary school
-property parcels.  FPG is highlighted as the school with the largest
-flood-plain intersection.
+property parcels.  All schools are shown equally.
 
 Usage:
     python src/flood_map.py
@@ -14,7 +13,6 @@ Output:
 
 from __future__ import annotations
 
-import math
 from pathlib import Path
 
 import contextily as cx
@@ -35,6 +33,7 @@ FLOOD_CACHE = DATA_CACHE / "fema_flood_zones.gpkg"
 OUTPUT_PNG = PROJECT_ROOT / "assets" / "maps" / "flood_school_properties.png"
 
 CRS_WGS84 = "EPSG:4326"
+CRS_UTM17N = "EPSG:32617"
 CRS_WEB_MERCATOR = "EPSG:3857"
 
 # ── colours ────────────────────────────────────────────────────────────
@@ -199,7 +198,11 @@ def compute_overlaps(
     flood_100: gpd.GeoDataFrame,
     flood_500: gpd.GeoDataFrame,
 ) -> gpd.GeoDataFrame:
-    """Compute school-property × flood-zone intersection polygons."""
+    """Compute school-property × flood-zone intersection polygons.
+
+    All area computations are performed in UTM 17N (EPSG:32617) for
+    accurate metric areas. Results are returned in WGS84 for display.
+    """
     overlaps = []
 
     # Fix invalid geometries before union
@@ -210,15 +213,15 @@ def compute_overlaps(
         flood_500 = flood_500.copy()
         flood_500["geometry"] = flood_500.geometry.make_valid()
 
-    union_100 = unary_union(flood_100.geometry) if len(flood_100) else None
-    union_500 = unary_union(flood_500.geometry) if len(flood_500) else None
+    # Reproject to UTM for accurate area computation
+    school_props_utm = school_props.to_crs(CRS_UTM17N)
+    flood_100_utm = flood_100.to_crs(CRS_UTM17N) if len(flood_100) else flood_100
+    flood_500_utm = flood_500.to_crs(CRS_UTM17N) if len(flood_500) else flood_500
 
-    # area conversion factor: deg² → m² → acres (at ~35.9°N)
-    lat_rad = math.radians(35.9)
-    m2_per_deg2 = 111_320 * 111_320 * math.cos(lat_rad)
-    acres_per_m2 = 1 / 4046.86
+    union_100 = unary_union(flood_100_utm.geometry) if len(flood_100_utm) else None
+    union_500 = unary_union(flood_500_utm.geometry) if len(flood_500_utm) else None
 
-    for _, row in school_props.iterrows():
+    for _, row in school_props_utm.iterrows():
         geom = row.geometry
         for label, union_geom in [("100-year", union_100), ("500-year", union_500)]:
             if union_geom is None:
@@ -226,11 +229,18 @@ def compute_overlaps(
             ix = geom.intersection(union_geom)
             if ix.is_empty:
                 continue
-            acres = ix.area * m2_per_deg2 * acres_per_m2
+            # Area is directly in square meters (UTM projection)
+            acres = ix.area / 4046.86
             pct = acres / row["CALC_ACRES"] * 100 if row["CALC_ACRES"] else 0
+            # Store intersection geometry in WGS84 for display
+            ix_wgs = (
+                gpd.GeoSeries([ix], crs=CRS_UTM17N)
+                .to_crs(CRS_WGS84)
+                .iloc[0]
+            )
             overlaps.append(
                 {
-                    "geometry": ix,
+                    "geometry": ix_wgs,
                     "school_name": row["school_name"],
                     "flood_type": label,
                     "overlap_acres": round(acres, 2),
@@ -258,7 +268,7 @@ def render_map(
     flood_500: gpd.GeoDataFrame,
     overlaps: gpd.GeoDataFrame,
 ) -> None:
-    """Two-panel figure: district overview (left) + FPG zoom (right)."""
+    """Single-panel figure showing all school properties and flood zones equally."""
 
     # reproject everything to Web Mercator for contextily
     sp = school_props.to_crs(CRS_WEB_MERCATOR)
@@ -266,76 +276,19 @@ def render_map(
     f500 = flood_500.to_crs(CRS_WEB_MERCATOR)
     ov = overlaps.to_crs(CRS_WEB_MERCATOR) if len(overlaps) else overlaps
 
-    fig, (ax_dist, ax_fpg) = plt.subplots(
-        1, 2, figsize=(16, 9), gridspec_kw={"width_ratios": [1.1, 1]}
-    )
+    fig, ax = plt.subplots(1, 1, figsize=(14, 10))
 
-    # ── left panel: district overview ──────────────────────────────────
-    _draw_layers(ax_dist, sp, f100, f500, ov, label_schools=True)
+    _draw_layers(ax, sp, f100, f500, ov, label_schools=True)
 
     # set extent to school properties + padding
     total_bounds = sp.total_bounds  # minx, miny, maxx, maxy
     dx = (total_bounds[2] - total_bounds[0]) * 0.08
     dy = (total_bounds[3] - total_bounds[1]) * 0.08
-    ax_dist.set_xlim(total_bounds[0] - dx, total_bounds[2] + dx)
-    ax_dist.set_ylim(total_bounds[1] - dy, total_bounds[3] + dy)
+    ax.set_xlim(total_bounds[0] - dx, total_bounds[2] + dx)
+    ax.set_ylim(total_bounds[1] - dy, total_bounds[3] + dy)
 
-    cx.add_basemap(ax_dist, source=cx.providers.CartoDB.Positron, zoom=13)
-    ax_dist.set_title("CHCCS Elementary School Properties & FEMA Flood Zones", fontsize=12, fontweight="bold")
-    ax_dist.set_axis_off()
-
-    # ── right panel: FPG zoom ──────────────────────────────────────────
-    fpg_row = sp[sp["school_name"].str.contains("Frank Porter Graham")]
-    if len(fpg_row) == 0:
-        fpg_row = sp[sp["school_name"].str.contains("FPG")]
-
-    _draw_layers(ax_fpg, sp, f100, f500, ov, label_schools=False)
-
-    if len(fpg_row) > 0:
-        fpg_bounds = fpg_row.total_bounds
-        buf = 400  # metres
-        ax_fpg.set_xlim(fpg_bounds[0] - buf, fpg_bounds[2] + buf)
-        ax_fpg.set_ylim(fpg_bounds[1] - buf, fpg_bounds[3] + buf)
-
-        # label FPG
-        cx_pt = (fpg_bounds[0] + fpg_bounds[2]) / 2
-        cy_pt = fpg_bounds[3] + 50
-        ax_fpg.annotate(
-            "Frank Porter Graham",
-            xy=(cx_pt, cy_pt),
-            fontsize=10,
-            fontweight="bold",
-            ha="center",
-            va="bottom",
-            color=SCHOOL_EDGE,
-        )
-
-        # overlap acreage annotation
-        fpg_ov = overlaps[overlaps["school_name"].str.contains("Frank Porter Graham")]
-        if len(fpg_ov) > 0:
-            ov_100 = fpg_ov[fpg_ov["flood_type"] == "100-year"]
-            if len(ov_100) > 0:
-                acres = ov_100.iloc[0]["overlap_acres"]
-                pct = ov_100.iloc[0]["overlap_pct"]
-                ax_fpg.annotate(
-                    f"100-yr flood overlap:\n{acres} acres ({pct}%)",
-                    xy=(cx_pt, fpg_bounds[1] - 60),
-                    fontsize=9,
-                    ha="center",
-                    va="top",
-                    color=OVERLAP_COLOR,
-                    fontweight="bold",
-                    bbox=dict(
-                        boxstyle="round,pad=0.3",
-                        facecolor="white",
-                        edgecolor=OVERLAP_COLOR,
-                        alpha=0.9,
-                    ),
-                )
-
-    cx.add_basemap(ax_fpg, source=cx.providers.CartoDB.Positron, zoom=16)
-    ax_fpg.set_title("FPG Flood Zone Detail", fontsize=12, fontweight="bold")
-    ax_fpg.set_axis_off()
+    cx.add_basemap(ax, source=cx.providers.CartoDB.Positron, zoom=13)
+    ax.set_axis_off()
 
     # ── legend ─────────────────────────────────────────────────────────
     legend_elements = [

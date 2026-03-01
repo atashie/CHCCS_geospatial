@@ -188,17 +188,17 @@ Each school's parcel is identified by spatial containment: the NCES coordinate p
 ### Overlap Computation
 
 1. Invalid flood geometries are repaired with `make_valid()`.
-2. All 100-year features are merged into a single geometry via `unary_union()`, and likewise for 500-year.
-3. For each school property, `school_geom.intersection(flood_union)` produces the overlap polygon.
-4. Overlap area is converted from degrees² to acres:
+2. School properties and flood unions are reprojected to UTM 17N (EPSG:32617) for accurate area computation.
+3. All 100-year features are merged into a single geometry via `unary_union()`, and likewise for 500-year.
+4. For each school property, `school_geom.intersection(flood_union)` produces the overlap polygon in UTM.
+5. Overlap area is computed directly in square meters from the UTM geometry:
 
 ```
-m²_per_deg² = 111,320² × cos(35.9° × π/180)
-acres = overlap_area_deg² × m²_per_deg² × (1 / 4046.86)
+acres = intersection_area_m² / 4046.86
 overlap_pct = overlap_acres / CALC_ACRES × 100
 ```
 
-The latitude is fixed at 35.9°N for the cosine correction, introducing <0.3% error across the district's latitude range.
+6. Intersection geometries are reprojected back to WGS84 for storage and display.
 
 ---
 
@@ -226,7 +226,7 @@ For each school at each analysis radius (500 m and 1000 m):
 
 ### Map Layer
 
-The tree canopy map overlay reads the full raster, downsampled by `step = max(1, max(height, width) // 2000)` for performance. Pixels with class 10 are rendered as forest green (`#228b22`, RGBA [34, 139, 34, 160]); all other pixels are transparent.
+The tree canopy map overlay reads the full raster, downsampled by `step = max(1, max(height, width) // 2000)` for performance. Pixels with class 10 are rendered as forest green (`#228b22`, RGBA [34, 139, 34, 160]); all other pixels are transparent. The overlay is clipped to the district boundary (passed as `district_gdf` parameter) using the same boolean mask as the TRAP and UHI raster layers, preventing tree canopy data from extending beyond the district boundary.
 
 ---
 
@@ -295,30 +295,33 @@ Source: `src/environmental_map.py`
 
 ### Map Assembly
 
-The map is built with Folium using a CartoDB Positron basemap, centered at [35.9132, -79.0558]. Seven toggleable FeatureGroups are added in this order (bottom to top):
+The map is built with Folium using a CartoDB Positron basemap, centered at [35.9132, -79.0558]. The following layers are added (bottom to top):
 
+0. **District Boundary** (always on) — dashed outline (`#333333`, weight 2, dashArray "5,5") matching the socioeconomic map style
 1. **School Properties** (always on) — parcel polygons with rich popups aggregating metrics from all analyses
-2. **Road Network (tertiary+)** (always on) — vector PolyLines for motorway through tertiary classes only, for performance
+2. **Road Network (tertiary+)** (always on) — vector PolyLines for motorway through tertiary classes only, clipped to district boundary with 2 km buffer via `gpd.clip()`
 3. **FEMA Flood Plains** (off by default) — 100-year and 500-year zones as individual GeoJSON features, plus red overlap polygons
-4. **Raw Air Pollution** (on by default) — raster overlay from TRAP grid
-5. **Tree Canopy** (off by default) — raster overlay from ESA WorldCover
-6. **Net Air Pollution** (off by default) — raster overlay from mitigated TRAP grid
-7. **UHI Proxy** (off by default) — raster overlay from UHI grid
+4. **Raw Air Pollution** (on by default) — raster overlay from TRAP grid, clipped to district boundary
+5. **Tree Canopy** (off by default) — raster overlay from ESA WorldCover, clipped to district boundary
+6. **Net Air Pollution** (off by default) — raster overlay from mitigated TRAP grid, clipped to district boundary
+7. **UHI Proxy** (off by default) — raster overlay from UHI grid, clipped to district boundary
+8. **Schools** (always on) — fixed-blue CircleMarkers (radius 6, `#2196F3`) matching the socioeconomic map style
 
-Each raster layer also has an associated set of school CircleMarkers color-coded by the corresponding metric.
+Each raster layer also has an associated set of metric-colored school CircleMarkers (radius 6) as a separate toggleable overlay.
 
 ### Raster Overlay Pipeline
 
-1. The numpy grid is converted to an RGBA image array using per-pixel colormapping:
-   - TRAP grids use green-yellow-red (`green_red`), normalized by the 99th percentile of nonzero values
-   - UHI grid uses blue-white-red (`blue_red`), normalized to the fixed 0-100 scale
-   - Tree canopy uses forest green with transparency proportional to coverage
-2. The RGBA array is converted to a PNG via PIL, then base64-encoded.
-3. A Folium `ImageOverlay` is created with bounds matching the grid's WGS84 extent.
+1. A district boundary mask is precomputed: grid cells inside the district polygon (buffered by 200 m in UTM for edge smoothing) are marked True. Cells outside the mask are zeroed out before rendering, preventing data from extending beyond the district boundary.
+2. The numpy grid is converted to an RGBA image array using matplotlib perceptually-uniform colormaps (vectorized, no per-pixel loops):
+   - TRAP grids use `YlOrRd` (yellow-orange-red), normalized by the 5th–95th percentile of nonzero values
+   - UHI grid uses `RdYlBu_r` (blue-yellow-red diverging), normalized to the fixed 0–100 scale
+   - Tree canopy uses forest green with transparency proportional to coverage, also clipped to district boundary
+3. The RGBA array is converted to a PNG via PIL, then base64-encoded.
+4. A Folium `ImageOverlay` is created with bounds matching the grid's WGS84 extent.
 
 ### Road Network Rendering
 
-Only tertiary-class and above roads are rendered as vector PolyLines to keep file size manageable. Roads are clipped to the district bounding box (plus 0.02° padding). Each road class has a distinct color and line width:
+Only tertiary-class and above roads are rendered as vector PolyLines to keep file size manageable. Roads are clipped to the district boundary polygon buffered by 2 km in UTM, using `gpd.clip()` with proper CRS handling. Each road class has a distinct color and line width:
 
 | Class | Color | Width |
 |-------|-------|-------|
@@ -375,9 +378,13 @@ Cached grids are loaded on subsequent runs to skip the computationally expensive
 | CRS | EPSG | Usage |
 |-----|------|-------|
 | WGS84 | 4326 | Storage, map display, grid cell centers, Folium overlays |
-| UTM 17N | 32617 | Distance calculations, KD-tree queries, ESA WorldCover native CRS |
+| UTM 17N | 32617 | Area computations, distance calculations, KD-tree queries, buffering, ESA WorldCover native CRS |
 
 On-the-fly reprojection is performed via `pyproj.Transformer`. The grid lives in WGS84; each cell center is transformed to UTM for distance computation against the road sub-segment KD-tree. The ESA WorldCover raster is stored in UTM 17N after reprojection from its source CRS; windowed reads operate in raster-native coordinates.
+
+Flood overlap areas are computed entirely in UTM (EPSG:32617), eliminating the previous approximate latitude-factor conversion. District boundary masking for raster layers is performed by buffering the district polygon in UTM, then reprojecting back to WGS84 for grid cell containment tests.
+
+See [`docs/GEOSPATIAL_ANALYSIS_GUIDELINES.md`](GEOSPATIAL_ANALYSIS_GUIDELINES.md) for the full CRS discipline rules.
 
 ---
 
@@ -401,43 +408,43 @@ On-the-fly reprojection is performed via `pyproj.Transformer`. The grid lives in
 
 ### Flood Plain Analysis
 
-8. **Approximate area conversion.** The deg²-to-m² conversion uses a fixed latitude of 35.9°N for the cosine correction. Across the district's latitude range, this introduces <0.3% error but is not exact.
+8. **Single parcel per school.** Each school is matched to a single containing parcel. Multi-parcel campuses (e.g., schools with separate athletic fields or annexes) may be incompletely represented.
 
-9. **Single parcel per school.** Each school is matched to a single containing parcel. Multi-parcel campuses (e.g., schools with separate athletic fields or annexes) may be incompletely represented.
+9. **No validation of CALC_ACRES.** The overlap percentage uses the parcel's `CALC_ACRES` field from Orange County tax records. This value is not validated against the computed geometry area.
 
-10. **No validation of CALC_ACRES.** The overlap percentage uses the parcel's `CALC_ACRES` field from Orange County tax records. This value is not validated against the computed geometry area.
-
-11. **Static FEMA data.** FEMA flood maps may not reflect recent development, stormwater infrastructure changes, or climate-change-driven shifts in flood frequency.
+10. **Static FEMA data.** FEMA flood maps may not reflect recent development, stormwater infrastructure changes, or climate-change-driven shifts in flood frequency.
 
 ### Tree Canopy
 
-12. **Single-class pixel limitation.** ESA WorldCover classifies each 10 m pixel as a single dominant land cover class. Mixed pixels (e.g., a suburban lot with one large tree and a house) default to the dominant class, typically "Built-up," understating tree presence.
+11. **Single-class pixel limitation.** ESA WorldCover classifies each 10 m pixel as a single dominant land cover class. Mixed pixels (e.g., a suburban lot with one large tree and a house) default to the dominant class, typically "Built-up," understating tree presence.
 
-13. **2021 vintage.** The land cover data is from 2021. Tree canopy may have changed due to development, storms, disease, or planting.
+12. **2021 vintage.** The land cover data is from 2021. Tree canopy may have changed due to development, storms, disease, or planting.
 
-14. **No species, height, or health data.** The analysis does not distinguish tree species, canopy height, density, or health — all of which affect air quality mitigation and thermal cooling effectiveness.
+13. **No species, height, or health data.** The analysis does not distinguish tree species, canopy height, density, or health — all of which affect air quality mitigation and thermal cooling effectiveness.
 
 ### UHI Proxy
 
-15. **Land-cover proxy, NOT measured surface temperature.** No Landsat thermal band, MODIS land surface temperature, or ground-station temperature data is used. The index reflects land cover composition, not thermal measurements.
+14. **Land-cover proxy, NOT measured surface temperature.** No Landsat thermal band, MODIS land surface temperature, or ground-station temperature data is used. The index reflects land cover composition, not thermal measurements.
 
-16. **Same 10 m pixel limitation as tree canopy.** Suburban scattered trees are classified as "Built-up" at 10 m resolution, biasing the UHI proxy toward higher (hotter) values in suburban areas.
+15. **Same 10 m pixel limitation as tree canopy.** Suburban scattered trees are classified as "Built-up" at 10 m resolution, biasing the UHI proxy toward higher (hotter) values in suburban areas.
 
-17. **Thermal weights are author-assigned estimates.** The numeric weights (e.g., tree cover = -0.60, built-up = +1.00) are informed by the general principles in Oke (1982) and Stewart & Oke (2012), but they are not directly measured thermal coefficients from those papers. Different weight assignments would produce different rankings.
+16. **Thermal weights are author-assigned estimates.** The numeric weights (e.g., tree cover = -0.60, built-up = +1.00) are informed by the general principles in Oke (1982) and Stewart & Oke (2012), but they are not directly measured thermal coefficients from those papers. Different weight assignments would produce different rankings.
 
-18. **No building height, albedo, anthropogenic heat, or wind data.** The UHI proxy considers only horizontal land cover, not vertical structure, surface reflectivity, waste heat from HVAC systems, or ventilation corridors.
+17. **No building height, albedo, anthropogenic heat, or wind data.** The UHI proxy considers only horizontal land cover, not vertical structure, surface reflectivity, waste heat from HVAC systems, or ventilation corridors.
 
-19. **Static snapshot.** The proxy uses 2021 land cover and does not capture seasonal UHI variation (stronger in summer), diurnal cycles (nighttime UHI often differs from daytime), or year-to-year land cover changes.
+18. **Static snapshot.** The proxy uses 2021 land cover and does not capture seasonal UHI variation (stronger in summer), diurnal cycles (nighttime UHI often differs from daytime), or year-to-year land cover changes.
 
-20. **Water body cooling overestimation.** Small water features below 10 m resolution (ponds, streams) may not appear in the raster, while larger features may have their cooling effect overrepresented at the grid cell scale.
+19. **Water body cooling overestimation.** Small water features below 10 m resolution (ponds, streams) may not appear in the raster, while larger features may have their cooling effect overrepresented at the grid cell scale.
 
 ### Cross-Cutting
 
-21. **All indices are comparative/relative screening tools**, not absolute risk assessments. They should not be interpreted as pollutant concentrations, flood probabilities for specific structures, or temperature predictions.
+20. **All indices are comparative/relative screening tools**, not absolute risk assessments. They should not be interpreted as pollutant concentrations, flood probabilities for specific structures, or temperature predictions.
 
-22. **Square buffer windows for raster queries.** School buffer analyses use square windows (`±radius` meters) rather than circular buffers. This simplifies raster I/O but includes corner areas outside the true circular radius.
+21. **Square buffer windows for raster queries.** School buffer analyses use square windows (`±radius` meters) rather than circular buffers. This simplifies raster I/O but includes corner areas outside the true circular radius.
 
-23. **Grid caching requires manual invalidation.** Cached `.npz` grids are loaded without checking whether input data has changed. Updates to road networks, AADT stations, or land cover require manual deletion of `data/cache/trap_grids.npz` and `data/cache/uhi_grid.npz` before regeneration.
+22. **Grid caching requires manual invalidation.** Cached `.npz` grids are loaded without checking whether input data has changed. Updates to road networks, AADT stations, or land cover require manual deletion of `data/cache/trap_grids.npz` and `data/cache/uhi_grid.npz` before regeneration.
+
+23. **District boundary raster clipping uses a 200 m buffer.** Raster layers are masked to the district polygon buffered by 200 m in UTM. This prevents hard edges at the district boundary but means a thin band of data outside the official boundary is still visible.
 
 ---
 

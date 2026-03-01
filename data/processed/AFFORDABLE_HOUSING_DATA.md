@@ -1,6 +1,6 @@
 # Affordable Housing Data — Source Documentation & Quality Assessment
 
-**Download date:** 2026-02-28
+**Download date:** 2026-03-01
 **Records:** 1168 housing units
 **Columns:** 44
 
@@ -26,7 +26,7 @@ Native CRS is NC State Plane (WKID 102719); downloaded with `outSR=4326` for WGS
 2. Paginate via `resultOffset`/`resultRecordCount` (page size = 1000)
 3. Convert point geometry features (x/y) to Shapely `Point` objects
 4. Build a GeoDataFrame with EPSG:4326 CRS
-5. Cache to `data\cache\affordable_housing.gpkg`
+5. Cache to `data/cache/affordable_housing.gpkg`
 
 ## Field Inventory
 

@@ -41,18 +41,16 @@ The following table ranks elementary schools by **percentage of enrollment withi
 
 | Rank | School | Within 0.5 mi | Enrollment | % within 0.5 mi | Walk/Bike % |
 |------|--------|---------------|------------|-----------------|-------------|
-| **1** | **Ephesus** | **99** | 401 | **24.7%** | 20% |
+| 1 | Ephesus | 99 | 401 | 24.7% | 20% |
 | 2 | Scroggs | 94 | 406 | 23.2% | 32% |
 | 3 | Northside | 64 | 399 | 16.0% | 14% |
 | 4 | Rashkis | 65 | 437 | 14.9% | 13% |
 | 5 | Estes Hills | 33 | 355 | 9.3% | 19% |
 | 6 | FPG | 35 | 528 | 6.6% | 7% |
 | 7 | Glenwood | 6 | 408 | 1.5% | 11% |
-| 8 | Seawell | **0** | 456 | 0% | 11% |
+| 8 | Seawell | 0 | 456 | 0% | 11% |
 
 *Source: Town of Chapel Hill GIS analysis (February 2025), CHCCS enrollment data (2024-2025)*
-
-> **KEY FINDING:** Ephesus is the **#1 most walkable elementary school** — nearly 25% of students live within 0.5 miles. This is the highest percentage in the district, ahead of Scroggs (23.2%), Northside (16.0%), and all other schools.
 
 ### Walking/Biking Tally Counts (Fall 2024)
 
@@ -60,12 +58,12 @@ Raw counts of students observed walking and biking during arrival/dismissal:
 
 | School | Walking | Biking | Total Active | % of Enrollment |
 |--------|---------|--------|--------------|-----------------|
-| **Scroggs** | 115 | 16 | **131** | **32%** |
+| Scroggs | 115 | 16 | 131 | 32% |
 | Chapel Hill High | 127 | 46 | 173 | High school |
 | Smith Middle | 98 | 21 | 119 | Middle school |
 | Culbreth Middle | 98 | 6 | 104 | 16% |
 | East Chapel Hill High | 92 | 20 | 112 | High school |
-| **Ephesus** | **64** | **14** | **78** | **20%** |
+| Ephesus | 64 | 14 | 78 | 20% |
 | Estes Hills | 58 | 11 | 69 | 19% |
 | Northside | 51 | 5 | 56 | 14% |
 | Rashkis | 38 | 19 | 57 | 13% |
@@ -75,147 +73,24 @@ Raw counts of students observed walking and biking during arrival/dismissal:
 | Seawell | 25 | 23 | 48 | 11% |
 | Phoenix Academy | 11 | 0 | 11 | Alternative |
 
-> **KEY FINDING:** Ephesus has the **third-highest walking count** (64 students) among elementary schools and the **second-highest active transportation rate** (20%) after Scroggs (32%). This demonstrates strong existing walking culture that would be lost with closure.
-
 ### Why Magnet Schools Have Lower Walking Rates
 
-FPG and Glenwood are magnet schools that draw students from across the district. This explains their lower walking percentages despite FPG being the largest elementary school. Neighborhood schools like Ephesus and Scroggs naturally have higher walkability because students live nearby.
+FPG and Glenwood are magnet schools that draw students from across the district. This explains their lower walking percentages despite FPG being the largest elementary school. Neighborhood schools naturally have higher walkability because students live nearby.
 
 ---
 
-## Ephesus Elementary Detailed Analysis
+## Infrastructure Plans by School
 
-### School Profile
-- **Address:** 1495 Ephesus Church Road
-- **Opened:** 1972
-- **Student Enrollment:** 401 (2024-2025)
-- **Location:** On Ephesus Church Road (two-lane, NCDOT-maintained), east of NC 15-501 (Fordham Boulevard)
-- **Adjacent:** Ephesus Park (shared circulation roads)
+### Ephesus Elementary
 
-### Demographics (Verified)
+**Focus:** Intersection safety, crosswalk visibility, and bike lane improvements on Ephesus Church Road.
 
-| Category | Count | Percentage |
-|----------|-------|------------|
-| Students with Disabilities | 59 | 14.7% |
-| Multilingual Learners | 52 | 13% |
-| Socioeconomically Disadvantaged | 145 | **35.8%** |
+**Key Projects:**
+- 8 Tier 3 (highest priority) intersection and crossing improvements
+- 4 Tier 2 linear and intersection projects
+- Raised intersection at Churchill Dr
 
-### Ethnicity Breakdown
-
-| Ethnicity | Students | Faculty |
-|-----------|----------|---------|
-| Asian | 13.6% | 0% |
-| Black | 16.3% | 11.1% |
-| Latinx | 14.1% | 3.7% |
-| Multiracial | 5.3% | 0% |
-| White | 50.5% | 81.5% |
-
-### Student Walkability Data (KEY FINDING)
-
-**Student Density by Distance from School:**
-
-| Distance | Students |
-|----------|----------|
-| Within 0.5 miles | **99 students** |
-| 0.5-1 mile | 93 students |
-| 1-1.5 miles | 59 students |
-| Over 1.5 miles | Many (north of US-15/501) |
-
-> **CRITICAL:** This verifies the "99 students within walking distance" claim with official Town of Chapel Hill GIS data (February 2025).
-
-### Walking/Biking Observations (November 12, 2024)
-
-Travel tallies during arrival:
-- **64 students (16%)** walked to school
-- **14 students (4%)** biked to school
-- **Total: 78 students (20%)** using active transportation
-
-### Field Observations
-
-During the November 12, 2024 observation:
-- Substantial traffic from Ephesus Park (pickleball courts) complicated circulation
-- Speeding on Ephesus Church Road observed
-- A **near miss between a bicycle and vehicle** was documented
-- Pedestrians crossed Ephesus Church Road without designated crosswalks
-- Caregivers parked on Churchill Drive to walk students to school
-
----
-
-## Infrastructure Assessment
-
-### Current Barriers
-- Missing sidewalks and marked crosswalks
-- Incomplete or faded pavement markings reduce visibility and safety
-- Lack of bike lane conflict markings at intersections (motorists lose sight of bike lane)
-- Unsafe driver behaviors and high-speed traffic create uncomfortable conditions
-- Speeding on Ephesus Church Road (near miss observed between bicycle and vehicle)
-- Pedestrians crossing Ephesus Church Road without designated crosswalks
-- Caregivers parking on Churchill Drive to walk students to school
-- Traffic from Ephesus Park (pickleball courts) complicates circulation
-
-### Current Opportunities
-- Bike lanes already exist on Ephesus Church Road
-- High-visibility crosswalks and curb ramps can improve intersection safety
-- Sidewalk repairs and extensions can close key gaps
-- Raised pedestrian crossings on campus can be striped for visibility
-- Parking stops can prevent drivers from blocking sidewalks
-
----
-
-## Planned Infrastructure Improvements for Ephesus
-
-The Town has identified specific projects to improve walking/biking safety around Ephesus Elementary.
-
-### Priority Tier 3 Projects (Highest Priority)
-
-| ID | Type | Location | Improvements |
-|----|------|----------|--------------|
-| S-85 | Mid-block Crossing | School main entrance | Add high-visibility crosswalk, yield lines |
-| S-91 | Intersection | Ephesus Church Rd at Ephesus Park entrance | Bike lane conflict markings, ADA curb ramps, high-visibility crosswalks |
-| S-92 | Intersection | Ephesus Church Rd at Eden Ln | Add curb ramps, high-visibility crosswalks |
-| S-95 | Intersection | Ephesus Church Rd at Long Leaf Dr | High-visibility crosswalks, ADA curb ramps, bike conflict striping |
-| S-110 | Intersection | Ephesus Church Rd at Churchill Dr | **Reconstruct as raised intersection**, high-visibility crosswalk, bike conflict striping |
-| S-111 | Mid-block Crossing | Ephesus Park entrance | Repair sidewalk, repaint crosswalk, add yield lines |
-| C-17 | Linear | Frances St to Long Leaf Dr | Add bikeway, fix sidewalk obstructions, narrow travel lanes, add bike lane delineators |
-| C-20 | Linear | Ephesus Church Rd to Cypress Rd | Add double yellow centerline, **add sidewalk** |
-
-### Priority Tier 2 Projects
-
-| ID | Type | Location | Improvements |
-|----|------|----------|--------------|
-| C-18 | Linear | Ephesus Church Rd to Churchill Dr | Clear vegetation, add double yellow centerline |
-| C-19 | Linear | Ephesus Church Rd to Murray Ln | Add bikeway, fix sidewalk obstructions, repair sidewalk, add centerlines |
-| S-82 | Intersection | Ephesus Church Rd at Banbury Ln | Add high-visibility crosswalks |
-| S-106 | Intersection | Churchill Dr at Long Leaf Dr | ADA curb ramps, high-visibility crosswalks, curb extensions |
-
-### Demonstration Project: Neighborhood Slow Zone
-
-**Estimated Cost:** $21,310
-
-**Project Elements:**
-- Neighborhood Slow Zone around school on Ephesus Road
-- Gateway treatments with signage
-- Curb extensions (small and large)
-- Artistic crosswalk
-- Small street mural intersection
-- High-visibility crosswalk with asphalt art
-
-**Locations:**
-- S Elliott Rd
-- Frances St
-- Long Leaf Dr
-- Tinkerbell Rd
-
-**Objectives:**
-1. Increase visibility of school zone
-2. Simplify crossings
-3. Promote safe speeds
-
-> **Note:** A future greenway connection to the north (not part of this Plan) has potential to further increase walking and biking to Ephesus.
-
----
-
-## Comparison: Other Schools' Infrastructure Plans
+**Demonstration Project:** Neighborhood Slow Zone — **$21,310**
 
 ### Estes Hills Elementary & Phillips Middle
 
@@ -227,7 +102,7 @@ The Town has identified specific projects to improve walking/biking safety aroun
 - Speed management on MLK Jr Blvd to Library Dr
 - Multiple intersection improvements
 
-**Demonstration Project:** Add a 0.3-mile bike lane on Curtis Road for a "climbing lane" - **$2,850** (much lower cost than Ephesus)
+**Demonstration Project:** Add a 0.3-mile bike lane on Curtis Road for a "climbing lane" — **$2,850**
 
 **Note:** The 2024 school bond includes plans to **relocate the Estes Hills building** further north on the campus.
 
@@ -313,11 +188,6 @@ The Safe Routes To School Action Plan includes important historical context abou
 
 The Plan explicitly acknowledges: "It is important that this SRTS Action Plan acknowledges this history so that the strategies included serve all students and families in the district, **especially those who have disproportionately shouldered the burdens of transportation 'progress' in the past.**"
 
-This applies directly to Ephesus, which:
-- Serves a **35.8% socioeconomically disadvantaged** population
-- Has **99 students within walking distance** who may lack car access
-- Would force additional transportation burden on families if closed
-
 ---
 
 ## District-Wide Survey Results (2024 Intent Survey)
@@ -350,7 +220,7 @@ This applies directly to Ephesus, which:
 | Never | - | 1,599 |
 
 ### Key Finding
-**Distance is the #1 barrier** (66%). Closing Ephesus would increase distance to school for 99+ students who currently walk, converting them from walkers to bus riders and directly contradicting SRTS goals.
+**Distance is the #1 barrier** (66%). The survey data shows that distance is the dominant factor determining whether families choose walking/biking or motorized transportation.
 
 ---
 
@@ -383,46 +253,6 @@ This applies directly to Ephesus, which:
 | Student Safety Patrol | Students assist with arrival/departure | Medium-term |
 | Walking School Bus / Bike Train | Groups of children walk/bike together with supervision | Medium-term |
 | Safety Campaign | Educational materials for students, parents, teachers, drivers | Medium-term |
-
----
-
-## Implications for Save Ephesus Campaign
-
-### Verified Claims
-
-1. **99 students live within 0.5 miles** - Confirmed by Town of Chapel Hill GIS (February 2025)
-2. **20% of students already walk or bike** - 78 students observed during Nov 2024 tally
-3. **35.8% socioeconomically disadvantaged** - Confirms Title I status relevance
-4. **#1 in walkability** among elementary schools (24.7% of enrollment within 0.5 miles)
-
-### Infrastructure Investment Already Planned
-
-The Town has committed to significant infrastructure improvements around Ephesus Elementary:
-- 8 Tier 3 (highest priority) projects
-- 4 Tier 2 projects
-- $21,310 demonstration project
-- **Multiple intersection improvements**
-- **New sidewalks**
-- **Bike lane enhancements**
-- **Raised intersection at Churchill Dr**
-
-### Key Argument Points
-
-1. **Town is actively investing in Ephesus walkability** - Closing the school would waste planned infrastructure improvements that assume the school remains open.
-
-2. **High walker percentage** - 20% active transportation rate demonstrates strong community demand for walking to school.
-
-3. **Highest walkability in the district** - 99 students (24.7% of enrollment) within 0.5 miles, 192 within 1 mile. This is the highest percentage among all elementary schools.
-
-4. **Equity considerations** - 35.8% socioeconomically disadvantaged students would be disproportionately impacted by longer commutes. Over 1,100 Chapel Hill households lack vehicles.
-
-5. **Distance is the #1 barrier** - Survey shows 66% cite distance as the main barrier to walking. Closing Ephesus increases distance for all current walkers.
-
-6. **Vision Zero alignment** - Town has committed to eliminating traffic deaths and injuries by 2031. More buses = more traffic conflicts.
-
-7. **NCDOT coordination underway** - Multiple projects require NCDOT coordination, indicating serious commitment to implementation.
-
-8. **Other schools being relocated, not Ephesus** - The 2024 bond includes plans to relocate Estes Hills and FPG, but NOT Ephesus. This suggests Ephesus's current location is considered sound for walkability.
 
 ---
 

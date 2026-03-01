@@ -94,12 +94,17 @@ For each travel mode, grid points are snapped to the road network using **edge-s
 | Scenario | Schools closed | Schools open |
 |----------|---------------|-------------|
 | Baseline | None | All 11 |
+| Close Carrboro | Carrboro Elementary | 10 |
 | Close Ephesus | Ephesus Elementary | 10 |
-| Close Glenwood | Glenwood Elementary | 10 |
-| Close FPG | Frank Porter Graham Bilingüe | 10 |
 | Close Estes Hills | Estes Hills Elementary | 10 |
+| Close FPG | Frank Porter Graham Bilingue | 10 |
+| Close Glenwood | Glenwood Elementary | 10 |
+| Close McDougle | McDougle Elementary | 10 |
+| Close Morris Grove | Morris Grove Elementary | 10 |
+| Close Northside | Northside Elementary | 10 |
+| Close Rashkis | Rashkis Elementary | 10 |
+| Close Scroggs | Scroggs Elementary | 10 |
 | Close Seawell | Seawell Elementary | 10 |
-| Close Ephesus + Glenwood | Ephesus + Glenwood | 9 |
 
 ### Step 7: Compute Deltas
 
