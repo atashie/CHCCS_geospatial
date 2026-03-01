@@ -1,0 +1,3315 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_afb42544203b5272398458660eb56034 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+
+            <style>html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            </style>
+
+            <style>#map {
+                position:absolute;
+                top:0;
+                bottom:0;
+                right:0;
+                left:0;
+                }
+            </style>
+
+            <script>
+                L_NO_TOUCH = false;
+                L_DISABLE_3D = false;
+            </script>
+
+        
+</head>
+<body>
+    
+    
+    <div style="position: fixed; bottom: 50px; left: 50px; z-index: 1000;
+                background-color: white; padding: 10px; border-radius: 5px;
+                box-shadow: 2px 2px 5px rgba(0,0,0,0.3); max-width: 280px;">
+        <h4 style="margin: 0 0 10px 0;">Childcare Near Schools</h4>
+        <div style="margin-bottom: 5px;">
+            <span style="background-color: #2E86AB; width: 12px; height: 12px; display: inline-block; margin-right: 5px; border-radius: 50%;"></span>
+            Ephesus Elementary
+        </div>
+        <div style="margin-bottom: 5px;">
+            <span style="background-color: #27AE60; width: 12px; height: 12px; display: inline-block; margin-right: 5px; border-radius: 50%;"></span>
+            Childcare (near Ephesus)
+        </div>
+        <div style="margin-bottom: 5px;">
+            <span style="background-color: #9B59B6; width: 12px; height: 12px; display: inline-block; margin-right: 5px; border-radius: 50%;"></span>
+            Childcare (other areas)
+        </div>
+        <div style="margin-bottom: 5px;">
+            <span style="background-color: #95A5A6; width: 12px; height: 12px; display: inline-block; margin-right: 5px; border-radius: 50%;"></span>
+            Other Schools
+        </div>
+        <hr style="margin: 10px 0;">
+        <div style="font-size: 11px;">
+            <b>Ephesus Area Facilities:</b><br>
+            0.25 mi: 0<br>0.5 mi: 3<br>1.0 mi: 3<br>2.0 mi: 9
+        </div>
+        <div style="font-size: 10px; color: #666; margin-top: 5px;">
+            Total: 44 facilities<br>
+            (Centers + Family Homes)
+        </div>
+    </div>
+    
+    
+    <div style="position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
+                z-index: 1000; background-color: white; padding: 10px 20px;
+                border-radius: 5px; box-shadow: 2px 2px 5px rgba(0,0,0,0.3);">
+        <h3 style="margin: 0;">Licensed Childcare Near CHCCS Elementary Schools</h3>
+        <p style="margin: 5px 0 0 0; font-size: 12px; color: #666;">
+            Use layer controls to toggle radius views (0.25, 0.5, 1.0, 2.0 miles)
+        </p>
+    </div>
+    
+    
+            <div class="folium-map" id="map_afb42544203b5272398458660eb56034" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_afb42544203b5272398458660eb56034 = L.map(
+                "map_afb42544203b5272398458660eb56034",
+                {
+                    center: [35.9132, -79.0558],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 12,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_0b3a29b864eedcb004258d35bd11e065 = L.tileLayer(
+                "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 20,
+  "maxNativeZoom": 20,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors \u0026copy; \u003ca href=\"https://carto.com/attributions\"\u003eCARTO\u003c/a\u003e",
+  "subdomains": "abcd",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_0b3a29b864eedcb004258d35bd11e065.addTo(map_afb42544203b5272398458660eb56034);
+        
+    
+            var feature_group_a86cf0d413246bff263a10f859a2e479 = L.featureGroup(
+                {
+}
+            );
+        
+    
+            var circle_7e90ec288a8e0d2dee74bd46b10b1462 = L.circle(
+                [35.9372, -79.0178],
+                {"bubblingMouseEvents": true, "color": "#2E86AB", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#2E86AB", "fillOpacity": 0.4, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 402, "stroke": true, "weight": 2}
+            ).addTo(feature_group_a86cf0d413246bff263a10f859a2e479);
+        
+    
+        var popup_babffdbf4d3d0684ae714218d4921893 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_5c0691cd56e79ee2cf692a8aaf004722 = $(`<div id="html_5c0691cd56e79ee2cf692a8aaf004722" style="width: 100.0%; height: 100.0%;"><b>Ephesus Elementary</b><br>0.25-mile radius</div>`)[0];
+                popup_babffdbf4d3d0684ae714218d4921893.setContent(html_5c0691cd56e79ee2cf692a8aaf004722);
+            
+        
+
+        circle_7e90ec288a8e0d2dee74bd46b10b1462.bindPopup(popup_babffdbf4d3d0684ae714218d4921893)
+        ;
+
+        
+    
+    
+            var circle_0ac34299dbfb419b34470172f7bcdd77 = L.circle(
+                [35.9128, -79.0589],
+                {"bubblingMouseEvents": true, "color": "#E74C3C", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#E74C3C", "fillOpacity": 0.4, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 402, "stroke": true, "weight": 2}
+            ).addTo(feature_group_a86cf0d413246bff263a10f859a2e479);
+        
+    
+        var popup_38f8a547c82c0f25aec2bc89228064de = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_ebeb96d195efc52510cb592cbe0b9c65 = $(`<div id="html_ebeb96d195efc52510cb592cbe0b9c65" style="width: 100.0%; height: 100.0%;"><b>Glenwood Elementary</b><br>0.25-mile radius</div>`)[0];
+                popup_38f8a547c82c0f25aec2bc89228064de.setContent(html_ebeb96d195efc52510cb592cbe0b9c65);
+            
+        
+
+        circle_0ac34299dbfb419b34470172f7bcdd77.bindPopup(popup_38f8a547c82c0f25aec2bc89228064de)
+        ;
+
+        
+    
+    
+            var circle_3b4824d1800c7302651958c02dc9e151 = L.circle(
+                [35.9033, -79.0817],
+                {"bubblingMouseEvents": true, "color": "#E74C3C", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#E74C3C", "fillOpacity": 0.4, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 402, "stroke": true, "weight": 2}
+            ).addTo(feature_group_a86cf0d413246bff263a10f859a2e479);
+        
+    
+        var popup_f13ef43abc9199fb81a4502bc8c35f82 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_16684108dbcd0012014b4e3b5fc3536a = $(`<div id="html_16684108dbcd0012014b4e3b5fc3536a" style="width: 100.0%; height: 100.0%;"><b>Seawell Elementary</b><br>0.25-mile radius</div>`)[0];
+                popup_f13ef43abc9199fb81a4502bc8c35f82.setContent(html_16684108dbcd0012014b4e3b5fc3536a);
+            
+        
+
+        circle_3b4824d1800c7302651958c02dc9e151.bindPopup(popup_f13ef43abc9199fb81a4502bc8c35f82)
+        ;
+
+        
+    
+    
+            var circle_3f2b42dbfdde896b96e77a203bf0e06e = L.circle(
+                [35.9103, -79.0753],
+                {"bubblingMouseEvents": true, "color": "#F39C12", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#F39C12", "fillOpacity": 0.4, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 402, "stroke": true, "weight": 2}
+            ).addTo(feature_group_a86cf0d413246bff263a10f859a2e479);
+        
+    
+        var popup_40e7dfd3f02b77c6f95bb406c0d00c5f = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_b2cecbf20d1f3a558c6639cc3a08aae4 = $(`<div id="html_b2cecbf20d1f3a558c6639cc3a08aae4" style="width: 100.0%; height: 100.0%;"><b>Carrboro Elementary</b><br>0.25-mile radius</div>`)[0];
+                popup_40e7dfd3f02b77c6f95bb406c0d00c5f.setContent(html_b2cecbf20d1f3a558c6639cc3a08aae4);
+            
+        
+
+        circle_3f2b42dbfdde896b96e77a203bf0e06e.bindPopup(popup_40e7dfd3f02b77c6f95bb406c0d00c5f)
+        ;
+
+        
+    
+    
+            var circle_d7b3d9bbde31885770f258344720122a = L.circle(
+                [35.9442, -79.0467],
+                {"bubblingMouseEvents": true, "color": "#F39C12", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#F39C12", "fillOpacity": 0.4, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 402, "stroke": true, "weight": 2}
+            ).addTo(feature_group_a86cf0d413246bff263a10f859a2e479);
+        
+    
+        var popup_b6a22fc59ac219cb81ac4f2fcedc10ec = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_ad94558c8505c3ab5d9a4499277c911f = $(`<div id="html_ad94558c8505c3ab5d9a4499277c911f" style="width: 100.0%; height: 100.0%;"><b>Estes Hills Elementary</b><br>0.25-mile radius</div>`)[0];
+                popup_b6a22fc59ac219cb81ac4f2fcedc10ec.setContent(html_ad94558c8505c3ab5d9a4499277c911f);
+            
+        
+
+        circle_d7b3d9bbde31885770f258344720122a.bindPopup(popup_b6a22fc59ac219cb81ac4f2fcedc10ec)
+        ;
+
+        
+    
+    
+            var circle_a559c37b99da5e95db5be5051008f5cd = L.circle(
+                [35.9285, -79.0392],
+                {"bubblingMouseEvents": true, "color": "#F39C12", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#F39C12", "fillOpacity": 0.4, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 402, "stroke": true, "weight": 2}
+            ).addTo(feature_group_a86cf0d413246bff263a10f859a2e479);
+        
+    
+        var popup_068d0099c16cc964493cb6042654d2ee = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_907b8d3e48c2231f9b30701b3dc47aff = $(`<div id="html_907b8d3e48c2231f9b30701b3dc47aff" style="width: 100.0%; height: 100.0%;"><b>Frank Porter Graham</b><br>0.25-mile radius</div>`)[0];
+                popup_068d0099c16cc964493cb6042654d2ee.setContent(html_907b8d3e48c2231f9b30701b3dc47aff);
+            
+        
+
+        circle_a559c37b99da5e95db5be5051008f5cd.bindPopup(popup_068d0099c16cc964493cb6042654d2ee)
+        ;
+
+        
+    
+    
+            var circle_35fa9583d3ac992548da24b3348d99dd = L.circle(
+                [35.9225, -79.0567],
+                {"bubblingMouseEvents": true, "color": "#95A5A6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#95A5A6", "fillOpacity": 0.4, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 402, "stroke": true, "weight": 2}
+            ).addTo(feature_group_a86cf0d413246bff263a10f859a2e479);
+        
+    
+        var popup_0a2846c6e64758fb9a314e68553ed656 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_e0645d0d8b28926bf8402e2086efef16 = $(`<div id="html_e0645d0d8b28926bf8402e2086efef16" style="width: 100.0%; height: 100.0%;"><b>Northside Elementary</b><br>0.25-mile radius</div>`)[0];
+                popup_0a2846c6e64758fb9a314e68553ed656.setContent(html_e0645d0d8b28926bf8402e2086efef16);
+            
+        
+
+        circle_35fa9583d3ac992548da24b3348d99dd.bindPopup(popup_0a2846c6e64758fb9a314e68553ed656)
+        ;
+
+        
+    
+    
+            var circle_aaf6fc50b044b4e38e3acc7f6ae36e58 = L.circle(
+                [35.8983, -79.0453],
+                {"bubblingMouseEvents": true, "color": "#95A5A6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#95A5A6", "fillOpacity": 0.4, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 402, "stroke": true, "weight": 2}
+            ).addTo(feature_group_a86cf0d413246bff263a10f859a2e479);
+        
+    
+        var popup_45490ccca3a4b3e26e83ad484587a8ba = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_3155cdd20eef62723ec8482bba522f73 = $(`<div id="html_3155cdd20eef62723ec8482bba522f73" style="width: 100.0%; height: 100.0%;"><b>McDougle Elementary</b><br>0.25-mile radius</div>`)[0];
+                popup_45490ccca3a4b3e26e83ad484587a8ba.setContent(html_3155cdd20eef62723ec8482bba522f73);
+            
+        
+
+        circle_aaf6fc50b044b4e38e3acc7f6ae36e58.bindPopup(popup_45490ccca3a4b3e26e83ad484587a8ba)
+        ;
+
+        
+    
+    
+            var circle_56c5f895bdb441a6f3beb7d209b027ff = L.circle(
+                [35.8775, -79.0308],
+                {"bubblingMouseEvents": true, "color": "#95A5A6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#95A5A6", "fillOpacity": 0.4, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 402, "stroke": true, "weight": 2}
+            ).addTo(feature_group_a86cf0d413246bff263a10f859a2e479);
+        
+    
+        var popup_584a1609f1f6f03e8410d50582550f87 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_2b6c35967c1be6efb54a0cbf4a46e4d8 = $(`<div id="html_2b6c35967c1be6efb54a0cbf4a46e4d8" style="width: 100.0%; height: 100.0%;"><b>Morris Grove Elementary</b><br>0.25-mile radius</div>`)[0];
+                popup_584a1609f1f6f03e8410d50582550f87.setContent(html_2b6c35967c1be6efb54a0cbf4a46e4d8);
+            
+        
+
+        circle_56c5f895bdb441a6f3beb7d209b027ff.bindPopup(popup_584a1609f1f6f03e8410d50582550f87)
+        ;
+
+        
+    
+    
+            var circle_4f38e7ba544b2fe423529a790ab5dce0 = L.circle(
+                [35.8817, -79.0692],
+                {"bubblingMouseEvents": true, "color": "#95A5A6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#95A5A6", "fillOpacity": 0.4, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 402, "stroke": true, "weight": 2}
+            ).addTo(feature_group_a86cf0d413246bff263a10f859a2e479);
+        
+    
+        var popup_b07ad1930160d2b8d9cd308d2ef3e0b7 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_3f8539e647ebd375a413dbc96b138f61 = $(`<div id="html_3f8539e647ebd375a413dbc96b138f61" style="width: 100.0%; height: 100.0%;"><b>Rashkis Elementary</b><br>0.25-mile radius</div>`)[0];
+                popup_b07ad1930160d2b8d9cd308d2ef3e0b7.setContent(html_3f8539e647ebd375a413dbc96b138f61);
+            
+        
+
+        circle_4f38e7ba544b2fe423529a790ab5dce0.bindPopup(popup_b07ad1930160d2b8d9cd308d2ef3e0b7)
+        ;
+
+        
+    
+    
+            var circle_edcdb4ea1003fa310adf66cce8643abf = L.circle(
+                [35.865, -79.0433],
+                {"bubblingMouseEvents": true, "color": "#95A5A6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#95A5A6", "fillOpacity": 0.4, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 402, "stroke": true, "weight": 2}
+            ).addTo(feature_group_a86cf0d413246bff263a10f859a2e479);
+        
+    
+        var popup_8c00f8f84a38bfa98add938f8b9ff90a = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_18bcd0d4fbc82427087730be4d309f2c = $(`<div id="html_18bcd0d4fbc82427087730be4d309f2c" style="width: 100.0%; height: 100.0%;"><b>Scroggs Elementary</b><br>0.25-mile radius</div>`)[0];
+                popup_8c00f8f84a38bfa98add938f8b9ff90a.setContent(html_18bcd0d4fbc82427087730be4d309f2c);
+            
+        
+
+        circle_edcdb4ea1003fa310adf66cce8643abf.bindPopup(popup_8c00f8f84a38bfa98add938f8b9ff90a)
+        ;
+
+        
+    
+    
+            var feature_group_8c1c95a63c6e1995f6a488eb8f17294d = L.featureGroup(
+                {
+}
+            );
+        
+    
+            var circle_7406b93406fbb20a67725118d2eb9106 = L.circle(
+                [35.9372, -79.0178],
+                {"bubblingMouseEvents": true, "color": "#2E86AB", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#2E86AB", "fillOpacity": 0.3, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 805, "stroke": true, "weight": 2}
+            ).addTo(feature_group_8c1c95a63c6e1995f6a488eb8f17294d);
+        
+    
+        var popup_ffaeb7136752cd46b3c4edb960448355 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_f8ef875eaba2f2a19393ae08565dbbe7 = $(`<div id="html_f8ef875eaba2f2a19393ae08565dbbe7" style="width: 100.0%; height: 100.0%;"><b>Ephesus Elementary</b><br>0.5-mile radius</div>`)[0];
+                popup_ffaeb7136752cd46b3c4edb960448355.setContent(html_f8ef875eaba2f2a19393ae08565dbbe7);
+            
+        
+
+        circle_7406b93406fbb20a67725118d2eb9106.bindPopup(popup_ffaeb7136752cd46b3c4edb960448355)
+        ;
+
+        
+    
+    
+            var circle_7eb6b3b44989bdf2323cacb99156e9f7 = L.circle(
+                [35.9128, -79.0589],
+                {"bubblingMouseEvents": true, "color": "#E74C3C", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#E74C3C", "fillOpacity": 0.3, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 805, "stroke": true, "weight": 2}
+            ).addTo(feature_group_8c1c95a63c6e1995f6a488eb8f17294d);
+        
+    
+        var popup_10573ba8f9440003cd46518b285ae893 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_494cd6ab91efdc1149ebee8a80c017ac = $(`<div id="html_494cd6ab91efdc1149ebee8a80c017ac" style="width: 100.0%; height: 100.0%;"><b>Glenwood Elementary</b><br>0.5-mile radius</div>`)[0];
+                popup_10573ba8f9440003cd46518b285ae893.setContent(html_494cd6ab91efdc1149ebee8a80c017ac);
+            
+        
+
+        circle_7eb6b3b44989bdf2323cacb99156e9f7.bindPopup(popup_10573ba8f9440003cd46518b285ae893)
+        ;
+
+        
+    
+    
+            var circle_a1008aae7a82e9fa0cc6d5f5dd265951 = L.circle(
+                [35.9033, -79.0817],
+                {"bubblingMouseEvents": true, "color": "#E74C3C", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#E74C3C", "fillOpacity": 0.3, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 805, "stroke": true, "weight": 2}
+            ).addTo(feature_group_8c1c95a63c6e1995f6a488eb8f17294d);
+        
+    
+        var popup_f1c294093dce01ba30f859e36c6f0168 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_bd1c6bec04665c65024dcc6f2a51cc0d = $(`<div id="html_bd1c6bec04665c65024dcc6f2a51cc0d" style="width: 100.0%; height: 100.0%;"><b>Seawell Elementary</b><br>0.5-mile radius</div>`)[0];
+                popup_f1c294093dce01ba30f859e36c6f0168.setContent(html_bd1c6bec04665c65024dcc6f2a51cc0d);
+            
+        
+
+        circle_a1008aae7a82e9fa0cc6d5f5dd265951.bindPopup(popup_f1c294093dce01ba30f859e36c6f0168)
+        ;
+
+        
+    
+    
+            var circle_7932a5831b40d92574fe518c577e48d4 = L.circle(
+                [35.9103, -79.0753],
+                {"bubblingMouseEvents": true, "color": "#F39C12", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#F39C12", "fillOpacity": 0.3, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 805, "stroke": true, "weight": 2}
+            ).addTo(feature_group_8c1c95a63c6e1995f6a488eb8f17294d);
+        
+    
+        var popup_2308de7cabca138767414cec424611db = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_d48f9af634d6862e15cda69254817f8f = $(`<div id="html_d48f9af634d6862e15cda69254817f8f" style="width: 100.0%; height: 100.0%;"><b>Carrboro Elementary</b><br>0.5-mile radius</div>`)[0];
+                popup_2308de7cabca138767414cec424611db.setContent(html_d48f9af634d6862e15cda69254817f8f);
+            
+        
+
+        circle_7932a5831b40d92574fe518c577e48d4.bindPopup(popup_2308de7cabca138767414cec424611db)
+        ;
+
+        
+    
+    
+            var circle_1d2ff705431949d3775d5839c5a55d58 = L.circle(
+                [35.9442, -79.0467],
+                {"bubblingMouseEvents": true, "color": "#F39C12", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#F39C12", "fillOpacity": 0.3, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 805, "stroke": true, "weight": 2}
+            ).addTo(feature_group_8c1c95a63c6e1995f6a488eb8f17294d);
+        
+    
+        var popup_e404e2304b5a6dca10427c149cc2a425 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_dbad91fe0ca98c396a9dbbcd4e62e4d7 = $(`<div id="html_dbad91fe0ca98c396a9dbbcd4e62e4d7" style="width: 100.0%; height: 100.0%;"><b>Estes Hills Elementary</b><br>0.5-mile radius</div>`)[0];
+                popup_e404e2304b5a6dca10427c149cc2a425.setContent(html_dbad91fe0ca98c396a9dbbcd4e62e4d7);
+            
+        
+
+        circle_1d2ff705431949d3775d5839c5a55d58.bindPopup(popup_e404e2304b5a6dca10427c149cc2a425)
+        ;
+
+        
+    
+    
+            var circle_4134a42f5f801f89686f1c47bb76c657 = L.circle(
+                [35.9285, -79.0392],
+                {"bubblingMouseEvents": true, "color": "#F39C12", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#F39C12", "fillOpacity": 0.3, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 805, "stroke": true, "weight": 2}
+            ).addTo(feature_group_8c1c95a63c6e1995f6a488eb8f17294d);
+        
+    
+        var popup_13562fb61d010f5f7e8998ef0a1bfacd = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_08293ee99ff9034dca0d6a90719e9231 = $(`<div id="html_08293ee99ff9034dca0d6a90719e9231" style="width: 100.0%; height: 100.0%;"><b>Frank Porter Graham</b><br>0.5-mile radius</div>`)[0];
+                popup_13562fb61d010f5f7e8998ef0a1bfacd.setContent(html_08293ee99ff9034dca0d6a90719e9231);
+            
+        
+
+        circle_4134a42f5f801f89686f1c47bb76c657.bindPopup(popup_13562fb61d010f5f7e8998ef0a1bfacd)
+        ;
+
+        
+    
+    
+            var circle_c2769365cd06f3b05108907da50efc20 = L.circle(
+                [35.9225, -79.0567],
+                {"bubblingMouseEvents": true, "color": "#95A5A6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#95A5A6", "fillOpacity": 0.3, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 805, "stroke": true, "weight": 2}
+            ).addTo(feature_group_8c1c95a63c6e1995f6a488eb8f17294d);
+        
+    
+        var popup_f386163df526c92f78fbe35d387ee07a = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_cb540d127388af4a46761e71db36201a = $(`<div id="html_cb540d127388af4a46761e71db36201a" style="width: 100.0%; height: 100.0%;"><b>Northside Elementary</b><br>0.5-mile radius</div>`)[0];
+                popup_f386163df526c92f78fbe35d387ee07a.setContent(html_cb540d127388af4a46761e71db36201a);
+            
+        
+
+        circle_c2769365cd06f3b05108907da50efc20.bindPopup(popup_f386163df526c92f78fbe35d387ee07a)
+        ;
+
+        
+    
+    
+            var circle_5fbba2e451bd077d60a4efd72ae4eef6 = L.circle(
+                [35.8983, -79.0453],
+                {"bubblingMouseEvents": true, "color": "#95A5A6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#95A5A6", "fillOpacity": 0.3, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 805, "stroke": true, "weight": 2}
+            ).addTo(feature_group_8c1c95a63c6e1995f6a488eb8f17294d);
+        
+    
+        var popup_1cb76529b35dc99fe118355288c8260f = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_79e9d2b6b89cac810729b8fa65db27b3 = $(`<div id="html_79e9d2b6b89cac810729b8fa65db27b3" style="width: 100.0%; height: 100.0%;"><b>McDougle Elementary</b><br>0.5-mile radius</div>`)[0];
+                popup_1cb76529b35dc99fe118355288c8260f.setContent(html_79e9d2b6b89cac810729b8fa65db27b3);
+            
+        
+
+        circle_5fbba2e451bd077d60a4efd72ae4eef6.bindPopup(popup_1cb76529b35dc99fe118355288c8260f)
+        ;
+
+        
+    
+    
+            var circle_5a5bf071bb3748be37adc9ca8278f7f4 = L.circle(
+                [35.8775, -79.0308],
+                {"bubblingMouseEvents": true, "color": "#95A5A6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#95A5A6", "fillOpacity": 0.3, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 805, "stroke": true, "weight": 2}
+            ).addTo(feature_group_8c1c95a63c6e1995f6a488eb8f17294d);
+        
+    
+        var popup_131450dcf51883bd4c6ed01c0c224662 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_5fc64e8c0995254cec05e52739880d71 = $(`<div id="html_5fc64e8c0995254cec05e52739880d71" style="width: 100.0%; height: 100.0%;"><b>Morris Grove Elementary</b><br>0.5-mile radius</div>`)[0];
+                popup_131450dcf51883bd4c6ed01c0c224662.setContent(html_5fc64e8c0995254cec05e52739880d71);
+            
+        
+
+        circle_5a5bf071bb3748be37adc9ca8278f7f4.bindPopup(popup_131450dcf51883bd4c6ed01c0c224662)
+        ;
+
+        
+    
+    
+            var circle_f27107d1193fb59e6f849de9365b71de = L.circle(
+                [35.8817, -79.0692],
+                {"bubblingMouseEvents": true, "color": "#95A5A6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#95A5A6", "fillOpacity": 0.3, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 805, "stroke": true, "weight": 2}
+            ).addTo(feature_group_8c1c95a63c6e1995f6a488eb8f17294d);
+        
+    
+        var popup_d54b2c0600deeecf7c48d4e6713f8f49 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_e768d1bcb415283a8f089afb3793d4ee = $(`<div id="html_e768d1bcb415283a8f089afb3793d4ee" style="width: 100.0%; height: 100.0%;"><b>Rashkis Elementary</b><br>0.5-mile radius</div>`)[0];
+                popup_d54b2c0600deeecf7c48d4e6713f8f49.setContent(html_e768d1bcb415283a8f089afb3793d4ee);
+            
+        
+
+        circle_f27107d1193fb59e6f849de9365b71de.bindPopup(popup_d54b2c0600deeecf7c48d4e6713f8f49)
+        ;
+
+        
+    
+    
+            var circle_feec05d7aa8df524859edbc57a45354d = L.circle(
+                [35.865, -79.0433],
+                {"bubblingMouseEvents": true, "color": "#95A5A6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#95A5A6", "fillOpacity": 0.3, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 805, "stroke": true, "weight": 2}
+            ).addTo(feature_group_8c1c95a63c6e1995f6a488eb8f17294d);
+        
+    
+        var popup_a813a500fd1c6d1e362ef8a78cb87939 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_81d464b2f83e6294bbff37e825f357ac = $(`<div id="html_81d464b2f83e6294bbff37e825f357ac" style="width: 100.0%; height: 100.0%;"><b>Scroggs Elementary</b><br>0.5-mile radius</div>`)[0];
+                popup_a813a500fd1c6d1e362ef8a78cb87939.setContent(html_81d464b2f83e6294bbff37e825f357ac);
+            
+        
+
+        circle_feec05d7aa8df524859edbc57a45354d.bindPopup(popup_a813a500fd1c6d1e362ef8a78cb87939)
+        ;
+
+        
+    
+    
+            feature_group_8c1c95a63c6e1995f6a488eb8f17294d.addTo(map_afb42544203b5272398458660eb56034);
+        
+    
+            var feature_group_bbdf1c5fdb257bbbd76a45509ff541ed = L.featureGroup(
+                {
+}
+            );
+        
+    
+            var circle_2e69eac35dccf05370f6d8330a9b91ef = L.circle(
+                [35.9372, -79.0178],
+                {"bubblingMouseEvents": true, "color": "#2E86AB", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#2E86AB", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 1609, "stroke": true, "weight": 2}
+            ).addTo(feature_group_bbdf1c5fdb257bbbd76a45509ff541ed);
+        
+    
+        var popup_1317bdf80420231d4b6960239a90ffd0 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_b08b2ecce7c672a98aeb9867dac3c8fe = $(`<div id="html_b08b2ecce7c672a98aeb9867dac3c8fe" style="width: 100.0%; height: 100.0%;"><b>Ephesus Elementary</b><br>1.0-mile radius</div>`)[0];
+                popup_1317bdf80420231d4b6960239a90ffd0.setContent(html_b08b2ecce7c672a98aeb9867dac3c8fe);
+            
+        
+
+        circle_2e69eac35dccf05370f6d8330a9b91ef.bindPopup(popup_1317bdf80420231d4b6960239a90ffd0)
+        ;
+
+        
+    
+    
+            var circle_03dcd1d5e6471f30d82d35de7c8a9225 = L.circle(
+                [35.9128, -79.0589],
+                {"bubblingMouseEvents": true, "color": "#E74C3C", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#E74C3C", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 1609, "stroke": true, "weight": 2}
+            ).addTo(feature_group_bbdf1c5fdb257bbbd76a45509ff541ed);
+        
+    
+        var popup_fc590e591145b0f203e2f79a1e47d615 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_75b9821f9d6948a2faf623d23f5d89a0 = $(`<div id="html_75b9821f9d6948a2faf623d23f5d89a0" style="width: 100.0%; height: 100.0%;"><b>Glenwood Elementary</b><br>1.0-mile radius</div>`)[0];
+                popup_fc590e591145b0f203e2f79a1e47d615.setContent(html_75b9821f9d6948a2faf623d23f5d89a0);
+            
+        
+
+        circle_03dcd1d5e6471f30d82d35de7c8a9225.bindPopup(popup_fc590e591145b0f203e2f79a1e47d615)
+        ;
+
+        
+    
+    
+            var circle_111f3e9a3bdc992493ecabe1836240ae = L.circle(
+                [35.9033, -79.0817],
+                {"bubblingMouseEvents": true, "color": "#E74C3C", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#E74C3C", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 1609, "stroke": true, "weight": 2}
+            ).addTo(feature_group_bbdf1c5fdb257bbbd76a45509ff541ed);
+        
+    
+        var popup_cd56125c43660fb6ccec7b3ce2b164d2 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_d20ff56e1f3db8bdc0e66c47372a1a6a = $(`<div id="html_d20ff56e1f3db8bdc0e66c47372a1a6a" style="width: 100.0%; height: 100.0%;"><b>Seawell Elementary</b><br>1.0-mile radius</div>`)[0];
+                popup_cd56125c43660fb6ccec7b3ce2b164d2.setContent(html_d20ff56e1f3db8bdc0e66c47372a1a6a);
+            
+        
+
+        circle_111f3e9a3bdc992493ecabe1836240ae.bindPopup(popup_cd56125c43660fb6ccec7b3ce2b164d2)
+        ;
+
+        
+    
+    
+            var circle_b7a3049219057f3fca8f4224c2de204a = L.circle(
+                [35.9103, -79.0753],
+                {"bubblingMouseEvents": true, "color": "#F39C12", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#F39C12", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 1609, "stroke": true, "weight": 2}
+            ).addTo(feature_group_bbdf1c5fdb257bbbd76a45509ff541ed);
+        
+    
+        var popup_23d42a72e518f29d5fd938a080871538 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_25619050fc84321812b210705e52fd3d = $(`<div id="html_25619050fc84321812b210705e52fd3d" style="width: 100.0%; height: 100.0%;"><b>Carrboro Elementary</b><br>1.0-mile radius</div>`)[0];
+                popup_23d42a72e518f29d5fd938a080871538.setContent(html_25619050fc84321812b210705e52fd3d);
+            
+        
+
+        circle_b7a3049219057f3fca8f4224c2de204a.bindPopup(popup_23d42a72e518f29d5fd938a080871538)
+        ;
+
+        
+    
+    
+            var circle_ff0f7df6099f84f6c5d6760301e29baf = L.circle(
+                [35.9442, -79.0467],
+                {"bubblingMouseEvents": true, "color": "#F39C12", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#F39C12", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 1609, "stroke": true, "weight": 2}
+            ).addTo(feature_group_bbdf1c5fdb257bbbd76a45509ff541ed);
+        
+    
+        var popup_85edd732f17f4d5d5598f0264bf73f9d = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_11ed4aa852df1736fe7bcfcedaf1a4f6 = $(`<div id="html_11ed4aa852df1736fe7bcfcedaf1a4f6" style="width: 100.0%; height: 100.0%;"><b>Estes Hills Elementary</b><br>1.0-mile radius</div>`)[0];
+                popup_85edd732f17f4d5d5598f0264bf73f9d.setContent(html_11ed4aa852df1736fe7bcfcedaf1a4f6);
+            
+        
+
+        circle_ff0f7df6099f84f6c5d6760301e29baf.bindPopup(popup_85edd732f17f4d5d5598f0264bf73f9d)
+        ;
+
+        
+    
+    
+            var circle_a8f27466a1e1c636e1f74190e9025ec3 = L.circle(
+                [35.9285, -79.0392],
+                {"bubblingMouseEvents": true, "color": "#F39C12", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#F39C12", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 1609, "stroke": true, "weight": 2}
+            ).addTo(feature_group_bbdf1c5fdb257bbbd76a45509ff541ed);
+        
+    
+        var popup_6898ff726cce27e4bdd4ffb90b3fe583 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_453a4a2716a1c02396cde7ddf0e0b468 = $(`<div id="html_453a4a2716a1c02396cde7ddf0e0b468" style="width: 100.0%; height: 100.0%;"><b>Frank Porter Graham</b><br>1.0-mile radius</div>`)[0];
+                popup_6898ff726cce27e4bdd4ffb90b3fe583.setContent(html_453a4a2716a1c02396cde7ddf0e0b468);
+            
+        
+
+        circle_a8f27466a1e1c636e1f74190e9025ec3.bindPopup(popup_6898ff726cce27e4bdd4ffb90b3fe583)
+        ;
+
+        
+    
+    
+            var circle_17aed007c5c9e6b450906b46113e7673 = L.circle(
+                [35.9225, -79.0567],
+                {"bubblingMouseEvents": true, "color": "#95A5A6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#95A5A6", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 1609, "stroke": true, "weight": 2}
+            ).addTo(feature_group_bbdf1c5fdb257bbbd76a45509ff541ed);
+        
+    
+        var popup_d82b99ca91ba246a316e40a6cf66dbbb = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_27f3d9eeced4b9b0721e3440a81eb8de = $(`<div id="html_27f3d9eeced4b9b0721e3440a81eb8de" style="width: 100.0%; height: 100.0%;"><b>Northside Elementary</b><br>1.0-mile radius</div>`)[0];
+                popup_d82b99ca91ba246a316e40a6cf66dbbb.setContent(html_27f3d9eeced4b9b0721e3440a81eb8de);
+            
+        
+
+        circle_17aed007c5c9e6b450906b46113e7673.bindPopup(popup_d82b99ca91ba246a316e40a6cf66dbbb)
+        ;
+
+        
+    
+    
+            var circle_771a2a3ad7a9008b339e73757c4473cc = L.circle(
+                [35.8983, -79.0453],
+                {"bubblingMouseEvents": true, "color": "#95A5A6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#95A5A6", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 1609, "stroke": true, "weight": 2}
+            ).addTo(feature_group_bbdf1c5fdb257bbbd76a45509ff541ed);
+        
+    
+        var popup_d23cbd14f654c18550deaa2a381529ee = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_8f5f98ebeb4cc8bb47a5b74fefed1a29 = $(`<div id="html_8f5f98ebeb4cc8bb47a5b74fefed1a29" style="width: 100.0%; height: 100.0%;"><b>McDougle Elementary</b><br>1.0-mile radius</div>`)[0];
+                popup_d23cbd14f654c18550deaa2a381529ee.setContent(html_8f5f98ebeb4cc8bb47a5b74fefed1a29);
+            
+        
+
+        circle_771a2a3ad7a9008b339e73757c4473cc.bindPopup(popup_d23cbd14f654c18550deaa2a381529ee)
+        ;
+
+        
+    
+    
+            var circle_fcde9c7256637cbb7cdb02ff690eb730 = L.circle(
+                [35.8775, -79.0308],
+                {"bubblingMouseEvents": true, "color": "#95A5A6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#95A5A6", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 1609, "stroke": true, "weight": 2}
+            ).addTo(feature_group_bbdf1c5fdb257bbbd76a45509ff541ed);
+        
+    
+        var popup_49a50dadb64564e3373d5d7914d80746 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_4edebd137482212cd6e03f9772845a88 = $(`<div id="html_4edebd137482212cd6e03f9772845a88" style="width: 100.0%; height: 100.0%;"><b>Morris Grove Elementary</b><br>1.0-mile radius</div>`)[0];
+                popup_49a50dadb64564e3373d5d7914d80746.setContent(html_4edebd137482212cd6e03f9772845a88);
+            
+        
+
+        circle_fcde9c7256637cbb7cdb02ff690eb730.bindPopup(popup_49a50dadb64564e3373d5d7914d80746)
+        ;
+
+        
+    
+    
+            var circle_1361611bef47e0032f548192c3855911 = L.circle(
+                [35.8817, -79.0692],
+                {"bubblingMouseEvents": true, "color": "#95A5A6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#95A5A6", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 1609, "stroke": true, "weight": 2}
+            ).addTo(feature_group_bbdf1c5fdb257bbbd76a45509ff541ed);
+        
+    
+        var popup_8adb876247e56d4d1dd1f9acdb21fef2 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_a419edd9f7de123a5053e77c7be45649 = $(`<div id="html_a419edd9f7de123a5053e77c7be45649" style="width: 100.0%; height: 100.0%;"><b>Rashkis Elementary</b><br>1.0-mile radius</div>`)[0];
+                popup_8adb876247e56d4d1dd1f9acdb21fef2.setContent(html_a419edd9f7de123a5053e77c7be45649);
+            
+        
+
+        circle_1361611bef47e0032f548192c3855911.bindPopup(popup_8adb876247e56d4d1dd1f9acdb21fef2)
+        ;
+
+        
+    
+    
+            var circle_d4122fce30e52edb3ea7e9622859bd29 = L.circle(
+                [35.865, -79.0433],
+                {"bubblingMouseEvents": true, "color": "#95A5A6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#95A5A6", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 1609, "stroke": true, "weight": 2}
+            ).addTo(feature_group_bbdf1c5fdb257bbbd76a45509ff541ed);
+        
+    
+        var popup_64b2182a4b58275119e241e3529c2903 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_2a5c6011545ce2df51d957377ba92422 = $(`<div id="html_2a5c6011545ce2df51d957377ba92422" style="width: 100.0%; height: 100.0%;"><b>Scroggs Elementary</b><br>1.0-mile radius</div>`)[0];
+                popup_64b2182a4b58275119e241e3529c2903.setContent(html_2a5c6011545ce2df51d957377ba92422);
+            
+        
+
+        circle_d4122fce30e52edb3ea7e9622859bd29.bindPopup(popup_64b2182a4b58275119e241e3529c2903)
+        ;
+
+        
+    
+    
+            var feature_group_69926734012dd337172941c44d52d428 = L.featureGroup(
+                {
+}
+            );
+        
+    
+            var circle_8a2ff5d7503673b1008046b776bf6d4d = L.circle(
+                [35.9372, -79.0178],
+                {"bubblingMouseEvents": true, "color": "#2E86AB", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#2E86AB", "fillOpacity": 0.1, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 3219, "stroke": true, "weight": 2}
+            ).addTo(feature_group_69926734012dd337172941c44d52d428);
+        
+    
+        var popup_94e3aedd3929051f0cc94c1ace2b9477 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_bb5da9bcead4fdb30ca9e7cb8104e5e8 = $(`<div id="html_bb5da9bcead4fdb30ca9e7cb8104e5e8" style="width: 100.0%; height: 100.0%;"><b>Ephesus Elementary</b><br>2.0-mile radius</div>`)[0];
+                popup_94e3aedd3929051f0cc94c1ace2b9477.setContent(html_bb5da9bcead4fdb30ca9e7cb8104e5e8);
+            
+        
+
+        circle_8a2ff5d7503673b1008046b776bf6d4d.bindPopup(popup_94e3aedd3929051f0cc94c1ace2b9477)
+        ;
+
+        
+    
+    
+            var circle_052653755ffeb6709f9d801af87aeb98 = L.circle(
+                [35.9128, -79.0589],
+                {"bubblingMouseEvents": true, "color": "#E74C3C", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#E74C3C", "fillOpacity": 0.1, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 3219, "stroke": true, "weight": 2}
+            ).addTo(feature_group_69926734012dd337172941c44d52d428);
+        
+    
+        var popup_c67d48f4d2bff621f2e00a253067a98e = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_96c8e9b58522adc15b25ec9776c611cb = $(`<div id="html_96c8e9b58522adc15b25ec9776c611cb" style="width: 100.0%; height: 100.0%;"><b>Glenwood Elementary</b><br>2.0-mile radius</div>`)[0];
+                popup_c67d48f4d2bff621f2e00a253067a98e.setContent(html_96c8e9b58522adc15b25ec9776c611cb);
+            
+        
+
+        circle_052653755ffeb6709f9d801af87aeb98.bindPopup(popup_c67d48f4d2bff621f2e00a253067a98e)
+        ;
+
+        
+    
+    
+            var circle_ee97a33a3849a99a4824de0863065145 = L.circle(
+                [35.9033, -79.0817],
+                {"bubblingMouseEvents": true, "color": "#E74C3C", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#E74C3C", "fillOpacity": 0.1, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 3219, "stroke": true, "weight": 2}
+            ).addTo(feature_group_69926734012dd337172941c44d52d428);
+        
+    
+        var popup_c9161b8e9ba07ddbe4ce45381ddcf02f = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_1459eef7b0c33a440b4cb56215eda1d2 = $(`<div id="html_1459eef7b0c33a440b4cb56215eda1d2" style="width: 100.0%; height: 100.0%;"><b>Seawell Elementary</b><br>2.0-mile radius</div>`)[0];
+                popup_c9161b8e9ba07ddbe4ce45381ddcf02f.setContent(html_1459eef7b0c33a440b4cb56215eda1d2);
+            
+        
+
+        circle_ee97a33a3849a99a4824de0863065145.bindPopup(popup_c9161b8e9ba07ddbe4ce45381ddcf02f)
+        ;
+
+        
+    
+    
+            var circle_e12e97ce4d9af5740b20dbf0d8907b7e = L.circle(
+                [35.9103, -79.0753],
+                {"bubblingMouseEvents": true, "color": "#F39C12", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#F39C12", "fillOpacity": 0.1, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 3219, "stroke": true, "weight": 2}
+            ).addTo(feature_group_69926734012dd337172941c44d52d428);
+        
+    
+        var popup_bf030fb6b07a2879c40dfe8821079334 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_3df5702ad601c404a049f9d79514597c = $(`<div id="html_3df5702ad601c404a049f9d79514597c" style="width: 100.0%; height: 100.0%;"><b>Carrboro Elementary</b><br>2.0-mile radius</div>`)[0];
+                popup_bf030fb6b07a2879c40dfe8821079334.setContent(html_3df5702ad601c404a049f9d79514597c);
+            
+        
+
+        circle_e12e97ce4d9af5740b20dbf0d8907b7e.bindPopup(popup_bf030fb6b07a2879c40dfe8821079334)
+        ;
+
+        
+    
+    
+            var circle_75d56aacb8c5230e55f11c6a8bce8a9f = L.circle(
+                [35.9442, -79.0467],
+                {"bubblingMouseEvents": true, "color": "#F39C12", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#F39C12", "fillOpacity": 0.1, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 3219, "stroke": true, "weight": 2}
+            ).addTo(feature_group_69926734012dd337172941c44d52d428);
+        
+    
+        var popup_9f2f768baa7887a1b3c64a432209d7e3 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_9a74d90ec9acd07c6ad549a1325dc843 = $(`<div id="html_9a74d90ec9acd07c6ad549a1325dc843" style="width: 100.0%; height: 100.0%;"><b>Estes Hills Elementary</b><br>2.0-mile radius</div>`)[0];
+                popup_9f2f768baa7887a1b3c64a432209d7e3.setContent(html_9a74d90ec9acd07c6ad549a1325dc843);
+            
+        
+
+        circle_75d56aacb8c5230e55f11c6a8bce8a9f.bindPopup(popup_9f2f768baa7887a1b3c64a432209d7e3)
+        ;
+
+        
+    
+    
+            var circle_d36ee8478083f946d139a28fb1307664 = L.circle(
+                [35.9285, -79.0392],
+                {"bubblingMouseEvents": true, "color": "#F39C12", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#F39C12", "fillOpacity": 0.1, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 3219, "stroke": true, "weight": 2}
+            ).addTo(feature_group_69926734012dd337172941c44d52d428);
+        
+    
+        var popup_9b03573bc8d0b2f18094c4d9cc54efd7 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_ee03e1b303d414392c5e57fa311dfee7 = $(`<div id="html_ee03e1b303d414392c5e57fa311dfee7" style="width: 100.0%; height: 100.0%;"><b>Frank Porter Graham</b><br>2.0-mile radius</div>`)[0];
+                popup_9b03573bc8d0b2f18094c4d9cc54efd7.setContent(html_ee03e1b303d414392c5e57fa311dfee7);
+            
+        
+
+        circle_d36ee8478083f946d139a28fb1307664.bindPopup(popup_9b03573bc8d0b2f18094c4d9cc54efd7)
+        ;
+
+        
+    
+    
+            var circle_3169e87553c38d22e3eff605cc767f25 = L.circle(
+                [35.9225, -79.0567],
+                {"bubblingMouseEvents": true, "color": "#95A5A6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#95A5A6", "fillOpacity": 0.1, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 3219, "stroke": true, "weight": 2}
+            ).addTo(feature_group_69926734012dd337172941c44d52d428);
+        
+    
+        var popup_8187f245af7d442bf326a34adf4f9e25 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_715beaedd44c1eb1f94424fc7b83f110 = $(`<div id="html_715beaedd44c1eb1f94424fc7b83f110" style="width: 100.0%; height: 100.0%;"><b>Northside Elementary</b><br>2.0-mile radius</div>`)[0];
+                popup_8187f245af7d442bf326a34adf4f9e25.setContent(html_715beaedd44c1eb1f94424fc7b83f110);
+            
+        
+
+        circle_3169e87553c38d22e3eff605cc767f25.bindPopup(popup_8187f245af7d442bf326a34adf4f9e25)
+        ;
+
+        
+    
+    
+            var circle_cd2e7aa5e4cc65842c139b9a1e972217 = L.circle(
+                [35.8983, -79.0453],
+                {"bubblingMouseEvents": true, "color": "#95A5A6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#95A5A6", "fillOpacity": 0.1, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 3219, "stroke": true, "weight": 2}
+            ).addTo(feature_group_69926734012dd337172941c44d52d428);
+        
+    
+        var popup_9dfb8b2f398d83e63c492c41c606efb1 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_d8899b4a5e2204038f62aeefcc55d4f9 = $(`<div id="html_d8899b4a5e2204038f62aeefcc55d4f9" style="width: 100.0%; height: 100.0%;"><b>McDougle Elementary</b><br>2.0-mile radius</div>`)[0];
+                popup_9dfb8b2f398d83e63c492c41c606efb1.setContent(html_d8899b4a5e2204038f62aeefcc55d4f9);
+            
+        
+
+        circle_cd2e7aa5e4cc65842c139b9a1e972217.bindPopup(popup_9dfb8b2f398d83e63c492c41c606efb1)
+        ;
+
+        
+    
+    
+            var circle_5d835128cb195ca6e5dc02b950f7aaf9 = L.circle(
+                [35.8775, -79.0308],
+                {"bubblingMouseEvents": true, "color": "#95A5A6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#95A5A6", "fillOpacity": 0.1, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 3219, "stroke": true, "weight": 2}
+            ).addTo(feature_group_69926734012dd337172941c44d52d428);
+        
+    
+        var popup_3513adf0462e09234aa6b839c48959d1 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_0263848a7b6b7e77aae537a712d41a0b = $(`<div id="html_0263848a7b6b7e77aae537a712d41a0b" style="width: 100.0%; height: 100.0%;"><b>Morris Grove Elementary</b><br>2.0-mile radius</div>`)[0];
+                popup_3513adf0462e09234aa6b839c48959d1.setContent(html_0263848a7b6b7e77aae537a712d41a0b);
+            
+        
+
+        circle_5d835128cb195ca6e5dc02b950f7aaf9.bindPopup(popup_3513adf0462e09234aa6b839c48959d1)
+        ;
+
+        
+    
+    
+            var circle_c81a9b279d8a2951ce157963756cd457 = L.circle(
+                [35.8817, -79.0692],
+                {"bubblingMouseEvents": true, "color": "#95A5A6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#95A5A6", "fillOpacity": 0.1, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 3219, "stroke": true, "weight": 2}
+            ).addTo(feature_group_69926734012dd337172941c44d52d428);
+        
+    
+        var popup_efcc6057f707d120483cef463aaf45c0 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_64391842b140e9adad4c6ba2b65ef8b2 = $(`<div id="html_64391842b140e9adad4c6ba2b65ef8b2" style="width: 100.0%; height: 100.0%;"><b>Rashkis Elementary</b><br>2.0-mile radius</div>`)[0];
+                popup_efcc6057f707d120483cef463aaf45c0.setContent(html_64391842b140e9adad4c6ba2b65ef8b2);
+            
+        
+
+        circle_c81a9b279d8a2951ce157963756cd457.bindPopup(popup_efcc6057f707d120483cef463aaf45c0)
+        ;
+
+        
+    
+    
+            var circle_ad5ee811e535c67f2c9ea3cc8768891a = L.circle(
+                [35.865, -79.0433],
+                {"bubblingMouseEvents": true, "color": "#95A5A6", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#95A5A6", "fillOpacity": 0.1, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 3219, "stroke": true, "weight": 2}
+            ).addTo(feature_group_69926734012dd337172941c44d52d428);
+        
+    
+        var popup_9dcd2eab3f3b39c4c4067d922811ec82 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_38b8bc9362fbf972f658171a4a9077a9 = $(`<div id="html_38b8bc9362fbf972f658171a4a9077a9" style="width: 100.0%; height: 100.0%;"><b>Scroggs Elementary</b><br>2.0-mile radius</div>`)[0];
+                popup_9dcd2eab3f3b39c4c4067d922811ec82.setContent(html_38b8bc9362fbf972f658171a4a9077a9);
+            
+        
+
+        circle_ad5ee811e535c67f2c9ea3cc8768891a.bindPopup(popup_9dcd2eab3f3b39c4c4067d922811ec82)
+        ;
+
+        
+    
+    
+            var feature_group_372b959683b4f9bb9a3312dafa4b5de0 = L.featureGroup(
+                {
+}
+            );
+        
+    
+            var marker_a0b4d9cf8fccde5f8d472dff277d1e5e = L.marker(
+                [35.9372, -79.0178],
+                {
+}
+            ).addTo(feature_group_372b959683b4f9bb9a3312dafa4b5de0);
+        
+    
+            var icon_a30d81cacc3516429e6d5fd7944363bb = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "graduation-cap",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_183db2e24e0e271d3895088629d4cdaf = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_b819e28f2d6358a5675f087143268a72 = $(`<div id="html_b819e28f2d6358a5675f087143268a72" style="width: 100.0%; height: 100.0%;">         <b>Ephesus Elementary</b><br>         Walkable students: <b>99</b><br>         <hr style="margin: 5px 0;">         <b>Childcare by radius:</b><br>         0.25 mi: <b>0</b> facilities<br>0.5 mi: <b>3</b> facilities<br>1.0 mi: <b>3</b> facilities<br>2.0 mi: <b>9</b> facilities         </div>`)[0];
+                popup_183db2e24e0e271d3895088629d4cdaf.setContent(html_b819e28f2d6358a5675f087143268a72);
+            
+        
+
+        marker_a0b4d9cf8fccde5f8d472dff277d1e5e.bindPopup(popup_183db2e24e0e271d3895088629d4cdaf)
+        ;
+
+        
+    
+    
+                marker_a0b4d9cf8fccde5f8d472dff277d1e5e.setIcon(icon_a30d81cacc3516429e6d5fd7944363bb);
+            
+    
+            var marker_87c673ae86eef7c474fa4f0e0d1e504e = L.marker(
+                [35.9128, -79.0589],
+                {
+}
+            ).addTo(feature_group_372b959683b4f9bb9a3312dafa4b5de0);
+        
+    
+            var icon_06689ecd7ca935dc866766c5278f89dc = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "graduation-cap",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_25a8003ee714af277185121898251da4 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_e0c4c0b2c76b9f9dedf5e937f74e0312 = $(`<div id="html_e0c4c0b2c76b9f9dedf5e937f74e0312" style="width: 100.0%; height: 100.0%;">         <b>Glenwood Elementary</b><br>         Walkable students: <b>65</b><br>         <hr style="margin: 5px 0;">         <b>Childcare by radius:</b><br>         0.25 mi: <b>7</b> facilities<br>0.5 mi: <b>9</b> facilities<br>1.0 mi: <b>13</b> facilities<br>2.0 mi: <b>27</b> facilities         </div>`)[0];
+                popup_25a8003ee714af277185121898251da4.setContent(html_e0c4c0b2c76b9f9dedf5e937f74e0312);
+            
+        
+
+        marker_87c673ae86eef7c474fa4f0e0d1e504e.bindPopup(popup_25a8003ee714af277185121898251da4)
+        ;
+
+        
+    
+    
+                marker_87c673ae86eef7c474fa4f0e0d1e504e.setIcon(icon_06689ecd7ca935dc866766c5278f89dc);
+            
+    
+            var marker_b106bf89600766ff12c9d1df22d55af5 = L.marker(
+                [35.9033, -79.0817],
+                {
+}
+            ).addTo(feature_group_372b959683b4f9bb9a3312dafa4b5de0);
+        
+    
+            var icon_a5440673af0e8b2b1acd93c9d9ed86f7 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "graduation-cap",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_d356711fa372e20953c55ff6724fdc6a = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_c2997a8ea4972a65eb29333ba34b2668 = $(`<div id="html_c2997a8ea4972a65eb29333ba34b2668" style="width: 100.0%; height: 100.0%;">         <b>Seawell Elementary</b><br>         Walkable students: <b>45</b><br>         <hr style="margin: 5px 0;">         <b>Childcare by radius:</b><br>         0.25 mi: <b>0</b> facilities<br>0.5 mi: <b>0</b> facilities<br>1.0 mi: <b>10</b> facilities<br>2.0 mi: <b>22</b> facilities         </div>`)[0];
+                popup_d356711fa372e20953c55ff6724fdc6a.setContent(html_c2997a8ea4972a65eb29333ba34b2668);
+            
+        
+
+        marker_b106bf89600766ff12c9d1df22d55af5.bindPopup(popup_d356711fa372e20953c55ff6724fdc6a)
+        ;
+
+        
+    
+    
+                marker_b106bf89600766ff12c9d1df22d55af5.setIcon(icon_a5440673af0e8b2b1acd93c9d9ed86f7);
+            
+    
+            var marker_d118064ea122ca4ee5f13e85f0f2bbde = L.marker(
+                [35.9103, -79.0753],
+                {
+}
+            ).addTo(feature_group_372b959683b4f9bb9a3312dafa4b5de0);
+        
+    
+            var icon_db6b2f00ff2b7907d6d7efb8ae21dba0 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "orange",
+  "iconColor": "white",
+  "icon": "graduation-cap",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_310e78038fc87d02dc496717260d7f6b = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_236d5c5f70de296aae375b13db27bd2f = $(`<div id="html_236d5c5f70de296aae375b13db27bd2f" style="width: 100.0%; height: 100.0%;">         <b>Carrboro Elementary</b><br>         Walkable students: <b>58</b><br>         <hr style="margin: 5px 0;">         <b>Childcare by radius:</b><br>         0.25 mi: <b>3</b> facilities<br>0.5 mi: <b>7</b> facilities<br>1.0 mi: <b>12</b> facilities<br>2.0 mi: <b>22</b> facilities         </div>`)[0];
+                popup_310e78038fc87d02dc496717260d7f6b.setContent(html_236d5c5f70de296aae375b13db27bd2f);
+            
+        
+
+        marker_d118064ea122ca4ee5f13e85f0f2bbde.bindPopup(popup_310e78038fc87d02dc496717260d7f6b)
+        ;
+
+        
+    
+    
+                marker_d118064ea122ca4ee5f13e85f0f2bbde.setIcon(icon_db6b2f00ff2b7907d6d7efb8ae21dba0);
+            
+    
+            var marker_830ea68c3cac729bcd3736f4f984ee97 = L.marker(
+                [35.9442, -79.0467],
+                {
+}
+            ).addTo(feature_group_372b959683b4f9bb9a3312dafa4b5de0);
+        
+    
+            var icon_1797e9efb7e0a0f6d82aa12c6938a44d = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "orange",
+  "iconColor": "white",
+  "icon": "graduation-cap",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_07e49928f2501842b62d292ec357bd8d = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_22eeea0b60baafd6fd2046d676fc1827 = $(`<div id="html_22eeea0b60baafd6fd2046d676fc1827" style="width: 100.0%; height: 100.0%;">         <b>Estes Hills Elementary</b><br>         Walkable students: <b>52</b><br>         <hr style="margin: 5px 0;">         <b>Childcare by radius:</b><br>         0.25 mi: <b>1</b> facilities<br>0.5 mi: <b>1</b> facilities<br>1.0 mi: <b>5</b> facilities<br>2.0 mi: <b>15</b> facilities         </div>`)[0];
+                popup_07e49928f2501842b62d292ec357bd8d.setContent(html_22eeea0b60baafd6fd2046d676fc1827);
+            
+        
+
+        marker_830ea68c3cac729bcd3736f4f984ee97.bindPopup(popup_07e49928f2501842b62d292ec357bd8d)
+        ;
+
+        
+    
+    
+                marker_830ea68c3cac729bcd3736f4f984ee97.setIcon(icon_1797e9efb7e0a0f6d82aa12c6938a44d);
+            
+    
+            var marker_5c0a0cb14089072d8d84efc35b95d100 = L.marker(
+                [35.9285, -79.0392],
+                {
+}
+            ).addTo(feature_group_372b959683b4f9bb9a3312dafa4b5de0);
+        
+    
+            var icon_e6a5e172d589bf3ef4930f613ed10540 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "orange",
+  "iconColor": "white",
+  "icon": "graduation-cap",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_2336785458f6b1cad0bc2a0426381d01 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_6017da5dc96e3f00134e1458c53a5ee6 = $(`<div id="html_6017da5dc96e3f00134e1458c53a5ee6" style="width: 100.0%; height: 100.0%;">         <b>Frank Porter Graham</b><br>         Walkable students: <b>48</b><br>         <hr style="margin: 5px 0;">         <b>Childcare by radius:</b><br>         0.25 mi: <b>0</b> facilities<br>0.5 mi: <b>0</b> facilities<br>1.0 mi: <b>0</b> facilities<br>2.0 mi: <b>0</b> facilities         </div>`)[0];
+                popup_2336785458f6b1cad0bc2a0426381d01.setContent(html_6017da5dc96e3f00134e1458c53a5ee6);
+            
+        
+
+        marker_5c0a0cb14089072d8d84efc35b95d100.bindPopup(popup_2336785458f6b1cad0bc2a0426381d01)
+        ;
+
+        
+    
+    
+                marker_5c0a0cb14089072d8d84efc35b95d100.setIcon(icon_e6a5e172d589bf3ef4930f613ed10540);
+            
+    
+            var marker_514e56ace6c730abb034506a4c84535b = L.marker(
+                [35.9225, -79.0567],
+                {
+}
+            ).addTo(feature_group_372b959683b4f9bb9a3312dafa4b5de0);
+        
+    
+            var icon_bed9435c7e5d7b15e687b0a9e9e51e95 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "gray",
+  "iconColor": "white",
+  "icon": "graduation-cap",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_02565601c2d47f7b902c22face41ee41 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_49305368acd51fbdbde0beb1ba9f90f2 = $(`<div id="html_49305368acd51fbdbde0beb1ba9f90f2" style="width: 100.0%; height: 100.0%;">         <b>Northside Elementary</b><br>         Walkable students: <b>72</b><br>         <hr style="margin: 5px 0;">         <b>Childcare by radius:</b><br>         0.25 mi: <b>0</b> facilities<br>0.5 mi: <b>0</b> facilities<br>1.0 mi: <b>12</b> facilities<br>2.0 mi: <b>27</b> facilities         </div>`)[0];
+                popup_02565601c2d47f7b902c22face41ee41.setContent(html_49305368acd51fbdbde0beb1ba9f90f2);
+            
+        
+
+        marker_514e56ace6c730abb034506a4c84535b.bindPopup(popup_02565601c2d47f7b902c22face41ee41)
+        ;
+
+        
+    
+    
+                marker_514e56ace6c730abb034506a4c84535b.setIcon(icon_bed9435c7e5d7b15e687b0a9e9e51e95);
+            
+    
+            var marker_eb87ff393ce7f29f0ffc768081b97af1 = L.marker(
+                [35.8983, -79.0453],
+                {
+}
+            ).addTo(feature_group_372b959683b4f9bb9a3312dafa4b5de0);
+        
+    
+            var icon_1e11673fd9648b5477da3e80fba3b202 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "gray",
+  "iconColor": "white",
+  "icon": "graduation-cap",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_5b5443ad39cbd43806da53a8c386abcc = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_e013387646d130e98a5ad48b5d759612 = $(`<div id="html_e013387646d130e98a5ad48b5d759612" style="width: 100.0%; height: 100.0%;">         <b>McDougle Elementary</b><br>         Walkable students: <b>38</b><br>         <hr style="margin: 5px 0;">         <b>Childcare by radius:</b><br>         0.25 mi: <b>0</b> facilities<br>0.5 mi: <b>0</b> facilities<br>1.0 mi: <b>1</b> facilities<br>2.0 mi: <b>22</b> facilities         </div>`)[0];
+                popup_5b5443ad39cbd43806da53a8c386abcc.setContent(html_e013387646d130e98a5ad48b5d759612);
+            
+        
+
+        marker_eb87ff393ce7f29f0ffc768081b97af1.bindPopup(popup_5b5443ad39cbd43806da53a8c386abcc)
+        ;
+
+        
+    
+    
+                marker_eb87ff393ce7f29f0ffc768081b97af1.setIcon(icon_1e11673fd9648b5477da3e80fba3b202);
+            
+    
+            var marker_3ffd544bebceb6df7649600e2e650acd = L.marker(
+                [35.8775, -79.0308],
+                {
+}
+            ).addTo(feature_group_372b959683b4f9bb9a3312dafa4b5de0);
+        
+    
+            var icon_dceeabe869cdf19520a1ebcf4cc04b4f = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "gray",
+  "iconColor": "white",
+  "icon": "graduation-cap",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_6e9905159f7d5539856208135bbaa82f = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_0a73bdced2db1bf18121e76fd8207355 = $(`<div id="html_0a73bdced2db1bf18121e76fd8207355" style="width: 100.0%; height: 100.0%;">         <b>Morris Grove Elementary</b><br>         Walkable students: <b>32</b><br>         <hr style="margin: 5px 0;">         <b>Childcare by radius:</b><br>         0.25 mi: <b>0</b> facilities<br>0.5 mi: <b>0</b> facilities<br>1.0 mi: <b>0</b> facilities<br>2.0 mi: <b>2</b> facilities         </div>`)[0];
+                popup_6e9905159f7d5539856208135bbaa82f.setContent(html_0a73bdced2db1bf18121e76fd8207355);
+            
+        
+
+        marker_3ffd544bebceb6df7649600e2e650acd.bindPopup(popup_6e9905159f7d5539856208135bbaa82f)
+        ;
+
+        
+    
+    
+                marker_3ffd544bebceb6df7649600e2e650acd.setIcon(icon_dceeabe869cdf19520a1ebcf4cc04b4f);
+            
+    
+            var marker_0396f89d2020cf65e0696025a6f729a7 = L.marker(
+                [35.8817, -79.0692],
+                {
+}
+            ).addTo(feature_group_372b959683b4f9bb9a3312dafa4b5de0);
+        
+    
+            var icon_c456b103d061900bfcbf57def12cfb40 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "gray",
+  "iconColor": "white",
+  "icon": "graduation-cap",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_6aeae0b904617c7c860d0049d8d11f43 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_1d2390eefe860437faa2834ba00d402d = $(`<div id="html_1d2390eefe860437faa2834ba00d402d" style="width: 100.0%; height: 100.0%;">         <b>Rashkis Elementary</b><br>         Walkable students: <b>28</b><br>         <hr style="margin: 5px 0;">         <b>Childcare by radius:</b><br>         0.25 mi: <b>1</b> facilities<br>0.5 mi: <b>1</b> facilities<br>1.0 mi: <b>3</b> facilities<br>2.0 mi: <b>8</b> facilities         </div>`)[0];
+                popup_6aeae0b904617c7c860d0049d8d11f43.setContent(html_1d2390eefe860437faa2834ba00d402d);
+            
+        
+
+        marker_0396f89d2020cf65e0696025a6f729a7.bindPopup(popup_6aeae0b904617c7c860d0049d8d11f43)
+        ;
+
+        
+    
+    
+                marker_0396f89d2020cf65e0696025a6f729a7.setIcon(icon_c456b103d061900bfcbf57def12cfb40);
+            
+    
+            var marker_96c2b74a56463f61aca968d4364dea43 = L.marker(
+                [35.865, -79.0433],
+                {
+}
+            ).addTo(feature_group_372b959683b4f9bb9a3312dafa4b5de0);
+        
+    
+            var icon_05efaebe481db7c1775b8fd4a932c3b8 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "gray",
+  "iconColor": "white",
+  "icon": "graduation-cap",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_440647c30522a55fa55b3b6d31037aba = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_662524c48de3ea588b95f55b174a6ca3 = $(`<div id="html_662524c48de3ea588b95f55b174a6ca3" style="width: 100.0%; height: 100.0%;">         <b>Scroggs Elementary</b><br>         Walkable students: <b>25</b><br>         <hr style="margin: 5px 0;">         <b>Childcare by radius:</b><br>         0.25 mi: <b>0</b> facilities<br>0.5 mi: <b>0</b> facilities<br>1.0 mi: <b>0</b> facilities<br>2.0 mi: <b>2</b> facilities         </div>`)[0];
+                popup_440647c30522a55fa55b3b6d31037aba.setContent(html_662524c48de3ea588b95f55b174a6ca3);
+            
+        
+
+        marker_96c2b74a56463f61aca968d4364dea43.bindPopup(popup_440647c30522a55fa55b3b6d31037aba)
+        ;
+
+        
+    
+    
+                marker_96c2b74a56463f61aca968d4364dea43.setIcon(icon_05efaebe481db7c1775b8fd4a932c3b8);
+            
+    
+            feature_group_372b959683b4f9bb9a3312dafa4b5de0.addTo(map_afb42544203b5272398458660eb56034);
+        
+    
+            var feature_group_dd0d5a23e5434835f0ac40738dc83e24 = L.featureGroup(
+                {
+}
+            );
+        
+    
+            var marker_e86153f49e4b417a01cc6f69a07aef10 = L.marker(
+                [35.9099875, -79.0752876],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_dd81c7b03af4d53678f2b0696037c8c5 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_d71942ceac07e28dd4d79be8b2b922ba = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_939154418c0276c0694ba54cf560164d = $(`<div id="html_939154418c0276c0694ba54cf560164d" style="width: 100.0%; height: 100.0%;">         <b>UNC HORIZONS CHILD DEVELOPMENT CENTER</b><br>         <small>410 N GREENSBORO ST SUITE 130, CARRBORO, NC 27510</small><br>Phone: (919) 445-6127<br>         <hr style="margin: 5px 0;">         Nearest school: Carrboro Elementary<br>         Distance: <b>0.022 mi</b>         </div>`)[0];
+                popup_d71942ceac07e28dd4d79be8b2b922ba.setContent(html_939154418c0276c0694ba54cf560164d);
+            
+        
+
+        marker_e86153f49e4b417a01cc6f69a07aef10.bindPopup(popup_d71942ceac07e28dd4d79be8b2b922ba)
+        ;
+
+        
+    
+    
+                marker_e86153f49e4b417a01cc6f69a07aef10.setIcon(icon_dd81c7b03af4d53678f2b0696037c8c5);
+            
+    
+            var marker_55b8dda35516af50c57fa150e5a7d99d = L.marker(
+                [35.9100857, -79.0767339],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_213f822d7b4471bf62c32a32cacf86c0 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_78f44cbbef2a24039f6f09b40243a782 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_3eca4656bcfd17ad53d053809da921e3 = $(`<div id="html_3eca4656bcfd17ad53d053809da921e3" style="width: 100.0%; height: 100.0%;">         <b>HAPPY DAY NURSERY AND DAY CARE</b><br>         <small>107 LAUREL AVENUE, CARRBORO, NC 27510</small><br>Phone: (919) 967-2016<br>         <hr style="margin: 5px 0;">         Nearest school: Carrboro Elementary<br>         Distance: <b>0.082 mi</b>         </div>`)[0];
+                popup_78f44cbbef2a24039f6f09b40243a782.setContent(html_3eca4656bcfd17ad53d053809da921e3);
+            
+        
+
+        marker_55b8dda35516af50c57fa150e5a7d99d.bindPopup(popup_78f44cbbef2a24039f6f09b40243a782)
+        ;
+
+        
+    
+    
+                marker_55b8dda35516af50c57fa150e5a7d99d.setIcon(icon_213f822d7b4471bf62c32a32cacf86c0);
+            
+    
+            var marker_8324797cd9a7202d2a72162279f9b79f = L.marker(
+                [35.9105877, -79.0767712],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_1db819cd0a0d030aff8c6b3efa952bef = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_dd9499f826f75f24dc773ce12a7d4ef2 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_2b6eebc71ad2d08ec27eec5c1c89b503 = $(`<div id="html_2b6eebc71ad2d08ec27eec5c1c89b503" style="width: 100.0%; height: 100.0%;">         <b>MONTESSORI ACADEMY OF CARRBORO</b><br>         <small>103 LAUREL AVE, CARRBORO, NC 27510</small><br>Phone: (919) 869-7368<br>         <hr style="margin: 5px 0;">         Nearest school: Carrboro Elementary<br>         Distance: <b>0.085 mi</b>         </div>`)[0];
+                popup_dd9499f826f75f24dc773ce12a7d4ef2.setContent(html_2b6eebc71ad2d08ec27eec5c1c89b503);
+            
+        
+
+        marker_8324797cd9a7202d2a72162279f9b79f.bindPopup(popup_dd9499f826f75f24dc773ce12a7d4ef2)
+        ;
+
+        
+    
+    
+                marker_8324797cd9a7202d2a72162279f9b79f.setIcon(icon_1db819cd0a0d030aff8c6b3efa952bef);
+            
+    
+            var marker_9ebfcfed0c052ff0a6ee61f31ac21205 = L.marker(
+                [35.9131542, -79.05578],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_efc3ec8935a68c9ee983239bd15a45a9 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_72e09ae0a787835983e27869170eb448 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_146bfda9c4abe9428b59fe321dd949e5 = $(`<div id="html_146bfda9c4abe9428b59fe321dd949e5" style="width: 100.0%; height: 100.0%;">         <b>CHAPEL HILL KINDERCARE</b><br>         <small>210 SOUTH ELLIOTT ROAD, CHAPEL HILL, NC 27514</small><br>Phone: (919) 942-7223<br>         <hr style="margin: 5px 0;">         Nearest school: Glenwood Elementary<br>         Distance: <b>0.176 mi</b>         </div>`)[0];
+                popup_72e09ae0a787835983e27869170eb448.setContent(html_146bfda9c4abe9428b59fe321dd949e5);
+            
+        
+
+        marker_9ebfcfed0c052ff0a6ee61f31ac21205.bindPopup(popup_72e09ae0a787835983e27869170eb448)
+        ;
+
+        
+    
+    
+                marker_9ebfcfed0c052ff0a6ee61f31ac21205.setIcon(icon_efc3ec8935a68c9ee983239bd15a45a9);
+            
+    
+            var marker_31a23b656f3df8de83e24b54e83e4a05 = L.marker(
+                [35.9131542, -79.05578],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_049fac425a6b7c43290592444fa2fc48 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_c8e10dfd8ad2fe19277a50cecc847814 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_adac73e1c45bd840c8a6a7e91ce05c58 = $(`<div id="html_adac73e1c45bd840c8a6a7e91ce05c58" style="width: 100.0%; height: 100.0%;">         <b>BLOSSOMS DAY CARE</b><br>         <small>110 N ELLIOT RD, CHAPEL HILL, NC 27516</small><br>Phone: (919) 933-1014<br>         <hr style="margin: 5px 0;">         Nearest school: Glenwood Elementary<br>         Distance: <b>0.176 mi</b>         </div>`)[0];
+                popup_c8e10dfd8ad2fe19277a50cecc847814.setContent(html_adac73e1c45bd840c8a6a7e91ce05c58);
+            
+        
+
+        marker_31a23b656f3df8de83e24b54e83e4a05.bindPopup(popup_c8e10dfd8ad2fe19277a50cecc847814)
+        ;
+
+        
+    
+    
+                marker_31a23b656f3df8de83e24b54e83e4a05.setIcon(icon_049fac425a6b7c43290592444fa2fc48);
+            
+    
+            var marker_9d2ee11f8c53834d8c37cdf6fdb4d8ac = L.marker(
+                [35.9131542, -79.05578],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_a3b73666bf2a91e3872b101f1e09e141 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_a8542b8a8cd45c521ec531b5b982d656 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_6d830a43d2a31ae8058a1a5f3720d381 = $(`<div id="html_6d830a43d2a31ae8058a1a5f3720d381" style="width: 100.0%; height: 100.0%;">         <b>KINDERCARE LEARNING CENTER</b><br>         <small>27 KNOX WAY, CHAPEL HILL, NC 27516</small><br>Phone: (919) 967-1346<br>         <hr style="margin: 5px 0;">         Nearest school: Glenwood Elementary<br>         Distance: <b>0.176 mi</b>         </div>`)[0];
+                popup_a8542b8a8cd45c521ec531b5b982d656.setContent(html_6d830a43d2a31ae8058a1a5f3720d381);
+            
+        
+
+        marker_9d2ee11f8c53834d8c37cdf6fdb4d8ac.bindPopup(popup_a8542b8a8cd45c521ec531b5b982d656)
+        ;
+
+        
+    
+    
+                marker_9d2ee11f8c53834d8c37cdf6fdb4d8ac.setIcon(icon_a3b73666bf2a91e3872b101f1e09e141);
+            
+    
+            var marker_cf5965b136cb710c29a935f9ed17fc21 = L.marker(
+                [35.9131542, -79.05578],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_895f149477cee7ca9648ec70fcfa4c50 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_2b370a2d8ad3ee7fe54a9816de95e5c5 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_76e288af32e122d3a8b21ec6bb623c17 = $(`<div id="html_76e288af32e122d3a8b21ec6bb623c17" style="width: 100.0%; height: 100.0%;">         <b>MCDOUGLE ELEMENTARY PREK/HEAD START</b><br>         <small>800 OLD FAYETTEVILLE ROAD, CHAPEL HILL, NC 27516</small><br>Phone: (919) 918-2153<br>         <hr style="margin: 5px 0;">         Nearest school: Glenwood Elementary<br>         Distance: <b>0.176 mi</b>         </div>`)[0];
+                popup_2b370a2d8ad3ee7fe54a9816de95e5c5.setContent(html_76e288af32e122d3a8b21ec6bb623c17);
+            
+        
+
+        marker_cf5965b136cb710c29a935f9ed17fc21.bindPopup(popup_2b370a2d8ad3ee7fe54a9816de95e5c5)
+        ;
+
+        
+    
+    
+                marker_cf5965b136cb710c29a935f9ed17fc21.setIcon(icon_895f149477cee7ca9648ec70fcfa4c50);
+            
+    
+            var marker_2060512675df5b758c412cecd6d9d126 = L.marker(
+                [35.9131542, -79.05578],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_a541867d363d2ed70f1b180cf45c025d = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_17c5b377a598c41adf0ce4caa1be526f = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_2b794bc564804df8298065e78e757527 = $(`<div id="html_2b794bc564804df8298065e78e757527" style="width: 100.0%; height: 100.0%;">         <b>CASA CLUB SPANISH IMMERSION PRESCHOOL, INC.</b><br>         <small>41130 MORING DRIVE, CHAPEL HILL, NC 27517</small><br>Phone: (919) 929-6019<br>         <hr style="margin: 5px 0;">         Nearest school: Glenwood Elementary<br>         Distance: <b>0.176 mi</b>         </div>`)[0];
+                popup_17c5b377a598c41adf0ce4caa1be526f.setContent(html_2b794bc564804df8298065e78e757527);
+            
+        
+
+        marker_2060512675df5b758c412cecd6d9d126.bindPopup(popup_17c5b377a598c41adf0ce4caa1be526f)
+        ;
+
+        
+    
+    
+                marker_2060512675df5b758c412cecd6d9d126.setIcon(icon_a541867d363d2ed70f1b180cf45c025d);
+            
+    
+            var marker_d8184215a589faca5115bb7c1ab6c863 = L.marker(
+                [35.9131542, -79.05578],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_6fdf94f716a91e2a59206f971184270f = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_8a43bec8f10e024e4ea8fd667d094d9b = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_0671401b37fd0fdf19527676b7274a28 = $(`<div id="html_0671401b37fd0fdf19527676b7274a28" style="width: 100.0%; height: 100.0%;">         <b>RASHKIS ELEMENTARY PRE-K/HEAD START</b><br>         <small>601MEADOWMONT LN, CHAPEL HILL, NC 27517</small><br>Phone: (919) 918-2153<br>         <hr style="margin: 5px 0;">         Nearest school: Glenwood Elementary<br>         Distance: <b>0.176 mi</b>         </div>`)[0];
+                popup_8a43bec8f10e024e4ea8fd667d094d9b.setContent(html_0671401b37fd0fdf19527676b7274a28);
+            
+        
+
+        marker_d8184215a589faca5115bb7c1ab6c863.bindPopup(popup_8a43bec8f10e024e4ea8fd667d094d9b)
+        ;
+
+        
+    
+    
+                marker_d8184215a589faca5115bb7c1ab6c863.setIcon(icon_6fdf94f716a91e2a59206f971184270f);
+            
+    
+            var marker_d8a2e53adeb59f8ed39d01ce92a1154b = L.marker(
+                [35.9131542, -79.05578],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_d926e8f8c341866b2d648d5c8d13e059 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_bb59eb37a663b7618519756104b6179d = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_e6fdc51dab1ded641315051decaddee4 = $(`<div id="html_e6fdc51dab1ded641315051decaddee4" style="width: 100.0%; height: 100.0%;">         <b>SEEDS OF WONDER</b><br>         <small>10329 US HWY 15-501 N, CHAPEL HILL, NC 27517</small><br>Phone: (919) 631-9615<br>         <hr style="margin: 5px 0;">         Nearest school: Glenwood Elementary<br>         Distance: <b>0.176 mi</b>         </div>`)[0];
+                popup_bb59eb37a663b7618519756104b6179d.setContent(html_e6fdc51dab1ded641315051decaddee4);
+            
+        
+
+        marker_d8a2e53adeb59f8ed39d01ce92a1154b.bindPopup(popup_bb59eb37a663b7618519756104b6179d)
+        ;
+
+        
+    
+    
+                marker_d8a2e53adeb59f8ed39d01ce92a1154b.setIcon(icon_d926e8f8c341866b2d648d5c8d13e059);
+            
+    
+            var marker_99950fb0d254210fc5363048966848f3 = L.marker(
+                [35.9310158, -79.037232],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_f2c31424ef061f985602ab2c4fba4948 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_c8379a1024f873c690795a7eff406847 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_4c8d8be80e81501d6e258bfaef61bfad = $(`<div id="html_4c8d8be80e81501d6e258bfaef61bfad" style="width: 100.0%; height: 100.0%;">         <b>ESTES CHILDREN'S COTTAGE</b><br>         <small>200 NORTH ESTES DRIVE, CHAPEL HILL, NC 27514</small><br>Phone: (919) 942-8485<br>         <hr style="margin: 5px 0;">         Nearest school: Frank Porter Graham Bilingue<br>         Distance: <b>0.206 mi</b>         </div>`)[0];
+                popup_c8379a1024f873c690795a7eff406847.setContent(html_4c8d8be80e81501d6e258bfaef61bfad);
+            
+        
+
+        marker_99950fb0d254210fc5363048966848f3.bindPopup(popup_c8379a1024f873c690795a7eff406847)
+        ;
+
+        
+    
+    
+                marker_99950fb0d254210fc5363048966848f3.setIcon(icon_f2c31424ef061f985602ab2c4fba4948);
+            
+    
+            var marker_191c46730a987b02b81c77554f176689 = L.marker(
+                [35.8793147, -79.0668365],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_7c7d1e653eaf421336b48ba5237998af = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_dffb3bd708c6065d856de3282c115458 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_c10cd3d8939cc4153ebaa99fe701fabb = $(`<div id="html_c10cd3d8939cc4153ebaa99fe701fabb" style="width: 100.0%; height: 100.0%;">         <b>CHAPEL HILL DAY CARE CENTER</b><br>         <small>401 KILDAIRE ROAD, CHAPEL HILL, NC 27516</small><br>Phone: (919) 929-3585<br>         <hr style="margin: 5px 0;">         Nearest school: Rashkis Elementary<br>         Distance: <b>0.211 mi</b>         </div>`)[0];
+                popup_dffb3bd708c6065d856de3282c115458.setContent(html_c10cd3d8939cc4153ebaa99fe701fabb);
+            
+        
+
+        marker_191c46730a987b02b81c77554f176689.bindPopup(popup_dffb3bd708c6065d856de3282c115458)
+        ;
+
+        
+    
+    
+                marker_191c46730a987b02b81c77554f176689.setIcon(icon_7c7d1e653eaf421336b48ba5237998af);
+            
+    
+            var marker_cd76bc9455182483af77844585cdcc2b = L.marker(
+                [35.9473201, -79.0468886],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_fa66fd3b9a185caf7c6e567cc65e6f23 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_73d03c9cf2417a4487c0153c01924e87 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_e47707a5ead149b49434e4d6349f524b = $(`<div id="html_e47707a5ead149b49434e4d6349f524b" style="width: 100.0%; height: 100.0%;">         <b>THE COZY CORNER</b><br>         <small>103 A LOUIS ARMSTRONG COURT, CHAPEL HILL, NC 27514</small><br>Phone: (919) 370-2764<br>         <hr style="margin: 5px 0;">         Nearest school: Estes Hills Elementary<br>         Distance: <b>0.216 mi</b>         </div>`)[0];
+                popup_73d03c9cf2417a4487c0153c01924e87.setContent(html_e47707a5ead149b49434e4d6349f524b);
+            
+        
+
+        marker_cd76bc9455182483af77844585cdcc2b.bindPopup(popup_73d03c9cf2417a4487c0153c01924e87)
+        ;
+
+        
+    
+    
+                marker_cd76bc9455182483af77844585cdcc2b.setIcon(icon_fa66fd3b9a185caf7c6e567cc65e6f23);
+            
+    
+            var marker_4ed338dfb3971fd97252895d78c8cddd = L.marker(
+                [35.9380114, -79.0132191],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_73522a5e04cb5a3a8ba7a95088dbbaa5 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "green",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_a0082070e378a34009ea268dc3809957 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_bad757e1fcb1386de5a2f4b94d3fa63d = $(`<div id="html_bad757e1fcb1386de5a2f4b94d3fa63d" style="width: 100.0%; height: 100.0%;">         <b>ANN BARKLEY DAY CARE HOME</b><br>         <small>100 ELDERBERRY DRIVE, CHAPEL HILL, NC 27514</small><br>Phone: (919) 967-3739<br>         <hr style="margin: 5px 0;">         Nearest school: Ephesus Elementary<br>         Distance: <b>0.262 mi</b>         </div>`)[0];
+                popup_a0082070e378a34009ea268dc3809957.setContent(html_bad757e1fcb1386de5a2f4b94d3fa63d);
+            
+        
+
+        marker_4ed338dfb3971fd97252895d78c8cddd.bindPopup(popup_a0082070e378a34009ea268dc3809957)
+        ;
+
+        
+    
+    
+                marker_4ed338dfb3971fd97252895d78c8cddd.setIcon(icon_73522a5e04cb5a3a8ba7a95088dbbaa5);
+            
+    
+            var marker_3d75247055155e6435b870630c53df76 = L.marker(
+                [35.9336581, -79.0160393],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_ef669c8bdbac49c8f384b9f20877749d = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "green",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_57d50971100006eecc33950e198f30a9 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_793e86d9603ee13753a5d7e6f104def1 = $(`<div id="html_793e86d9603ee13753a5d7e6f104def1" style="width: 100.0%; height: 100.0%;">         <b>EPHESUS ELEMENTARY PRE-K/HEAD START</b><br>         <small>1495 EPHESUS CHURCH RD, CHAPEL HILL, NC 27514</small><br>Phone: (919) 918-2153<br>         <hr style="margin: 5px 0;">         Nearest school: Ephesus Elementary<br>         Distance: <b>0.264 mi</b>         </div>`)[0];
+                popup_57d50971100006eecc33950e198f30a9.setContent(html_793e86d9603ee13753a5d7e6f104def1);
+            
+        
+
+        marker_3d75247055155e6435b870630c53df76.bindPopup(popup_57d50971100006eecc33950e198f30a9)
+        ;
+
+        
+    
+    
+                marker_3d75247055155e6435b870630c53df76.setIcon(icon_ef669c8bdbac49c8f384b9f20877749d);
+            
+    
+            var marker_8f8034931feb6d11422b697cfd8d152f = L.marker(
+                [35.9336581, -79.0160393],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_b957f63d1698263aac6e5911252bfabb = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "green",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_6dd554e50f1ef4963f5d6e45856438b3 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_3c19daf9a859d738102ed9bf1e620cf0 = $(`<div id="html_3c19daf9a859d738102ed9bf1e620cf0" style="width: 100.0%; height: 100.0%;">         <b>EPHESUS SCHOOL-AGE CARE PROGRAM</b><br>         <small>1495 EPHESUS CHURCH ROAD, CHAPEL HILL, NC 27516</small><br>Phone: (919) 929-8715<br>         <hr style="margin: 5px 0;">         Nearest school: Ephesus Elementary<br>         Distance: <b>0.264 mi</b>         </div>`)[0];
+                popup_6dd554e50f1ef4963f5d6e45856438b3.setContent(html_3c19daf9a859d738102ed9bf1e620cf0);
+            
+        
+
+        marker_8f8034931feb6d11422b697cfd8d152f.bindPopup(popup_6dd554e50f1ef4963f5d6e45856438b3)
+        ;
+
+        
+    
+    
+                marker_8f8034931feb6d11422b697cfd8d152f.setIcon(icon_b957f63d1698263aac6e5911252bfabb);
+            
+    
+            var marker_12178c1c731c59d030c56ec26aba5d9e = L.marker(
+                [35.9128846, -79.0638342],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_05b8c46e19aaa4e45bd044b522e09475 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_e48947e0d83cbe3d0d49614d2845ce62 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_49e996ccec79f917ebb9e373b6b550fa = $(`<div id="html_49e996ccec79f917ebb9e373b6b550fa" style="width: 100.0%; height: 100.0%;">         <b>HOLMES CHILD CARE</b><br>         <small>216 N ROBERSON ST, CHAPEL HILL, NC 27516</small><br>Phone: (919) 942-5495<br>         <hr style="margin: 5px 0;">         Nearest school: Glenwood Elementary<br>         Distance: <b>0.276 mi</b>         </div>`)[0];
+                popup_e48947e0d83cbe3d0d49614d2845ce62.setContent(html_49e996ccec79f917ebb9e373b6b550fa);
+            
+        
+
+        marker_12178c1c731c59d030c56ec26aba5d9e.bindPopup(popup_e48947e0d83cbe3d0d49614d2845ce62)
+        ;
+
+        
+    
+    
+                marker_12178c1c731c59d030c56ec26aba5d9e.setIcon(icon_05b8c46e19aaa4e45bd044b522e09475);
+            
+    
+            var marker_008480ed10880d5e4cca1a040d186b39 = L.marker(
+                [35.9089369, -79.0639021],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_935760b10d6bdd3cd13c213295393244 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_0149a81a6ead545ae51fe34dc3e5a6ec = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_180549062ec9cb6919aeebd7f65f58c2 = $(`<div id="html_180549062ec9cb6919aeebd7f65f58c2" style="width: 100.0%; height: 100.0%;">         <b>LITTLE GENIUS LLC</b><br>         <small>114 SOUTH GRAHAM STREET, CHAPEL HILL, NC 27517</small><br>Phone: (984) 999-4545<br>         <hr style="margin: 5px 0;">         Nearest school: Glenwood Elementary<br>         Distance: <b>0.387 mi</b>         </div>`)[0];
+                popup_0149a81a6ead545ae51fe34dc3e5a6ec.setContent(html_180549062ec9cb6919aeebd7f65f58c2);
+            
+        
+
+        marker_008480ed10880d5e4cca1a040d186b39.bindPopup(popup_0149a81a6ead545ae51fe34dc3e5a6ec)
+        ;
+
+        
+    
+    
+                marker_008480ed10880d5e4cca1a040d186b39.setIcon(icon_935760b10d6bdd3cd13c213295393244);
+            
+    
+            var marker_b52ea4b5d135f583d429c4552acd7355 = L.marker(
+                [35.9129972, -79.0691353],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_ef462d7f1f63c5a10bd344dca001873a = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_3835857f214820b31f9a8f12dc71b41b = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_f4f99e04ae97344c7a3a25494fb03733 = $(`<div id="html_f4f99e04ae97344c7a3a25494fb03733" style="width: 100.0%; height: 100.0%;">         <b>CARRBORO EARLY SCHOOL</b><br>         <small>310 LLOYD STREET, CARRBORO, NC 27510</small><br>Phone: (919) 929-9998<br>         <hr style="margin: 5px 0;">         Nearest school: Carrboro Elementary<br>         Distance: <b>0.392 mi</b>         </div>`)[0];
+                popup_3835857f214820b31f9a8f12dc71b41b.setContent(html_f4f99e04ae97344c7a3a25494fb03733);
+            
+        
+
+        marker_b52ea4b5d135f583d429c4552acd7355.bindPopup(popup_3835857f214820b31f9a8f12dc71b41b)
+        ;
+
+        
+    
+    
+                marker_b52ea4b5d135f583d429c4552acd7355.setIcon(icon_ef462d7f1f63c5a10bd344dca001873a);
+            
+    
+            var marker_bf00d64c69cf2dccc9cc94fac79bb2d3 = L.marker(
+                [35.915768, -79.0778025],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_28dc8c5017dcfd28d5f086471ddbf62a = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_a16737d54819b3debc7c6ab565e941fa = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_046dfae273797fdc6b0c8416d8b340a8 = $(`<div id="html_046dfae273797fdc6b0c8416d8b340a8" style="width: 100.0%; height: 100.0%;">         <b>CARRBORO ELEMENTARY PRE-K/HEAD START</b><br>         <small>400 SHELTON ST, CARRBORO, NC 27510</small><br>Phone: (919) 918-2153<br>         <hr style="margin: 5px 0;">         Nearest school: Carrboro Elementary<br>         Distance: <b>0.403 mi</b>         </div>`)[0];
+                popup_a16737d54819b3debc7c6ab565e941fa.setContent(html_046dfae273797fdc6b0c8416d8b340a8);
+            
+        
+
+        marker_bf00d64c69cf2dccc9cc94fac79bb2d3.bindPopup(popup_a16737d54819b3debc7c6ab565e941fa)
+        ;
+
+        
+    
+    
+                marker_bf00d64c69cf2dccc9cc94fac79bb2d3.setIcon(icon_28dc8c5017dcfd28d5f086471ddbf62a);
+            
+    
+            var marker_cc9a80bf5a438606707d53e3522d6106 = L.marker(
+                [35.915768, -79.0778025],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_99ba6712fcdc2d2d2c92fa1979fc0fd9 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_045771dde18ca06003518520e41fcae4 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_b08f0d7b04c6f6ea240fc97c14ff98f1 = $(`<div id="html_b08f0d7b04c6f6ea240fc97c14ff98f1" style="width: 100.0%; height: 100.0%;">         <b>CARRBORO SCHOOL AGE CARE PROGRAM</b><br>         <small>400 SHELTON ST, CARRBORO, NC 27510</small><br>Phone: (919) 968-3652<br>         <hr style="margin: 5px 0;">         Nearest school: Carrboro Elementary<br>         Distance: <b>0.403 mi</b>         </div>`)[0];
+                popup_045771dde18ca06003518520e41fcae4.setContent(html_b08f0d7b04c6f6ea240fc97c14ff98f1);
+            
+        
+
+        marker_cc9a80bf5a438606707d53e3522d6106.bindPopup(popup_045771dde18ca06003518520e41fcae4)
+        ;
+
+        
+    
+    
+                marker_cc9a80bf5a438606707d53e3522d6106.setIcon(icon_99ba6712fcdc2d2d2c92fa1979fc0fd9);
+            
+    
+            var marker_13e56d99b9dbd9f32bc5c6caa69693be = L.marker(
+                [35.908277, -79.0684718],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_c0e8975057989634c7d470539a118c58 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_8ecc59f0deb54c79b605c4b9939124c1 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_52ac1831f730c0420527f76c8272448b = $(`<div id="html_52ac1831f730c0420527f76c8272448b" style="width: 100.0%; height: 100.0%;">         <b>COMMUNITY SCHOOL FOR PEOPLE UNDER 6</b><br>         <small>102 HARGRAVES STREET, CARRBORO, NC 27510</small><br>Phone: (919) 929-1543<br>         <hr style="margin: 5px 0;">         Nearest school: Carrboro Elementary<br>         Distance: <b>0.407 mi</b>         </div>`)[0];
+                popup_8ecc59f0deb54c79b605c4b9939124c1.setContent(html_52ac1831f730c0420527f76c8272448b);
+            
+        
+
+        marker_13e56d99b9dbd9f32bc5c6caa69693be.bindPopup(popup_8ecc59f0deb54c79b605c4b9939124c1)
+        ;
+
+        
+    
+    
+                marker_13e56d99b9dbd9f32bc5c6caa69693be.setIcon(icon_c0e8975057989634c7d470539a118c58);
+            
+    
+            var marker_24322e72601ec6a06e3bc6beb8300a55 = L.marker(
+                [35.9359769, -79.0438998],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_656c7142ea201f73fb867da758a776bc = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_8621d3f141b17c8629fd4eb8f3f39b06 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_93a7f64044cac29cbe15f90d18c0050a = $(`<div id="html_93a7f64044cac29cbe15f90d18c0050a" style="width: 100.0%; height: 100.0%;">         <b>ESTES HILLS PREK</b><br>         <small>500 N ESTES DR, CHAPEL HILL, NC 27514</small><br>Phone: (919) 918-2153<br>         <hr style="margin: 5px 0;">         Nearest school: Frank Porter Graham Bilingue<br>         Distance: <b>0.58 mi</b>         </div>`)[0];
+                popup_8621d3f141b17c8629fd4eb8f3f39b06.setContent(html_93a7f64044cac29cbe15f90d18c0050a);
+            
+        
+
+        marker_24322e72601ec6a06e3bc6beb8300a55.bindPopup(popup_8621d3f141b17c8629fd4eb8f3f39b06)
+        ;
+
+        
+    
+    
+                marker_24322e72601ec6a06e3bc6beb8300a55.setIcon(icon_656c7142ea201f73fb867da758a776bc);
+            
+    
+            var marker_4b3af35b646c004cef3e4a9e28860bfa = L.marker(
+                [35.9359769, -79.0438998],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_d29f73232783f949fe383bd902625f75 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_4d68f653f0b9a9b8610eecc2305b8182 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_9a811c2af64a06fb74033bd4f0725f77 = $(`<div id="html_9a811c2af64a06fb74033bd4f0725f77" style="width: 100.0%; height: 100.0%;">         <b>ESTES HILLS SCHOOL-AGE CARE PROGRAM</b><br>         <small>500 ESTES DRIVE, CHAPEL HILL, NC 27514</small><br>Phone: (919) 967-8211<br>         <hr style="margin: 5px 0;">         Nearest school: Frank Porter Graham Bilingue<br>         Distance: <b>0.58 mi</b>         </div>`)[0];
+                popup_4d68f653f0b9a9b8610eecc2305b8182.setContent(html_9a811c2af64a06fb74033bd4f0725f77);
+            
+        
+
+        marker_4b3af35b646c004cef3e4a9e28860bfa.bindPopup(popup_4d68f653f0b9a9b8610eecc2305b8182)
+        ;
+
+        
+    
+    
+                marker_4b3af35b646c004cef3e4a9e28860bfa.setIcon(icon_d29f73232783f949fe383bd902625f75);
+            
+    
+            var marker_b0b0ea19eec04f4ea98bb77a8cbe9251 = L.marker(
+                [35.8999118, -79.0718339],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_c0bd8050296dae125eddf33566ba03df = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_2eabc7788f32c70c850a7b2ed5507dd1 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_88f387f891172c46f9e8be3628ca340b = $(`<div id="html_88f387f891172c46f9e8be3628ca340b" style="width: 100.0%; height: 100.0%;">         <b>FRANK PORTER GRAHAM ELEMENTARY PRE-K</b><br>         <small>101 SMITH LEVEL ROAD, CHAPEL HILL, NC 27516</small><br>Phone: (919) 918-2153<br>         <hr style="margin: 5px 0;">         Nearest school: Seawell Elementary<br>         Distance: <b>0.6 mi</b>         </div>`)[0];
+                popup_2eabc7788f32c70c850a7b2ed5507dd1.setContent(html_88f387f891172c46f9e8be3628ca340b);
+            
+        
+
+        marker_b0b0ea19eec04f4ea98bb77a8cbe9251.bindPopup(popup_2eabc7788f32c70c850a7b2ed5507dd1)
+        ;
+
+        
+    
+    
+                marker_b0b0ea19eec04f4ea98bb77a8cbe9251.setIcon(icon_c0bd8050296dae125eddf33566ba03df);
+            
+    
+            var marker_ce6e74cb3ec4fbc502a0a66a11a526b4 = L.marker(
+                [35.8999118, -79.0718339],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_194dd4a7a7cec76a751863d76beae312 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_fa80e3f56cdb8f5869c429602bfe0fad = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_37e85348d0da94777ad4a211612db1bf = $(`<div id="html_37e85348d0da94777ad4a211612db1bf" style="width: 100.0%; height: 100.0%;">         <b>FRANK PORTER GRAHAM SCHOOL-AGE CARE PROGRAM</b><br>         <small>101 SMITH LEVEL ROAD, CHAPEL HILL, NC 27516</small><br>Phone: (919) 967-8211<br>         <hr style="margin: 5px 0;">         Nearest school: Seawell Elementary<br>         Distance: <b>0.6 mi</b>         </div>`)[0];
+                popup_fa80e3f56cdb8f5869c429602bfe0fad.setContent(html_37e85348d0da94777ad4a211612db1bf);
+            
+        
+
+        marker_ce6e74cb3ec4fbc502a0a66a11a526b4.bindPopup(popup_fa80e3f56cdb8f5869c429602bfe0fad)
+        ;
+
+        
+    
+    
+                marker_ce6e74cb3ec4fbc502a0a66a11a526b4.setIcon(icon_194dd4a7a7cec76a751863d76beae312);
+            
+    
+            var marker_e79b183758b71e27357e90b8580156e2 = L.marker(
+                [35.9181837, -79.0396821],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_a544b186e004d296fa1015e49ad5d929 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_7dc4c793e38c36c1a2dec215f5de7098 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_7caafe0e077f37826b60f251922bd82f = $(`<div id="html_7caafe0e077f37826b60f251922bd82f" style="width: 100.0%; height: 100.0%;">         <b>NURTURED BABY</b><br>         <small>750 E FRANKLIN STREET, CHAPEL HILL, NC 27514</small><br>Phone: (919) 236-9531<br>         <hr style="margin: 5px 0;">         Nearest school: Frank Porter Graham Bilingue<br>         Distance: <b>0.713 mi</b>         </div>`)[0];
+                popup_7dc4c793e38c36c1a2dec215f5de7098.setContent(html_7caafe0e077f37826b60f251922bd82f);
+            
+        
+
+        marker_e79b183758b71e27357e90b8580156e2.bindPopup(popup_7dc4c793e38c36c1a2dec215f5de7098)
+        ;
+
+        
+    
+    
+                marker_e79b183758b71e27357e90b8580156e2.setIcon(icon_a544b186e004d296fa1015e49ad5d929);
+            
+    
+            var marker_44fe4ac5997ba3b84433649247d5b4f3 = L.marker(
+                [35.9205151, -79.0710616],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_79e3626d168602334d3b0a362453e7a1 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_20226e9de6f116cdb88e50a51dd9e71a = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_0d0d0e0d2110e441113e6a170b46a697 = $(`<div id="html_0d0d0e0d2110e441113e6a170b46a697" style="width: 100.0%; height: 100.0%;">         <b>AFTON NATURE SCHOOL</b><br>         <small>109 HILLCREST AVENUE, CARRBORO, NC 27510</small><br>Phone: (919) 636-2836<br>         <hr style="margin: 5px 0;">         Nearest school: Carrboro Elementary<br>         Distance: <b>0.745 mi</b>         </div>`)[0];
+                popup_20226e9de6f116cdb88e50a51dd9e71a.setContent(html_0d0d0e0d2110e441113e6a170b46a697);
+            
+        
+
+        marker_44fe4ac5997ba3b84433649247d5b4f3.bindPopup(popup_20226e9de6f116cdb88e50a51dd9e71a)
+        ;
+
+        
+    
+    
+                marker_44fe4ac5997ba3b84433649247d5b4f3.setIcon(icon_79e3626d168602334d3b0a362453e7a1);
+            
+    
+            var marker_15b6614f0cdd95a278b991b74d0e1869 = L.marker(
+                [35.9436867, -79.0607714],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_4036cbf2ff921b8dd66a2c61d352e14f = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_17e14d55cfac44bf028049e8b056cba8 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_7ae99d9d0ca6530716dff17df473da84 = $(`<div id="html_7ae99d9d0ca6530716dff17df473da84" style="width: 100.0%; height: 100.0%;">         <b>A TODDLER'S PLACE</b><br>         <small>126 WINDSOR PLACE, CHAPEL HILL, NC 27516</small><br>Phone: (919) 240-4649<br>         <hr style="margin: 5px 0;">         Nearest school: Estes Hills Elementary<br>         Distance: <b>0.788 mi</b>         </div>`)[0];
+                popup_17e14d55cfac44bf028049e8b056cba8.setContent(html_7ae99d9d0ca6530716dff17df473da84);
+            
+        
+
+        marker_15b6614f0cdd95a278b991b74d0e1869.bindPopup(popup_17e14d55cfac44bf028049e8b056cba8)
+        ;
+
+        
+    
+    
+                marker_15b6614f0cdd95a278b991b74d0e1869.setIcon(icon_4036cbf2ff921b8dd66a2c61d352e14f);
+            
+    
+            var marker_3b42996710d74faa09917636eb1d5fe0 = L.marker(
+                [35.9347761, -79.0549136],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_fba3813bc5b3a23a108c5b88d44b2159 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_6d269c13df8f49d1f197911e30cdea52 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_f70c7c2820e27fe5b1d3ebf7ab6730ff = $(`<div id="html_f70c7c2820e27fe5b1d3ebf7ab6730ff" style="width: 100.0%; height: 100.0%;">         <b>CHILD CARE MATTERS INC</b><br>         <small>825 N ESTES DR, CHAPEL HILL, NC 27514</small><br>Phone: (919) 929-8190<br>         <hr style="margin: 5px 0;">         Nearest school: Estes Hills Elementary<br>         Distance: <b>0.797 mi</b>         </div>`)[0];
+                popup_6d269c13df8f49d1f197911e30cdea52.setContent(html_f70c7c2820e27fe5b1d3ebf7ab6730ff);
+            
+        
+
+        marker_3b42996710d74faa09917636eb1d5fe0.bindPopup(popup_6d269c13df8f49d1f197911e30cdea52)
+        ;
+
+        
+    
+    
+                marker_3b42996710d74faa09917636eb1d5fe0.setIcon(icon_fba3813bc5b3a23a108c5b88d44b2159);
+            
+    
+            var marker_44f722e8f5f140c3b9afec0f25aac150 = L.marker(
+                [35.890405, -79.0790861],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_fedcc3ae652a742e58ca484a3d89347a = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_3d171243ffdb116ca863ab9ff1949da9 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_7e301d2272e59536dc08ddd55e5a38d1 = $(`<div id="html_7e301d2272e59536dc08ddd55e5a38d1" style="width: 100.0%; height: 100.0%;">         <b>DIAS FELICES</b><br>         <small>108 WOODCREST DRIVE, CHAPEL HILL, NC 27516</small><br>Phone: (919) 619-3890<br>         <hr style="margin: 5px 0;">         Nearest school: Rashkis Elementary<br>         Distance: <b>0.817 mi</b>         </div>`)[0];
+                popup_3d171243ffdb116ca863ab9ff1949da9.setContent(html_7e301d2272e59536dc08ddd55e5a38d1);
+            
+        
+
+        marker_44f722e8f5f140c3b9afec0f25aac150.bindPopup(popup_3d171243ffdb116ca863ab9ff1949da9)
+        ;
+
+        
+    
+    
+                marker_44f722e8f5f140c3b9afec0f25aac150.setIcon(icon_fedcc3ae652a742e58ca484a3d89347a);
+            
+    
+            var marker_5a8e40a47d294e99846e2b22066fbe02 = L.marker(
+                [35.8894596, -79.0572931],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_6c1a962e730ed8f58dc6d43767c3f4bb = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_39815fd46c12a9f66506089750e590aa = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_ae6f4ae8efe5cccc2c92e882d7513572 = $(`<div id="html_ae6f4ae8efe5cccc2c92e882d7513572" style="width: 100.0%; height: 100.0%;">         <b>CHAPEL HILL COOPERATIVE PRESCHOOL</b><br>         <small>108 MT CARMEL CHURCH RD, CHAPEL HILL, NC 27517</small><br>Phone: (919) 942-3955<br>         <hr style="margin: 5px 0;">         Nearest school: Rashkis Elementary<br>         Distance: <b>0.855 mi</b>         </div>`)[0];
+                popup_39815fd46c12a9f66506089750e590aa.setContent(html_ae6f4ae8efe5cccc2c92e882d7513572);
+            
+        
+
+        marker_5a8e40a47d294e99846e2b22066fbe02.bindPopup(popup_39815fd46c12a9f66506089750e590aa)
+        ;
+
+        
+    
+    
+                marker_5a8e40a47d294e99846e2b22066fbe02.setIcon(icon_6c1a962e730ed8f58dc6d43767c3f4bb);
+            
+    
+            var marker_9fcae9b662aaac1efb48e767869e9186 = L.marker(
+                [35.9065569, -79.0259135],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_dc1ef939235155c1d9d8568bd0d14543 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_53d1825ccef5d86338a0ba24684877a9 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_5037af77881e326b208a3b43004c6ace = $(`<div id="html_5037af77881e326b208a3b43004c6ace" style="width: 100.0%; height: 100.0%;">         <b>GLENWOOD EL SCHOOL-AGE CARE PROGRAM</b><br>         <small>2 PRESTWICK ROAD, CHAPEL HILL, NC 27514</small><br>Phone: (919) 967-8211<br>         <hr style="margin: 5px 0;">         Nearest school: McDougle Elementary<br>         Distance: <b>1.226 mi</b>         </div>`)[0];
+                popup_53d1825ccef5d86338a0ba24684877a9.setContent(html_5037af77881e326b208a3b43004c6ace);
+            
+        
+
+        marker_9fcae9b662aaac1efb48e767869e9186.bindPopup(popup_53d1825ccef5d86338a0ba24684877a9)
+        ;
+
+        
+    
+    
+                marker_9fcae9b662aaac1efb48e767869e9186.setIcon(icon_dc1ef939235155c1d9d8568bd0d14543);
+            
+    
+            var marker_611433620d502e33aedf1e34586d38a4 = L.marker(
+                [35.9623602, -79.0519542],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_a2fa2c72af19e1bb94635bdaffbf951a = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_d779a3f432bb2c69ed461e81c0203465 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_06143c5731c06587646b88689275da9d = $(`<div id="html_06143c5731c06587646b88689275da9d" style="width: 100.0%; height: 100.0%;">         <b>CHILDREN'S CAMPUS OF CHAPEL HILL</b><br>         <small>110 KINGSTON DR, CHAPEL HILL, NC 27514</small><br>Phone: (919) 967-5020<br>         <hr style="margin: 5px 0;">         Nearest school: Estes Hills Elementary<br>         Distance: <b>1.289 mi</b>         </div>`)[0];
+                popup_d779a3f432bb2c69ed461e81c0203465.setContent(html_06143c5731c06587646b88689275da9d);
+            
+        
+
+        marker_611433620d502e33aedf1e34586d38a4.bindPopup(popup_d779a3f432bb2c69ed461e81c0203465)
+        ;
+
+        
+    
+    
+                marker_611433620d502e33aedf1e34586d38a4.setIcon(icon_a2fa2c72af19e1bb94635bdaffbf951a);
+            
+    
+            var marker_4355cae69e95f45f88dd6d914e3c5e17 = L.marker(
+                [35.960934, -79.0570496],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_6373e42cae05bc5aff3e68bed028b24c = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_9dd1442582b648d79244061c6b521003 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_0e1f31483adf8711dc20014bc990ad8e = $(`<div id="html_0e1f31483adf8711dc20014bc990ad8e" style="width: 100.0%; height: 100.0%;">         <b>CHILDREN'S CAMPUS OF CHAPEL HILL</b><br>         <small>100 WESTMINSTER DR, CHAPEL HILL, NC 27514</small><br>Phone: (919) 240-5254<br>         <hr style="margin: 5px 0;">         Nearest school: Estes Hills Elementary<br>         Distance: <b>1.293 mi</b>         </div>`)[0];
+                popup_9dd1442582b648d79244061c6b521003.setContent(html_0e1f31483adf8711dc20014bc990ad8e);
+            
+        
+
+        marker_4355cae69e95f45f88dd6d914e3c5e17.bindPopup(popup_9dd1442582b648d79244061c6b521003)
+        ;
+
+        
+    
+    
+                marker_4355cae69e95f45f88dd6d914e3c5e17.setIcon(icon_6373e42cae05bc5aff3e68bed028b24c);
+            
+    
+            var marker_e7ed5afc3516071f1b60acf4a22a658a = L.marker(
+                [35.9630007, -79.0479024],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_fa1766e47e43ae1f86a6d4a768ca30b4 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_3d18f49a5cf5e734f828bfe30d942290 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_9ac4e9b8d7123ceeccbbb8136c86d632 = $(`<div id="html_9ac4e9b8d7123ceeccbbb8136c86d632" style="width: 100.0%; height: 100.0%;">         <b>LITTLE OWL'S NEST</b><br>         <small>6 TIMBERLYNE RD, CHAPEL HILL, NC 27514</small><br>Phone: (857) 544-3212<br>         <hr style="margin: 5px 0;">         Nearest school: Estes Hills Elementary<br>         Distance: <b>1.301 mi</b>         </div>`)[0];
+                popup_3d18f49a5cf5e734f828bfe30d942290.setContent(html_9ac4e9b8d7123ceeccbbb8136c86d632);
+            
+        
+
+        marker_e7ed5afc3516071f1b60acf4a22a658a.bindPopup(popup_3d18f49a5cf5e734f828bfe30d942290)
+        ;
+
+        
+    
+    
+                marker_e7ed5afc3516071f1b60acf4a22a658a.setIcon(icon_fa1766e47e43ae1f86a6d4a768ca30b4);
+            
+    
+            var marker_0c6cb3c0a36ae8a34cbaf867d8ee8505 = L.marker(
+                [35.9458113, -79.0738478],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_6605dae51dfa1cc3c516fc4cd598e22c = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_bcfcabf56e86620d2335468df5a43c76 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_77a51e5158223bbc19969b98eedead98 = $(`<div id="html_77a51e5158223bbc19969b98eedead98" style="width: 100.0%; height: 100.0%;">         <b>CAROLINA CREATIVE PLAYSCHOOL</b><br>         <small>8800 SEAWELL SCHOOL RD, CHAPEL HILL, NC 27514</small><br>Phone: (919) 391-4406<br>         <hr style="margin: 5px 0;">         Nearest school: Estes Hills Elementary<br>         Distance: <b>1.523 mi</b>         </div>`)[0];
+                popup_bcfcabf56e86620d2335468df5a43c76.setContent(html_77a51e5158223bbc19969b98eedead98);
+            
+        
+
+        marker_0c6cb3c0a36ae8a34cbaf867d8ee8505.bindPopup(popup_bcfcabf56e86620d2335468df5a43c76)
+        ;
+
+        
+    
+    
+                marker_0c6cb3c0a36ae8a34cbaf867d8ee8505.setIcon(icon_6605dae51dfa1cc3c516fc4cd598e22c);
+            
+    
+            var marker_06fb93c731cb30eb3540c888957b1d08 = L.marker(
+                [35.958611, -79.0677912],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_a69d38e19418950a7ed061ad804d3215 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_84c03453a37e9cb2bcac181105c02acd = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_ce1547ee6cb54f12342514c67e6940ed = $(`<div id="html_ce1547ee6cb54f12342514c67e6940ed" style="width: 100.0%; height: 100.0%;">         <b>KID'S GARDEN</b><br>         <small>119 WORSHAM DRIVE, CHAPEL HILL, NC 27516</small><br>Phone: (919) 360-8395<br>         <hr style="margin: 5px 0;">         Nearest school: Estes Hills Elementary<br>         Distance: <b>1.544 mi</b>         </div>`)[0];
+                popup_84c03453a37e9cb2bcac181105c02acd.setContent(html_ce1547ee6cb54f12342514c67e6940ed);
+            
+        
+
+        marker_06fb93c731cb30eb3540c888957b1d08.bindPopup(popup_84c03453a37e9cb2bcac181105c02acd)
+        ;
+
+        
+    
+    
+                marker_06fb93c731cb30eb3540c888957b1d08.setIcon(icon_a69d38e19418950a7ed061ad804d3215);
+            
+    
+            var marker_2f9c6081febde7690eb1206c0772614b = L.marker(
+                [35.9140577, -79.0084062],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_ceccc2fdd9c3c0fcd7647df4504b6c2e = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "green",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_23a9fda0aca84230f7fcee79551f682c = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_32e05545e7b9aabc2b80bdad536d3b93 = $(`<div id="html_32e05545e7b9aabc2b80bdad536d3b93" style="width: 100.0%; height: 100.0%;">         <b>RASHKIS SCHOOL AGE CARE PROGRAM</b><br>         <small>601 MEADOWMONT LANE, CHAPEL HILL, NC 27517</small><br>Phone: (919) 918-7165<br>         <hr style="margin: 5px 0;">         Nearest school: Ephesus Elementary<br>         Distance: <b>1.683 mi</b>         </div>`)[0];
+                popup_23a9fda0aca84230f7fcee79551f682c.setContent(html_32e05545e7b9aabc2b80bdad536d3b93);
+            
+        
+
+        marker_2f9c6081febde7690eb1206c0772614b.bindPopup(popup_23a9fda0aca84230f7fcee79551f682c)
+        ;
+
+        
+    
+    
+                marker_2f9c6081febde7690eb1206c0772614b.setIcon(icon_ceccc2fdd9c3c0fcd7647df4504b6c2e);
+            
+    
+            var marker_28a5ce8dd8dadb6647fcef474a0b3153 = L.marker(
+                [35.8990016, -79.0145247],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_7070ccf6145cd16fa9fb7a35641b7044 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_66066cd3ce836aee52ed983bc7db2cb4 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_56f6c83b492e49cbda718e85abee9f18 = $(`<div id="html_56f6c83b492e49cbda718e85abee9f18" style="width: 100.0%; height: 100.0%;">         <b>THE UNIVERSITY CHILD CARE CENTER</b><br>         <small>130 FRIDAY CENTER DRIVE, CHAPEL HILL, NC 27517</small><br>Phone: (919) 445-9400<br>         <hr style="margin: 5px 0;">         Nearest school: McDougle Elementary<br>         Distance: <b>1.723 mi</b>         </div>`)[0];
+                popup_66066cd3ce836aee52ed983bc7db2cb4.setContent(html_56f6c83b492e49cbda718e85abee9f18);
+            
+        
+
+        marker_28a5ce8dd8dadb6647fcef474a0b3153.bindPopup(popup_66066cd3ce836aee52ed983bc7db2cb4)
+        ;
+
+        
+    
+    
+                marker_28a5ce8dd8dadb6647fcef474a0b3153.setIcon(icon_7070ccf6145cd16fa9fb7a35641b7044);
+            
+    
+            var marker_35020e3cfe0eaa2dde9363f0c817de35 = L.marker(
+                [35.9298113, -79.0988182],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_df8a2b4f2546666ed36547a1a71270c1 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_204aa86620f4f75270c8aef612cc831a = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_f4736c47014e06235ded3e93b61d9c39 = $(`<div id="html_f4736c47014e06235ded3e93b61d9c39" style="width: 100.0%; height: 100.0%;">         <b>MCDOUGLE SCHOOL AGE CARE PROGRAM</b><br>         <small>890 OLD FAYETTEVILLE ROAD, CHAPEL HILL, NC 27516</small><br>Phone: (919) 969-2435<br>         <hr style="margin: 5px 0;">         Nearest school: Carrboro Elementary<br>         Distance: <b>1.884 mi</b>         </div>`)[0];
+                popup_204aa86620f4f75270c8aef612cc831a.setContent(html_f4736c47014e06235ded3e93b61d9c39);
+            
+        
+
+        marker_35020e3cfe0eaa2dde9363f0c817de35.bindPopup(popup_204aa86620f4f75270c8aef612cc831a)
+        ;
+
+        
+    
+    
+                marker_35020e3cfe0eaa2dde9363f0c817de35.setIcon(icon_df8a2b4f2546666ed36547a1a71270c1);
+            
+    
+            var marker_527b5f62d9ad2bf8c89bba9220b2ecf2 = L.marker(
+                [35.902389, -79.0066709],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_5be8595f863ed702909844f3b981d3f3 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_5ec656cf74b430c0a5fa942980f6e3a9 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_efae57a073ffe3fa5ff159b0ac8634ee = $(`<div id="html_efae57a073ffe3fa5ff159b0ac8634ee" style="width: 100.0%; height: 100.0%;">         <b>THE LEARNING EXPERIENCE</b><br>         <small>501 E BARBEE CHAPEL ROAD, CHAPEL HILL, NC 27517</small><br>Phone: (919) 442-0515<br>         <hr style="margin: 5px 0;">         Nearest school: McDougle Elementary<br>         Distance: <b>2.181 mi</b>         </div>`)[0];
+                popup_5ec656cf74b430c0a5fa942980f6e3a9.setContent(html_efae57a073ffe3fa5ff159b0ac8634ee);
+            
+        
+
+        marker_527b5f62d9ad2bf8c89bba9220b2ecf2.bindPopup(popup_5ec656cf74b430c0a5fa942980f6e3a9)
+        ;
+
+        
+    
+    
+                marker_527b5f62d9ad2bf8c89bba9220b2ecf2.setIcon(icon_5be8595f863ed702909844f3b981d3f3);
+            
+    
+            var marker_2953605152616719ec344caca9cd34f9 = L.marker(
+                [35.9469777, -79.0860092],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_a89faa0684245da667461b7429d52d3d = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_1441a5f5861c28fd7eff4f70b398dc25 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_16cf917b3b1369de7557ce65ba41ff24 = $(`<div id="html_16cf917b3b1369de7557ce65ba41ff24" style="width: 100.0%; height: 100.0%;">         <b>LEGACY ACADEMY FOR CHILDREN</b><br>         <small>515 E WINMORE AVE, CHAPEL HILL, NC 27516</small><br>Phone: (919) 929-7060<br>         <hr style="margin: 5px 0;">         Nearest school: Estes Hills Elementary<br>         Distance: <b>2.207 mi</b>         </div>`)[0];
+                popup_1441a5f5861c28fd7eff4f70b398dc25.setContent(html_16cf917b3b1369de7557ce65ba41ff24);
+            
+        
+
+        marker_2953605152616719ec344caca9cd34f9.bindPopup(popup_1441a5f5861c28fd7eff4f70b398dc25)
+        ;
+
+        
+    
+    
+                marker_2953605152616719ec344caca9cd34f9.setIcon(icon_a89faa0684245da667461b7429d52d3d);
+            
+    
+            var marker_33a31e0db6040b42efc3ce6f9b1c24e3 = L.marker(
+                [35.9160784, -79.1340238],
+                {
+}
+            ).addTo(feature_group_dd0d5a23e5434835f0ac40738dc83e24);
+        
+    
+            var icon_f7a918da5f194f7fe0c884421134f5ee = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "child",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_21009aaef79de45a3929e439fc1b0c39 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_ad78cc5e7b19afc3592a355039d85cc5 = $(`<div id="html_ad78cc5e7b19afc3592a355039d85cc5" style="width: 100.0%; height: 100.0%;">         <b>ONE TWO BUCKLE MY SHOE</b><br>         <small>2406 NEVILLE RD, CHAPEL HILL, NC 27516</small><br>Phone: (919) 933-8165<br>         <hr style="margin: 5px 0;">         Nearest school: Seawell Elementary<br>         Distance: <b>3.059 mi</b>         </div>`)[0];
+                popup_21009aaef79de45a3929e439fc1b0c39.setContent(html_ad78cc5e7b19afc3592a355039d85cc5);
+            
+        
+
+        marker_33a31e0db6040b42efc3ce6f9b1c24e3.bindPopup(popup_21009aaef79de45a3929e439fc1b0c39)
+        ;
+
+        
+    
+    
+                marker_33a31e0db6040b42efc3ce6f9b1c24e3.setIcon(icon_f7a918da5f194f7fe0c884421134f5ee);
+            
+    
+            feature_group_dd0d5a23e5434835f0ac40738dc83e24.addTo(map_afb42544203b5272398458660eb56034);
+        
+    
+            var layer_control_7b821685ee1f111aa390832e418f8485_layers = {
+                base_layers : {
+                    "cartodbpositron" : tile_layer_0b3a29b864eedcb004258d35bd11e065,
+                },
+                overlays :  {
+                    "0.25 mile radius" : feature_group_a86cf0d413246bff263a10f859a2e479,
+                    "0.5 mile radius" : feature_group_8c1c95a63c6e1995f6a488eb8f17294d,
+                    "1.0 mile radius" : feature_group_bbdf1c5fdb257bbbd76a45509ff541ed,
+                    "2.0 mile radius" : feature_group_69926734012dd337172941c44d52d428,
+                    "Schools" : feature_group_372b959683b4f9bb9a3312dafa4b5de0,
+                    "Childcare Facilities" : feature_group_dd0d5a23e5434835f0ac40738dc83e24,
+                },
+            };
+            let layer_control_7b821685ee1f111aa390832e418f8485 = L.control.layers(
+                layer_control_7b821685ee1f111aa390832e418f8485_layers.base_layers,
+                layer_control_7b821685ee1f111aa390832e418f8485_layers.overlays,
+                {
+  "position": "topright",
+  "collapsed": false,
+  "autoZIndex": true,
+}
+            ).addTo(map_afb42544203b5272398458660eb56034);
+
+        
+</script>
+</html>

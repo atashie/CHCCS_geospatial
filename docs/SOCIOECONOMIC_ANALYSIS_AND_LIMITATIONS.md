@@ -1,0 +1,656 @@
+# Socioeconomic Analysis: Methodology and Limitations
+
+## 1. Overview
+
+The socioeconomic analysis module (`src/school_socioeconomic_analysis.py`) characterizes the demographic profiles of CHCCS elementary school attendance zones using US Census Bureau data. It downloads ACS 5-Year block group estimates and 2020 Decennial block-level race data, overlays CHCCS attendance zone boundaries, and performs dasymetric areal interpolation to produce per-zone demographic summaries — covering income, poverty, race/ethnicity, vehicle access, housing tenure, family structure, and elementary-age population.
+
+Outputs include a CSV of per-school-zone demographics (`data/processed/census_school_demographics.csv`), an interactive Folium map with choropleth and dot-density layers, static comparison charts, and auto-generated methodology documentation. These products are designed to inform district-level educational planning.
+
+---
+
+## 2. Data Sources and Provenance
+
+| # | Data | Source | Vintage | Geography | Access | Citation |
+|---|------|--------|---------|-----------|--------|----------|
+| 1 | Population, age, race, income, poverty, tenure, vehicles, family type, language | U.S. Census Bureau, American Community Survey 5-Year Estimates | 2018-2022 (released 2023) | Block group | Census API (`api.census.gov/data/2022/acs/acs5`) | U.S. Census Bureau (2023). *2018-2022 ACS 5-Year Estimates Detailed Tables.* |
+| 2 | Block-level race/ethnicity | U.S. Census Bureau, 2020 Census Redistricting Data (P.L. 94-171) | April 1, 2020 | Block | Census API (`api.census.gov/data/2020/dec/pl`) | U.S. Census Bureau (2021). *2020 Census P.L. 94-171 Redistricting Data Summary Files.* |
+| 3 | Block group polygon geometries | TIGER/Line Shapefiles | 2023 | Block group | Census FTP (`TIGER2023/BG/tl_2023_37_bg.zip`) | U.S. Census Bureau (2023). *TIGER/Line Shapefiles.* |
+| 4 | Block polygon geometries | TIGER/Line Shapefiles | 2020 | Block | Census FTP (`TIGER2020PL/STATE/37_NORTH_CAROLINA/37135/`) | U.S. Census Bureau (2021). *2020 Census TIGER/Line Shapefiles.* |
+| 5 | School locations | NCES Education Demographic and Geographic Estimates (EDGE) | 2023-24 | Point | Public download (LEAID `3700720`) | National Center for Education Statistics (2024). *EDGE Public School Locations 2023-24.* |
+| 6 | District boundary | Census TIGER/Line Unified School Districts | 2023 | Polygon | Public download (GEOID `3700720`) | U.S. Census Bureau (2023). *TIGER/Line Shapefiles: School Districts.* |
+| 7 | Attendance zones | CHCCS elementary attendance zone shapefile | Current | Polygon | Local file (`data/raw/properties/CHCCS/CHCCS.shp`) | Chapel Hill-Carrboro City Schools (n.d.). Administrative shapefile. |
+| 8 | Residential parcels | Orange County Tax Assessor parcel data | Current | Polygon | Local file (`data/raw/properties/combined_data_polys.gpkg`) | Orange County, NC (n.d.). Property parcel data. |
+
+**Notes on data #1:** ACS 5-Year estimates pool data collected over 60 months (January 2018 through December 2022). They represent period estimates, not point-in-time snapshots. The Census Bureau recommends caution when comparing 5-year estimates across time periods with fewer than 5 years of separation (U.S. Census Bureau, 2020, *Understanding and Using ACS Data*, pp. 14-16).
+
+**Notes on data #2:** The 2020 Decennial P.L. 94-171 redistricting data was processed through the Census Bureau's TopDown Algorithm (TDA) for disclosure avoidance, which applies calibrated noise to protect individual responses (Abowd et al., 2022). At the block level — the finest geography published — this noise can meaningfully distort small counts.
+
+**Notes on data #3 vs. #4:** Block group boundaries use 2023-vintage TIGER/Line (matching ACS tabulation geography), while block boundaries use 2020-vintage TIGER/Line (matching Decennial tabulation geography). Block group boundaries were revised between 2020 and 2023; this creates a subtle spatial mismatch between the two Census products.
+
+---
+
+## 3. Census Variable Inventory
+
+### 3a. ACS 5-Year Variables (50 variables, 9 tables)
+
+| Census Table | Census Variable | Column Alias | Description | Derived Metric |
+|---|---|---|---|---|
+| **B01001** | B01001_001E | `total_pop` | Total population | (base) |
+| | B01001_004E | `male_5_9` | Male, age 5-9 | `pct_elementary_age` |
+| | B01001_028E | `female_5_9` | Female, age 5-9 | `pct_elementary_age` |
+| **B03002** | B03002_001E | `race_total` | Total population (Hispanic origin by race) | (denominator) |
+| | B03002_003E | `white_nh` | White alone, not Hispanic | `pct_minority` |
+| | B03002_004E | `black_nh` | Black alone, not Hispanic | `pct_black` |
+| | B03002_005E | `aian_nh` | American Indian/Alaska Native alone, NH | — |
+| | B03002_006E | `asian_nh` | Asian alone, not Hispanic | — |
+| | B03002_007E | `nhpi_nh` | Native Hawaiian/Pacific Islander alone, NH | — |
+| | B03002_008E | `other_nh` | Some other race alone, not Hispanic | — |
+| | B03002_009E | `two_plus_nh` | Two or more races, not Hispanic | — |
+| | B03002_012E | `hispanic` | Hispanic or Latino (any race) | `pct_hispanic` |
+| **B19013** | B19013_001E | `median_hh_income` | Median household income (dollars) | `median_hh_income` |
+| **B19001** | B19001_001E | `income_total` | Total households | `pct_low_income` |
+| | B19001_002E–017E | `income_lt_10k` ... `income_200k_plus` | 16 income brackets | Income distribution chart |
+| **C17002** | C17002_001E | `poverty_universe` | Population with poverty status determined | (denominator) |
+| | C17002_002E | `poverty_lt_050` | Ratio < 0.50 | `pct_below_185_poverty` |
+| | C17002_003E | `poverty_050_099` | Ratio 0.50-0.99 | `pct_below_185_poverty` |
+| | C17002_004E | `poverty_100_124` | Ratio 1.00-1.24 | `pct_below_185_poverty` |
+| | C17002_005E | `poverty_125_149` | Ratio 1.25-1.49 | `pct_below_185_poverty` |
+| | C17002_006E | `poverty_150_184` | Ratio 1.50-1.84 | `pct_below_185_poverty` |
+| | C17002_007E | `poverty_185_199` | Ratio 1.85-1.99 | (fetched, unused) |
+| **B25003** | B25003_001E | `tenure_total` | Occupied housing units | (denominator) |
+| | B25003_002E | `tenure_owner` | Owner-occupied | — |
+| | B25003_003E | `tenure_renter` | Renter-occupied | `pct_renter` |
+| **B25044** | B25044_001E | `vehicles_total_hh` | Occupied housing units | (denominator) |
+| | B25044_003E | `vehicles_zero_owner` | Owner-occupied, no vehicles | `pct_zero_vehicle` |
+| | B25044_010E | `vehicles_zero_renter` | Renter-occupied, no vehicles | `pct_zero_vehicle` |
+| **B11003** | B11003_001E | `family_total` | Total family households | — |
+| | B11003_003E | `married_with_kids` | Married-couple with own children | `pct_single_parent` (denom) |
+| | B11003_010E | `male_hholder_with_kids` | Male householder, no spouse, with own children | `pct_single_parent` |
+| | B11003_016E | `female_hholder_with_kids` | Female householder, no spouse, with own children | `pct_single_parent` |
+| **B16004** | B16004_001E | `lang_total_5_17` | Population 5-17 by language | (fetched, unused) |
+| | B16004_003E | `lang_spanish_5_17` | Spanish-speaking, 5-17 | (fetched, unused) |
+| | B16004_005E | `lang_other_5_17` | Other language, 5-17 | (fetched, unused) |
+
+**Note:** B16004 variables are fetched and cached but not used in any derived metric, chart, or output. See Limitation #9. C17002_007E (`poverty_185_199`) is also fetched but excluded from the below-185% poverty sum.
+
+### 3b. Decennial P.L. 94-171 Variables (9 variables, 2 tables)
+
+| Census Table | Census Variable | Column Alias | Description |
+|---|---|---|---|
+| **P1** | P1_001N | `total_pop` | Total population |
+| | P1_003N | `white_alone` | White alone |
+| | P1_004N | `black_alone` | Black or African American alone |
+| | P1_005N | `aian_alone` | American Indian and Alaska Native alone |
+| | P1_006N | `asian_alone` | Asian alone |
+| | P1_007N | `nhpi_alone` | Native Hawaiian and Other Pacific Islander alone |
+| | P1_008N | `other_alone` | Some other race alone |
+| | P1_009N | `two_plus` | Two or more races |
+| **P2** | P2_002N | `hispanic_total` | Hispanic or Latino |
+
+A derived column `other_race` is computed as the residual: `total_pop - white_alone - black_alone - asian_alone - hispanic_total - two_plus`, clipped to zero. This residual absorbs AIAN, NHPI, and "some other race" categories.
+
+---
+
+## 4. Data Processing Pipeline
+
+The pipeline runs as 8 numbered steps, printed to console as `[1/8]` through `[8/8]`.
+
+### Step 1: Load School Locations
+**Function:** `load_schools()` (line 494)
+**Source:** `data/cache/nces_school_locations.csv` (NCES EDGE 2023-24, LEAID 3700720)
+
+Loads 11 CHCCS elementary schools with NCES coordinates (WGS84). Used for map markers and as a fallback for district boundary generation.
+
+### Step 2: Load District Boundary
+**Function:** `load_district_boundary()` (line 508)
+**Source:** `data/cache/chccs_district_boundary.gpkg` (TIGER/Line Unified School District, GEOID 3700720, cached by `school_desert.py`)
+
+If the cache does not exist, a fallback convex hull around all school locations with a 3 km buffer is created in UTM (EPSG:32617), then reprojected to WGS84.
+
+### Step 3: Load Attendance Zones
+**Function:** `load_attendance_zones()` (line 523)
+**Source:** `data/raw/properties/CHCCS/CHCCS.shp`
+
+The raw shapefile contains multiple features per school (walk zone and full zone polygons). All features are dissolved by the `ENAME` field to produce one polygon per school. The `ENAME` values are mapped to standard school names via the `_ENAME_TO_SCHOOL` dictionary, which includes multiple FPG name variants. Unmapped ENAME values are logged and skipped.
+
+### Step 4: Fetch ACS Block Group Data
+**Function:** `fetch_acs_blockgroup_data()` (line 301)
+**API:** `https://api.census.gov/data/2022/acs/acs5`
+**Geography:** Block groups in Orange County, NC (state FIPS `37`, county FIPS `135`)
+
+Fetches 50 variables across 9 Census tables. The Census API imposes a limit of ~50 variables per request; the `_census_get()` helper (line 239) chunks variables into groups of 48 (leaving room for `NAME`), issues separate API requests, and merges results on geography columns (`state`, `county`, `tract`, `block group`, `NAME`) via `pd.merge()` with a left join.
+
+The tabular response is joined with TIGER/Line 2023-vintage block group polygon geometries (downloaded from `tl_2023_37_bg.zip`, filtered to Orange County FIPS 135). The merged GeoDataFrame is cached to `data/cache/census_acs_blockgroups.gpkg`.
+
+### Step 5: Fetch Decennial Block Data
+**Function:** `fetch_decennial_block_data()` (line 346)
+**API:** `https://api.census.gov/data/2020/dec/pl`
+**Geography:** Blocks in Orange County, NC
+
+Fetches 9 variables from tables P1 and P2. The `other_race` residual is computed and clipped to zero. Blocks with zero total population are dropped. Data is joined with TIGER/Line 2020-vintage block polygon geometries and cached to `data/cache/census_decennial_blocks.gpkg`.
+
+### Step 6: Spatial Analysis
+**Functions:** `clip_to_district()` (line 567), `compute_derived_metrics()` (line 581), `intersect_zones_with_blockgroups()` (line 685), `aggregate_zone_demographics()` (line 774)
+
+Three sub-steps:
+
+1. **District clipping:** ACS block groups are clipped to the district boundary using `gpd.clip()`. The clip can produce non-polygon geometries (points, lines) at boundary edges; these are filtered with `geom_type.isin(["Polygon", "MultiPolygon"])`.
+
+2. **Derived metrics:** Percentage columns are computed on clipped block groups (`compute_derived_metrics()`): `pct_elementary_age`, `pct_minority`, `pct_hispanic`, `pct_black`, `pct_below_185_poverty`, `pct_renter`, `pct_zero_vehicle`, `pct_single_parent`, `pct_low_income`. Profiles are saved to `data/processed/census_blockgroup_profiles.csv`.
+
+3. **Dasymetric areal interpolation:** Block groups are intersected with attendance zones in UTM (EPSG:32617). When residential parcel data is available, dasymetric weights are computed (see Section 5). Population counts are allocated proportionally; zone-level percentages are recomputed from the aggregated numerators and denominators. Results are saved to `data/processed/census_school_demographics.csv`.
+
+### Step 7: Dot-Density Generation
+**Function:** `generate_racial_dots()` (line 879)
+
+2020 Decennial Census blocks (clipped to the district) are used to generate one dot per person (default `dots_per_person=1`) for 6 race/ethnicity categories. Dots are placed within the intersection of Census block boundaries and residential parcel polygons (dasymetric placement). See Section 6 for details.
+
+### Step 8: Map, Charts, and Documentation
+**Functions:** `create_socioeconomic_map()` (line 1087), `create_comparison_charts()` (line 1329), `generate_methodology_doc()` (line 1461)
+
+1. **Interactive Folium map** (`assets/maps/school_socioeconomic_map.html`): CartoDB Positron tiles, 7 choropleth layers (block level): median income, % below 185% poverty, % minority, % renter, % zero-vehicle, % elementary age 5-9, % young children 0-4. Dot-density race layer. Five zone type overlays switchable via radio buttons: School Zones (10 attendance zones), Walk Zones (7 CHCCS walk zones), Nearest Walk (11 Voronoi-like zones from travel-time grid), Nearest Bike (11), Nearest Drive (11) — each with demographic popups and per-zone barplots/histograms. School markers (uniform style). Canvas renderer enabled via `prefer_canvas=True`.
+
+2. **Static charts** (`assets/charts/socioeconomic_*.png`): 7 horizontal bar charts (poverty, minority %, income, renter %, zero-vehicle %, single-parent %, young children 0-4) with per-school comparison, plus a district-wide income distribution chart across 16 income brackets.
+
+3. **Auto-generated documentation** (`docs/socioeconomic/SOCIOECONOMIC_ANALYSIS.md`): Methodology summary, variable definitions, results table, and limitations.
+
+---
+
+## 5. Areal Interpolation: Theory and Implementation
+
+### 5a. The Problem
+
+Census block groups and school attendance zones are independently drawn geographies. Block groups follow Census Bureau criteria (population thresholds, county boundaries); attendance zones follow school board policy. There is no hierarchical nesting — a single block group may span multiple attendance zones, and a single zone may contain parts of many block groups. Estimating demographics for attendance zones therefore requires transferring data from one set of areal units (block groups) to another (zones).
+
+This is the *areal interpolation problem*, first formally defined by Goodchild and Lam (1980).
+
+### 5b. Simple Area-Weighted Interpolation (Baseline)
+
+The classical approach assumes a uniform density within each source zone. For an extensive variable *Y* (e.g., population count) in source zone *s*, the estimate for target zone *t* is:
+
+```
+Ŷ_t = Σ_s (A_st / A_s) × Y_s
+```
+
+where:
+- *A_st* = area of the intersection of source zone *s* and target zone *t*
+- *A_s* = total area of source zone *s*
+- *Y_s* = observed value in source zone *s*
+
+The ratio *A_st / A_s* is the **areal weight**: the fraction of the source zone's area that falls within the target zone. Under the uniform density assumption, this fraction equals the fraction of the source zone's population that resides in the overlap.
+
+**Reference:** Goodchild, M. F. & Lam, N. S. (1980). Areal interpolation: A variant of the traditional spatial problem. *Geo-Processing*, 1, 297-312.
+
+### 5c. Dasymetric Refinement (Implemented)
+
+The uniform density assumption is the largest source of error in simple area-weighted interpolation. Dasymetric mapping — coined by Wright (1936) — incorporates ancillary data to refine the density estimate within source zones. The key idea: population density is not uniform across a block group, but it *is* approximately uniform across the *residential* portion of a block group.
+
+The implementation replaces geometric area with *residential parcel area* as the weighting variable:
+
+```
+Ŷ_t = Σ_s (R_st / R_s) × Y_s
+```
+
+where:
+- *R_st* = total residential parcel area within the intersection of source zone *s* and target zone *t*
+- *R_s* = total residential parcel area within source zone *s*
+
+When *R_s* = 0 (no residential parcels intersect the source zone), the algorithm falls back to simple area weighting: *A_st / A_s*.
+
+**Implementation details** (`intersect_zones_with_blockgroups()`, line 685):
+
+1. All geometries are reprojected to UTM 17N (EPSG:32617) for accurate area calculations.
+2. Residential parcels are filtered: `is_residential == True AND imp_vac contains "Improved"` (excluding vacant residential lots).
+3. The `_compute_residential_area()` helper (line 664) uses an R-tree spatial index (`parcels_utm.sindex`) for efficient intersection queries: for each geometry, candidate parcels are identified via bounding-box lookup (`sindex.intersection(geom.bounds)`), then precisely clipped with `parcels_utm.iloc[candidates].intersection(geom)`, and their areas summed.
+4. Residential area is computed for both full block groups (`bg_res_area`) and each zone-BG intersection fragment (`frag_res_area`).
+5. The dasymetric weight is: `weight = frag_res_area / bg_res_area`, falling back to `frag_area / bg_area` where `bg_res_area == 0`.
+6. All weights are clipped to a maximum of 1.0 to prevent floating-point overshoot.
+
+In the CHCCS district, 179 of 184 zone-BG fragments received dasymetric weights; 5 used the area-weighted fallback.
+
+**References:**
+- Wright, J. K. (1936). A method of mapping densities of population with Cape Cod as an example. *Geographical Review*, 26(1), 103-110.
+- Eicher, C. L. & Brewer, C. A. (2001). Dasymetric mapping and areal interpolation: Implementation and evaluation. *Cartography and Geographic Information Science*, 28(2), 125-138.
+- Mennis, J. (2003). Generating surface models of population using dasymetric mapping. *The Professional Geographer*, 55(1), 31-42.
+
+### 5d. Median Income Estimation
+
+Median household income for each zone is computed as a population-weighted average of block group medians:
+
+```
+zone_median ≈ Σ_s (M_s × P_s × w_s) / Σ_s (P_s × w_s)
+```
+
+where *M_s* is the block group median, *P_s* is the block group population, and *w_s* is the dasymetric (or area) weight for that fragment. Block groups with zero or missing median income are excluded from the calculation.
+
+A weighted average of medians is **not** a true median. If block group A has median $30k (100 households) and block group B has median $150k (100 households), the weighted average gives $90k — but the true zone median depends on the shape of both distributions and could be anywhere from $30k to $150k. This is a manifestation of the *ecological fallacy* (Robinson, 1950): aggregate statistics do not reliably characterize individual-level distributions.
+
+The code fetches income bracket data (B19001, 16 bins from <$10k to $200k+) which could theoretically enable Pareto interpolation of the true median. Currently, this bracket data is used only for the income distribution comparison chart, not for median estimation.
+
+**Reference:** Robinson, W. S. (1950). Ecological correlations and the behavior of individuals. *American Sociological Review*, 15(3), 351-357.
+
+### 5e. Aggregation of Extensive vs. Intensive Variables
+
+The aggregation in `aggregate_zone_demographics()` (line 774) treats all count variables as *extensive* (weighted sum) and recomputes percentages from the aggregated counts. This is the correct approach — aggregating percentage columns directly would produce area-weighted averages of ratios rather than ratios of area-weighted sums, introducing bias when block groups have different population sizes.
+
+For example, `pct_minority` for a zone is computed as:
+
+```
+pct_minority = (1 - Σ(white_nh × weight) / Σ(race_total × weight)) × 100
+```
+
+not as `Σ(pct_minority × weight)`.
+
+---
+
+## 6. Dot-Density Visualization: Theory and Implementation
+
+### 6a. Cartographic Background
+
+Dot-density maps represent spatial distributions by placing dots proportionally within geographic units. Each dot represents a fixed number of individuals (or one individual, in the 1:1 case). When done well, dot maps reveal spatial patterns — segregation, clustering, gradients — that choropleth maps obscure by assigning uniform color to entire polygons.
+
+The technique has a long cartographic history. Kimerling (2009) provides a modern survey. A key design choice is the dot-to-person ratio: lower ratios produce denser, more detailed maps but require more dots and thus more rendering capacity.
+
+**References:**
+- Kimerling, A. J. (2009). Dotmaps. In M. Dodge, R. Kitchin, & C. Perkins (Eds.), *The Map Reader: Theories of Mapping Practice and Cartographic Representation* (pp. 194-200). Wiley.
+- MacEachren, A. M. (1995). *How Maps Work: Representation, Visualization, and Design.* Guilford Press.
+
+### 6b. Implementation Details
+
+**Function:** `generate_racial_dots()` (line 879)
+
+**Race categories and colors** (censusdots.com color scheme):
+
+| Category | Column | Color | Hex |
+|----------|--------|-------|-----|
+| White | `white_alone` | Blue | `#3b5fc0` |
+| Black | `black_alone` | Green | `#41ae76` |
+| Hispanic/Latino | `hispanic_total` | Yellow | `#f2c94c` |
+| Asian | `asian_alone` | Red | `#e74c3c` |
+| Multiracial | `two_plus` | Purple | `#9b59b6` |
+| Native American/Other | `other_race` | Brown | `#a0522d` |
+
+**Dot generation algorithm:**
+
+1. All Census blocks are reprojected to UTM 17N.
+2. For each block, a *placement geometry* is computed:
+   - If parcel data is available: `placement = block_geom ∩ union(nearby_residential_parcels)`, where nearby parcels are found via R-tree spatial index lookup (`sindex.intersection(block_geom.bounds)`). The intersection must have area > 10 m²; otherwise, the full block geometry is used.
+   - If parcel data is unavailable: `placement = block_geom`.
+3. For each of the 6 race columns: `n_dots = count // dots_per_person` (integer floor division).
+4. Random points are generated within the placement geometry using `shapely.random_points(geom, n_dots, rng=rng)`. A fallback to rejection sampling (`_random_points_fallback()`, line 986) handles older Shapely versions that lack `random_points()`.
+5. All point generation uses a fixed seed: `rng = np.random.default_rng(42)`.
+6. UTM coordinates are transformed to WGS84 via `pyproj.Transformer` for display, rounded to 5 decimal places.
+
+**Note on parcel filtering:** The dot-density function filters parcels to `is_residential == True AND imp_vac contains "Improved"` before constraining dot placement — the same filter used by the statistical dasymetric interpolation (Section 5c) and zone-level interpolation (Section 5d). All three parcel consumers now use a consistent residential mask.
+
+### 6c. Batch Rendering
+
+**Function:** `create_socioeconomic_map()` (line 1087), batch JS injection at line 1200.
+
+The dot-density layer uses a compact batch-rendering approach rather than individual `folium.CircleMarker` Python objects:
+
+1. Dots are encoded as a JSON array: `[[lat, lon, raceIndex], ...]` with minimal separators (no whitespace).
+2. Race categories are mapped to integer indices (0-5) and a parallel colors array is emitted.
+3. A `<script>` block is injected into the HTML, deferred via `DOMContentLoaded` to ensure Folium's FeatureGroup variable exists:
+
+```javascript
+document.addEventListener('DOMContentLoaded', function() {
+    var fg = <featureGroupName>;
+    var d = <dotArray>;
+    var c = <colorsArray>;
+    for (var i = 0; i < d.length; i++) {
+        L.circleMarker([d[i][0], d[i][1]], {
+            radius: 1.5,
+            fillColor: c[d[i][2]],
+            color: c[d[i][2]],
+            weight: 0,
+            fillOpacity: 0.7
+        }).addTo(fg);
+    }
+    if (!map.hasLayer(fg)) { fg.addTo(map); }
+});
+```
+
+4. The map is created with `prefer_canvas=True`, enabling Leaflet's Canvas renderer for efficient rendering of 95K+ CircleMarkers.
+
+**Result:** At the default 1:1 ratio, the map contains approximately 95,764 dots in a 7.8 MB HTML file.
+
+### 6d. Comparison with censusdots.com
+
+| Aspect | censusdots.com | This implementation |
+|--------|---------------|---------------------|
+| Dot placement | Naive uniform random within Census blocks | Dasymetric: constrained to residential parcel polygons |
+| Dot ratio | 1:1 (331M dots nationally) | 1:1 (95,764 dots for CHCCS district) |
+| Rendering | Pre-rendered PNG raster tiles (z3-z14), OpenLayers Canvas 2D | Live Leaflet CircleMarkers, Canvas renderer |
+| File delivery | Tile server (object storage) | Single HTML file (7.8 MB) |
+| Dot size | Varies with zoom (pixel-perfect raster) | Fixed 1.5px radius at all zoom levels |
+| Analytical sophistication | None — dots fall on roads, water, parking lots | Higher — dots constrained to residential parcels |
+
+Our implementation is more analytically rigorous (dasymetric refinement), but censusdots.com achieves superior visual quality through pre-rendered raster tiles that provide pixel-perfect rendering at every zoom level. The remaining visual gap is a rendering pipeline difference, not an analytical one.
+
+---
+
+## 7. Known Limitations
+
+### A. Area-Weighted Interpolation Issues
+
+#### 1. Uniform Distribution Assumption
+
+The fundamental flaw of area-weighted interpolation: population is assumed to be uniformly distributed within each Census block group. In reality, population clusters around residential areas. A block group that is half apartment complex and half shopping mall will have its population spread across the entire block group area, causing the half overlapping a school zone to receive only 50% of the population even if 100% of residents live on that side.
+
+The dasymetric refinement (Section 5c) substantially mitigates this issue by concentrating weight on residential parcels, but residual error remains because density varies *within* the residential footprint (e.g., apartments vs. single-family homes). The effect is worst for large, heterogeneous block groups that straddle zone boundaries.
+
+#### 2. ~~No Dasymetric Refinement for Statistical Reporting~~ (RESOLVED)
+
+~~The dot-density visualization uses residential parcels to constrain dot placement (dasymetric refinement), but this refinement is **not applied to the area-weighted interpolation** that produces the statistical summaries.~~
+
+**Resolved:** `intersect_zones_with_blockgroups()` now accepts an optional `parcels` parameter and computes dasymetric weights using improved residential parcel area (`weight = frag_res_area / bg_res_area`). Falls back to plain area weighting only for block groups with no residential parcels (5 of 184 fragments in the CHCCS district). For example, one Title I school zone shifted from 19.2% to 23.5% poverty (+4.3pp closer to the known 30-36% FRL rate).
+
+#### 3. Median Income Approximation
+
+Median household income for each zone is computed as a population-weighted average of block group medians (see Section 5d). A weighted average of medians is not a true median. The income bracket data (B19001, 16 bins) is fetched and could theoretically be used for a better approximation via Pareto interpolation, but the current code only uses it for the income distribution chart, not for median estimation.
+
+#### 4. Weight Clipping at 1.0
+
+Fragment weights are clipped: `weight.clip(upper=1.0)`. This prevents weights from exceeding 1.0 due to floating-point area calculation differences at polygon edges. The practical impact is negligible — it silently discards tiny area excesses caused by coordinate precision — but is worth noting for reproducibility.
+
+---
+
+### B. Census Data Quality
+
+#### 5. ACS Margins of Error Not Tracked or Displayed
+
+ACS 5-Year estimates have associated margins of error (MOE) published alongside each estimate (the `*_M` suffix variables). The code fetches only estimate variables (`*_E` suffix), not MOEs. There is no way to assess whether differences between school zones are statistically significant. For small block groups, MOEs can be large relative to the estimates — a block group reporting 15% poverty could have a 90% confidence interval of 5%-25%.
+
+Spielman, Folch, and Nagle (2014) demonstrated that ACS uncertainty is spatially structured and disproportionately affects small geographic units and minority populations — precisely the populations this analysis seeks to characterize.
+
+**Reference:** Spielman, S. E., Folch, D., & Nagle, N. (2014). Patterns and causes of uncertainty in the American Community Survey. *Applied Geography*, 46, 147-157.
+
+#### 6. Differential Privacy Noise in Decennial Block Data
+
+The 2020 Decennial Census applied differential privacy ("disclosure avoidance") via the TopDown Algorithm to all published data. At the block level, this introduces noise that can cause small counts to be inaccurate — a block with a true population of 3 Asian residents might be published as 0 or 7. This noise is most significant for small racial groups in small blocks. The analysis uses block data only for dot-density visualization (not statistical reporting), which partially mitigates the impact — visual patterns emerge at aggregate scale even if individual blocks are noisy.
+
+**Reference:** Abowd, J. M., Ashmead, R., Cumings-Menon, R., Garfinkel, S., Heineck, M., Heiss, C., Johns, R., Kifer, D., Leclerc, P., Machanavajjhala, A., Moran, B., Sexton, W., Spence, M., & Zhuravlev, P. (2022). The 2020 Census Disclosure Avoidance System TopDown Algorithm. *Harvard Data Science Review*, Special Issue 2.
+
+#### 7. Five-Year Rolling Average Masks Recent Shifts
+
+ACS 2022 5-Year estimates represent data collected from 2018 through 2022. They do not reflect a single point in time. Neighborhoods that experienced rapid demographic change during this period (new affordable housing, gentrification, student housing construction) will have their recent characteristics blended with older data. Zones that have seen significant recent apartment construction may already be underrepresented in the ACS data.
+
+#### 8. Vehicle Data Uses B25044 (Tenure by Vehicles), Not B08201
+
+The ideal Census table for vehicle access is B08201 (Household Size by Vehicles Available), which counts vehicles available to the entire household. However, B08201 is not available at the block group level in the ACS 5-Year data. The code instead uses B25044 (Tenure by Vehicles Available), which reports vehicles by owner-occupied and renter-occupied households separately. The zero-vehicle count is summed across both tenure types: `vehicles_zero = vehicles_zero_owner + vehicles_zero_renter`.
+
+The key difference: B25044 is a housing-unit-level table (one record per occupied housing unit), while B08201 is a household-level table. For most purposes these are equivalent (one household per housing unit), but B25044 specifically excludes group quarters (dorms, nursing homes). This means the zero-vehicle rate may slightly undercount vehicle-less individuals living in group quarters.
+
+#### 9. Language Data Fetched But Not Used
+
+Table B16004 (Language Spoken at Home for Population 5-17) is included in the ACS variable list (`lang_total_5_17`, `lang_spanish_5_17`, `lang_other_5_17`). These variables are fetched from the Census API, stored in the cached GeoPackage, but are **not used** in any derived metric, chart, or output CSV. Similarly, C17002_007E (`poverty_185_199`) is fetched but excluded from the poverty sum. Both add download time and cache size without contributing to the analysis.
+
+---
+
+### C. Geographic Alignment
+
+#### 10. Attendance Zone ≠ Actual Enrollment Catchment
+
+Attendance zone boundaries define the default school assignment, but actual enrollment diverges due to:
+- **Transfers:** Families can request transfers to other CHCCS schools.
+- **Charter/private schools:** Students zoned to a CHCCS school may attend non-district schools.
+- **Magnet programs:** FPG Bilingue draws students from across the district, not just its zone.
+- **Grandfathering:** Students already enrolled at a school may be allowed to continue after zone boundary changes.
+
+As a result, the demographics of a school's attendance zone describe the *residential population in the geographic area*, not the demographics of the students actually enrolled. For example, one Title I school zone shows 23.5% below 185% FPL (post-dasymetric), while actual school FRL rates are 30-36%. This ~10 percentage point gap exists because zone residents ≠ enrolled students (lower-income families are more likely to attend their zoned school, while higher-income families are more likely to exercise choice).
+
+#### 11. FPG Has No Zone in the CHCCS Shapefile
+
+Frank Porter Graham Bilingue is a dual-language magnet school that draws students from across the district. The CHCCS attendance zone shapefile may not contain an FPG-specific zone polygon (or it may be listed under a variant ENAME like "Frank Porter Graham Elementary"). The `_ENAME_TO_SCHOOL` mapping handles several ENAME variants (`"Frank Porter Graham Bilingue"`, `"Frank Porter Graham Elementary"`, `"FPG Bilingue"`), but if FPG's zone is simply absent from the shapefile, only 10 of 11 schools will have zone-level statistics. The code logs unmapped ENAMEs but does not error — it silently produces results for the schools it can match.
+
+#### 12. Temporal Mismatch Across Data Sources
+
+The analysis combines data from different time periods:
+
+| Data | Vintage |
+|------|---------|
+| ACS 5-Year | 2018-2022 |
+| Decennial blocks | April 2020 |
+| TIGER/Line block groups | 2023 boundaries |
+| TIGER/Line blocks | 2020 boundaries |
+| Attendance zones | Current (shapefile date) |
+| Residential parcels | Current (download date) |
+
+Block group boundaries changed between 2020 and 2023. The ACS data uses 2023-vintage block group boundaries, while the Decennial data uses 2020-vintage block boundaries. The attendance zones and parcel data have no fixed vintage. These temporal mismatches can cause spatial misalignment where boundaries shifted between vintages.
+
+#### 13. Block Groups Extend Beyond District Boundary — Clip Edge Distortion
+
+Census block groups at the edges of the CHCCS district extend into neighboring districts (Durham County, Orange County unincorporated). Clipping these block groups to the district boundary produces small slivers with distorted area ratios. A block group that is 90% outside the district will have only a 10% sliver inside, but its demographic data (income, poverty rates) represents the entire block group — which may include very different neighborhoods outside the district. The dasymetric weighting helps (residential parcels in the sliver are matched to their actual block group residential area), but does not fully resolve the issue if demographic characteristics differ sharply at the district boundary.
+
+---
+
+### D. Dot-Density Visualization
+
+#### 14. Integer Truncation Systematically Undercounts Small Populations
+
+Dot count is computed as `count // dots_per_person` (integer floor division). At the default 1:1 ratio, this has no effect (every person gets one dot). At higher ratios (e.g., 1:5), up to `dots_per_person - 1` people per race per block can be invisible:
+- 4 Asian residents at 1:5 → 0 dots (4 people invisible)
+- 9 Black residents at 1:5 → 1 dot (4 people invisible)
+
+Across hundreds of blocks, this systematically reduces the dot count for small racial groups. Minority groups that are thinly distributed can be entirely invisible. This is a known trade-off — using `round()` instead of `//` would sometimes produce dots for zero-population cells, which is worse.
+
+#### ~~15. Residential Parcels Include Vacant and Under-Construction Properties~~ *(Resolved)*
+
+~~The dot-density dasymetric placement uses the full parcel dataset (clipped to the district boundary) without filtering for improved/residential status.~~
+
+**Resolution:** The dot-density function now applies the same `is_residential == True AND imp_vac contains "Improved"` filter used by the statistical dasymetric functions (`downscale_bg_to_blocks` and `intersect_zones_with_blockgroups`). All three parcel consumers are consistent. Additionally, `RESIDENTIAL_LUC_PREFIXES` was expanded from 4-char exact codes (`1001`, `1000`, `1100`, `1200`) to 3-char true prefixes (`100`, `110`, `120`, `630`), correctly capturing condominiums (1101-CND-I), multifamily apartments (1201-MFA-I), and mobile home parks (6301-MHP).
+
+#### 16. No Within-Block Density Variation (Uniform Area-Proportional Placement)
+
+Dots are placed uniformly within the placement geometry (block ∩ parcels) using `shapely.random_points()`. A 50-unit apartment complex and a 1-acre single-family lot receive dots at the same spatial density (proportional to polygon area, not dwelling unit count). This creates two visual distortions:
+
+- **Apartment neighborhoods appear too sparse:** A 200-unit complex on 2 acres gets the same dot density as 10 single-family homes on 2 acres, despite housing 20x more people per acre.
+- **Single-family neighborhoods appear too dense:** Dots spread across large residential lots create a visual impression of higher density than reality.
+
+A building-footprint-weighted or dwelling-unit-weighted approach would produce more realistic density patterns but would require building footprint data with unit counts or parcel-level dwelling unit estimates from tax assessor data.
+
+#### 17. Parcel Data Vintage May Not Match Census Vintage
+
+The residential parcel data reflects current property boundaries, while Census blocks reflect 2020 boundaries and 2020 population counts. New developments built after 2020 will have parcel polygons but may have zero population in the Census data (no dots generated). Conversely, recently demolished housing will have Census population but no parcel polygon to constrain the dots.
+
+#### 25. ~~Rendering Approach Limits Visual Quality and Performance~~ (PARTIALLY RESOLVED)
+
+~~The dot-density layer was rendered as 16,577 individual `folium.CircleMarker` objects, each generating ~6 lines of JavaScript in the HTML output, producing a 13.4 MB HTML file.~~
+
+**Resolved:** Dots are now emitted as a compact JavaScript array (`[[lat, lon, raceIdx], ...]`) and rendered via a single `for` loop that creates `L.circleMarker` objects in batch (see Section 6c). Combined with switching from 1:5 to 1:1 dot-to-person ratio, the map now shows **95,764 dots** (5.8x more) in a **7.8 MB file** (42% smaller). The `prefer_canvas=True` Canvas renderer handles 95K markers well.
+
+**Remaining:** Dots are still 1.5px radius and do not scale with zoom. At the default zoom level (12), individual dots are small. Pre-rendered raster tiles (like censusdots.com) would provide crisper rendering across all zoom levels, but require an offline tile generation pipeline that is out of scope for a single-file HTML output.
+
+#### 26. Exempt Parcels Classified as Residential (EXHA, EXED)
+
+Two exempt land-use code prefixes are included in `RESIDENTIAL_LUC_PREFIXES`:
+
+- **EXHA (Exempt - Housing Authority):** 4 parcels, 43 buildings, all `imp_vac=Improved`. These are public housing complexes (Craig-Gomains, etc.) containing low-income families. Excluding them would remove genuine residential population from the dasymetric mask.
+
+- **EXED (Exempt - Educational):** 1 useful parcel — UNC's main campus (614 acres, 218 buildings, `imp_vac=Improved`). A second EXED parcel (Duke, 49 acres) has `imp_vac=Vacant` and `BLDGCNT=0`, so it is automatically excluded by the downstream `imp_vac="Improved"` filter. The UNC parcel covers the *entire* campus — dorms, academic buildings, athletic facilities, and open space — so dasymetric weighting treats all 614 improved acres as residential. This overestimates residential area but is preferable to excluding thousands of on-campus residents entirely, which would cause Census block population to fall back to area-proportional placement across the full block geometry.
+
+**Known exclusion:** RRPV University Chapel Hill LP (PIN 9799220621) is a 15-building, 314K-sqft student apartment complex classified `1301-COM-I` (Commercial). It is functionally residential but its LUC prefix `130` would also capture all 326 commercial parcels in the CHCCS district. A PIN-specific override would work but is fragile; this remains a known under-count of student housing.
+
+---
+
+### E. Analytical Gaps
+
+#### 18. No Connection to School Desert Analysis
+
+The socioeconomic analysis and school desert analysis (`src/school_desert.py`) are independent modules. There is no cross-referencing of demographics with travel-time impacts. The planned Stage 2 analysis — "What are the demographics of households whose travel time increases under each closure scenario?" — has not been implemented. This is the single most important analytical gap for the project's equity analysis.
+
+#### 19. Partial Walk Zone Overlay — Boundaries Only
+
+Walk zone boundaries from the CHCCS shapefile (features where `ESWALK=="Y"`) are now loaded and displayed on the map as a separate zone type ("Walk Zones"), with school-level barplots and histograms for the 7 schools that have walk zones. However, no zone-level *Census demographic aggregation* is performed for walk zones — the statistical analysis still uses only the dissolved full attendance zones. The question "What are the Census demographics of families within walking distance of each school?" remains unanswered at the aggregate statistical level.
+
+#### 20. Zone-Level Poverty Proxy Understates School-Level FRL
+
+The 185% FPL poverty proxy can understate school-level FRL rates. For example, one Title I school zone produces a 23.5% estimate (post-dasymetric) versus a known 30-36% FRL rate — a ~10 percentage point gap. This gap exists because:
+- Zone residents include childless households, retirees, and students (who are not in the FRL universe)
+- Families with school-age children may have different poverty rates than the overall zone population
+- FRL eligibility uses current household income, while Census ACS is a 5-year average
+- Direct certification and Community Eligibility Provision (CEP) can include families above 185% FPL
+- Lower-income families are less likely to exercise school choice, concentrating poverty in zoned schools
+
+This limitation should be explicitly disclosed whenever comparing zone poverty rates to school FRL data.
+
+#### 21. No Multivariate Equity Index
+
+Each metric is reported independently (poverty %, minority %, vehicle access, etc.). There is no composite equity index that combines these indicators into a single vulnerability score. Such an index could identify schools whose zones face compounding disadvantages (e.g., high poverty AND high minority AND low vehicle access). The absence of a composite score makes it harder to rank schools by overall equity impact of closure.
+
+---
+
+### F. Implementation Issues Found During Build
+
+#### 22. FIPS Code Was Initially Wrong
+
+The original code used FIPS county code `063` (Durham County) instead of `135` (Orange County). This was caught and fixed, but it documents a real risk: hardcoded FIPS codes are easy to get wrong, especially in the Research Triangle area where Chapel Hill straddles Orange and Durham counties. The CHCCS district is entirely in Orange County, but the university and much of Chapel Hill's identity is associated with Durham. The constant is now correctly set to `"135"` with a comment warning about the common mistake.
+
+#### 23. gpd.clip() Produces Mixed Geometry Types
+
+When clipping block groups to the district boundary, `gpd.clip()` can produce Point and LineString geometries where block group edges exactly coincide with the boundary. The `clip_to_district()` function (line 567) includes a filter: `mask = clipped.geometry.geom_type.isin(["Polygon", "MultiPolygon"])`. Without this filter, downstream area calculations would fail on non-polygon geometries.
+
+#### 24. Census API Chunking — Silent Column Drop Risk
+
+The Census API limits requests to ~50 variables. The `_census_get()` function (line 239) chunks variables into groups of 48 and merges them on geography columns (`state`, `county`, `tract`, `block group`, `NAME`). If the second chunk returns different geography column names or formatting, the merge can silently drop data columns or produce NaN values. The current implementation handles this correctly for Orange County, but the approach is fragile — a change in Census API response format could cause data loss without raising an error.
+
+---
+
+## 8. Validation
+
+### 8a. Dasymetric vs. Area-Weighted Comparison
+
+The dasymetric refinement produced meaningful shifts in zone-level estimates. The most notable change was for one Title I school zone:
+
+| Metric | Before (area-weighted) | After (dasymetric) | Change |
+|--------|----------------------|-------------------|--------|
+| % Below 185% Poverty | 19.2% | 23.5% | +4.3pp |
+
+The shift occurs because this zone contains block groups with mixed land use (residential + commercial/institutional). Under simple area weighting, commercial areas receive population proportional to their area; under dasymetric weighting, population concentrates on the residential parcels, which in this case are disproportionately lower-income.
+
+### 8b. Fragment Coverage
+
+Of 184 zone-block group intersection fragments across the CHCCS district:
+- **179** received dasymetric weights (residential parcel area in both fragment and block group)
+- **5** fell back to plain area weighting (block group contained no improved residential parcels)
+
+### 8c. Poverty Proxy vs. Known FRL Rates
+
+The 185% FPL poverty proxy consistently understates school-level FRL rates (see Limitation #20). For the Title I zone above, the gap narrowed from ~15pp (pre-dasymetric) to ~10pp (post-dasymetric), suggesting the dasymetric approach captures poverty distribution more accurately — but a structural gap remains because the Census poverty universe differs from the FRL-eligible population.
+
+---
+
+## 9. Potential Improvements (Prioritized)
+
+### ~~Priority 1: Dasymetric Downscaling for Area-Weighted Interpolation~~ (DONE)
+**Impact:** HIGH | **Effort:** MEDIUM | **Addresses:** Limitations #1, #2
+
+**Implemented.** `intersect_zones_with_blockgroups()` now accepts residential parcel data and computes weights as `fragment_residential_area / bg_residential_area` using spatial index lookups. Falls back to plain area weighting for block groups with no residential parcels. Result: one Title I school zone shifted from 19.2% to 23.5% poverty (+4.3pp closer to known FRL), and population estimates changed significantly across all zones.
+
+### ~~Priority 2: Dot-Density Rendering Overhaul~~ (DONE)
+**Impact:** HIGH | **Effort:** MEDIUM | **Addresses:** Limitations #14, #25
+
+**Implemented.** Changes made:
+1. Reduced default ratio from 1:5 to **1:1** (one dot per person, ~95,764 dots).
+2. Replaced individual `folium.CircleMarker` declarations with **batch JS injection** — dots stored as a compact `[[lat, lon, raceIdx], ...]` array, rendered in a single `for` loop.
+3. Canvas renderer (`prefer_canvas=True`) handles 95K markers efficiently.
+
+Result: **7.8 MB file** (down from 13.4 MB) with **5.8x more dots**. Density weighting (Priority 2b below) remains unimplemented.
+
+### Priority 2b: Density-Weight Dot Placement for Apartments
+**Impact:** MEDIUM | **Effort:** MEDIUM | **Addresses:** Limitation #16
+
+Dots are still placed uniformly within residential parcels. Apartment complexes should receive more dots per unit area than single-family lots. Options: weight by `SQFT` (building square footage) or `BLDGCNT` from parcel data, or estimate dwelling unit count from land use codes (`RES-U` vs `RES-I`).
+
+### Priority 3: Track and Display ACS Margins of Error
+**Impact:** MEDIUM | **Effort:** LOW | **Addresses:** Limitation #5
+
+Fetch the `*_M` (margin of error) variables alongside the `*_E` (estimate) variables from the Census API. Propagate them through the area-weighted interpolation (using standard error propagation formulas for sums and ratios) and include them in the output CSV. This would allow users to assess whether differences between school zones are statistically meaningful.
+
+### Priority 4: Stage 2 Cross-Reference with School Desert
+**Impact:** HIGH | **Effort:** HIGH | **Addresses:** Limitations #18, #19
+
+Overlay Census demographics with school desert travel-time masks to answer: "What are the income, racial, and vehicle-access profiles of households whose travel time increases under each school closure scenario?" This is the analysis most directly relevant to equity analysis.
+
+### Priority 5: FPG Zone Handling
+**Impact:** LOW | **Effort:** LOW | **Addresses:** Limitation #11
+
+Investigate whether FPG's attendance zone exists in the shapefile under a different ENAME or needs to be approximated. Since FPG is a magnet school, a geographic zone is somewhat meaningless — students come from across the district. May be better to simply document FPG's exclusion and explain why.
+
+### Priority 6: Walk Zone Demographic Overlay (PARTIALLY DONE)
+**Impact:** MEDIUM | **Effort:** MEDIUM | **Addresses:** Limitation #19
+
+Walk zone boundaries are now loaded from the CHCCS shapefile (`ESWALK=="Y"`) and displayed on the map as a separate zone type with per-zone barplots and histograms. **Remaining:** Compute Census demographic aggregation specifically for walk zones (areal interpolation of block group data to walk zone polygons) to directly support walkability analysis.
+
+---
+
+## 10. Output Files
+
+| File | Description |
+|------|-------------|
+| `data/processed/census_school_demographics.csv` | Per-school-zone demographic summaries (10 schools, ~20 metrics each) |
+| `data/processed/census_blockgroup_profiles.csv` | Block-group-level derived metrics for all block groups within the district |
+| `assets/maps/school_socioeconomic_map.html` | Interactive Folium map with choropleth, dot-density, and zone layers |
+| `assets/charts/socioeconomic_*.png` | 7 static comparison charts (6 metrics + income distribution) |
+| `docs/socioeconomic/SOCIOECONOMIC_ANALYSIS.md` | Auto-generated methodology documentation with results table |
+| `data/cache/census_acs_blockgroups.gpkg` | Cached ACS block group data with TIGER geometry (input) |
+| `data/cache/census_decennial_blocks.gpkg` | Cached Decennial block data with TIGER geometry (input) |
+| `data/cache/tiger_blockgroups_orange.gpkg` | Cached TIGER block group polygons for Orange County (input) |
+| `data/cache/tiger_blocks_orange.gpkg` | Cached TIGER block polygons for Orange County (input) |
+
+---
+
+## 11. Reproducibility
+
+To regenerate the analysis from scratch:
+
+```bash
+# Delete cached Census data to force fresh download
+rm data/cache/census_acs_blockgroups.gpkg
+rm data/cache/census_decennial_blocks.gpkg
+rm data/cache/tiger_blockgroups_orange.gpkg
+rm data/cache/tiger_blocks_orange.gpkg
+
+# Run the full analysis
+python src/school_socioeconomic_analysis.py
+
+# Or run with options:
+python src/school_socioeconomic_analysis.py --skip-dots          # Skip slow dot-density generation
+python src/school_socioeconomic_analysis.py --skip-maps          # Skip map generation
+python src/school_socioeconomic_analysis.py --cache-only         # Use cached data only (no downloads)
+python src/school_socioeconomic_analysis.py --dots-per-person 5  # Fewer dots (faster)
+```
+
+**Prerequisites:**
+- NCES school locations (`data/cache/nces_school_locations.csv`) must exist — run `python src/road_pollution.py` first if missing.
+- The CHCCS attendance zone shapefile (`data/raw/properties/CHCCS/CHCCS.shp`) must be present for per-zone analysis.
+- The residential parcel GeoPackage (`data/raw/properties/combined_data_polys.gpkg`) is optional but recommended for dasymetric weighting.
+
+**Census API key:** Optional but recommended. Set `CENSUS_API_KEY` environment variable or add to `.env` file. Without a key, requests are rate-limited to ~60/hour by the Census Bureau.
+
+**Determinism:** The dot-density layer uses a fixed random seed (`np.random.default_rng(42)`). All other steps are deterministic given the same input data. Census API responses are cached — regenerating from cache produces identical results. Regenerating from fresh API calls may produce different results if the Census Bureau revises estimates.
+
+---
+
+## 12. References
+
+Abowd, J. M., Ashmead, R., Cumings-Menon, R., Garfinkel, S., Heineck, M., Heiss, C., Johns, R., Kifer, D., Leclerc, P., Machanavajjhala, A., Moran, B., Sexton, W., Spence, M., & Zhuravlev, P. (2022). The 2020 Census Disclosure Avoidance System TopDown Algorithm. *Harvard Data Science Review*, Special Issue 2. https://doi.org/10.1162/99608f92.529e3cb3
+
+Eicher, C. L. & Brewer, C. A. (2001). Dasymetric mapping and areal interpolation: Implementation and evaluation. *Cartography and Geographic Information Science*, 28(2), 125-138. https://doi.org/10.1559/152304001782173727
+
+Goodchild, M. F. & Lam, N. S. (1980). Areal interpolation: A variant of the traditional spatial problem. *Geo-Processing*, 1, 297-312.
+
+Kimerling, A. J. (2009). Dotmaps. In M. Dodge, R. Kitchin, & C. Perkins (Eds.), *The Map Reader: Theories of Mapping Practice and Cartographic Representation* (pp. 194-200). Wiley. https://doi.org/10.1002/9780470979587.ch26
+
+MacEachren, A. M. (1995). *How Maps Work: Representation, Visualization, and Design.* Guilford Press.
+
+Mennis, J. (2003). Generating surface models of population using dasymetric mapping. *The Professional Geographer*, 55(1), 31-42. https://doi.org/10.1111/0033-0124.5510004
+
+Robinson, W. S. (1950). Ecological correlations and the behavior of individuals. *American Sociological Review*, 15(3), 351-357. https://doi.org/10.2307/2087176
+
+Spielman, S. E., Folch, D., & Nagle, N. (2014). Patterns and causes of uncertainty in the American Community Survey. *Applied Geography*, 46, 147-157. https://doi.org/10.1016/j.apgeog.2013.11.002
+
+U.S. Census Bureau (2020). *Understanding and Using American Community Survey Data: What All Data Users Need to Know.* U.S. Government Publishing Office.
+
+Wright, J. K. (1936). A method of mapping densities of population with Cape Cod as an example. *Geographical Review*, 26(1), 103-110. https://doi.org/10.2307/209467

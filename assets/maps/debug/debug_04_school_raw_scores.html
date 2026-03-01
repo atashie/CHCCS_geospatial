@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_72df17649cee15fd2b5c37f15fc2320b {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+
+            <style>html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            </style>
+
+            <style>#map {
+                position:absolute;
+                top:0;
+                bottom:0;
+                right:0;
+                left:0;
+                }
+            </style>
+
+            <script>
+                L_NO_TOUCH = false;
+                L_DISABLE_3D = false;
+            </script>
+
+        
+</head>
+<body>
+    
+    
+    <div style="position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
+                z-index: 1000; background-color: white; padding: 8px 16px;
+                border-radius: 5px; box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+                font-family: sans-serif;">
+        <h4 style="margin: 0;">Debug 04: Raw Pollution Scores (500m, circle size = score)</h4>
+    </div>
+    
+    
+            <div class="folium-map" id="map_72df17649cee15fd2b5c37f15fc2320b" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_72df17649cee15fd2b5c37f15fc2320b = L.map(
+                "map_72df17649cee15fd2b5c37f15fc2320b",
+                {
+                    center: [35.9132, -79.0558],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 12,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_2db0b5981fab826d157d33a6eb3a842a = L.tileLayer(
+                "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 20,
+  "maxNativeZoom": 20,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors \u0026copy; \u003ca href=\"https://carto.com/attributions\"\u003eCARTO\u003c/a\u003e",
+  "subdomains": "abcd",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_2db0b5981fab826d157d33a6eb3a842a.addTo(map_72df17649cee15fd2b5c37f15fc2320b);
+        
+    
+            var circle_marker_fe1d35a583b52630c3e1e4209f797106 = L.circleMarker(
+                [35.9149, -79.0786],
+                {"bubblingMouseEvents": true, "color": "#2c3e50", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#3498db", "fillOpacity": 0.5, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 13.011667867491175, "stroke": true, "weight": 2}
+            ).addTo(map_72df17649cee15fd2b5c37f15fc2320b);
+        
+    
+        var popup_af91bd0e9b30f9a54ddd37bd6a598193 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_8809cd81f16e77ede20df1b047c34ef8 = $(`<div id="html_8809cd81f16e77ede20df1b047c34ef8" style="width: 100.0%; height: 100.0%;"><b>Carrboro Elementary</b><br>Raw 500m: 4.42<br>Rank: #4</div>`)[0];
+                popup_af91bd0e9b30f9a54ddd37bd6a598193.setContent(html_8809cd81f16e77ede20df1b047c34ef8);
+            
+        
+
+        circle_marker_fe1d35a583b52630c3e1e4209f797106.bindPopup(popup_af91bd0e9b30f9a54ddd37bd6a598193)
+        ;
+
+        
+    
+    
+            var circle_marker_36d41660bfa3d9ebfea8094ce51e86d0 = L.circleMarker(
+                [35.9404, -79.0789],
+                {"bubblingMouseEvents": true, "color": "#2c3e50", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#3498db", "fillOpacity": 0.5, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6.439563971118011, "stroke": true, "weight": 2}
+            ).addTo(map_72df17649cee15fd2b5c37f15fc2320b);
+        
+    
+        var popup_2a941985b56b161e2408fd4363523dcc = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_4924c239c950a9d21bd8435a2f237ed5 = $(`<div id="html_4924c239c950a9d21bd8435a2f237ed5" style="width: 100.0%; height: 100.0%;"><b>Seawell Elementary</b><br>Raw 500m: 0.79<br>Rank: #10</div>`)[0];
+                popup_2a941985b56b161e2408fd4363523dcc.setContent(html_4924c239c950a9d21bd8435a2f237ed5);
+            
+        
+
+        circle_marker_36d41660bfa3d9ebfea8094ce51e86d0.bindPopup(popup_2a941985b56b161e2408fd4363523dcc)
+        ;
+
+        
+    
+    
+            var circle_marker_38bdfc567d04eef6d0fb6ba717c4aa0a = L.circleMarker(
+                [35.9335, -79.0162],
+                {"bubblingMouseEvents": true, "color": "red", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "red", "fillOpacity": 0.5, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 8.112070618847934, "stroke": true, "weight": 2}
+            ).addTo(map_72df17649cee15fd2b5c37f15fc2320b);
+        
+    
+        var popup_1a786966cbec96068c2502c0dc3769b2 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_f28f3286ba5bcd89e1a3ae809e8288cf = $(`<div id="html_f28f3286ba5bcd89e1a3ae809e8288cf" style="width: 100.0%; height: 100.0%;"><b>Ephesus Elementary</b><br>Raw 500m: 1.72<br>Rank: #8</div>`)[0];
+                popup_1a786966cbec96068c2502c0dc3769b2.setContent(html_f28f3286ba5bcd89e1a3ae809e8288cf);
+            
+        
+
+        circle_marker_38bdfc567d04eef6d0fb6ba717c4aa0a.bindPopup(popup_1a786966cbec96068c2502c0dc3769b2)
+        ;
+
+        
+    
+    
+            var circle_marker_3dd772cf140c0f62d5ee1a4c0abb0caa = L.circleMarker(
+                [35.9359, -79.0436],
+                {"bubblingMouseEvents": true, "color": "#2c3e50", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#3498db", "fillOpacity": 0.5, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 10.320853397469456, "stroke": true, "weight": 2}
+            ).addTo(map_72df17649cee15fd2b5c37f15fc2320b);
+        
+    
+        var popup_01fcc1465e3050b3f76446a8f42b35d3 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_f3307b0c76a3e491b426d5a5ee53e8cb = $(`<div id="html_f3307b0c76a3e491b426d5a5ee53e8cb" style="width: 100.0%; height: 100.0%;"><b>Estes Hills Elementary</b><br>Raw 500m: 2.93<br>Rank: #7</div>`)[0];
+                popup_01fcc1465e3050b3f76446a8f42b35d3.setContent(html_f3307b0c76a3e491b426d5a5ee53e8cb);
+            
+        
+
+        circle_marker_3dd772cf140c0f62d5ee1a4c0abb0caa.bindPopup(popup_01fcc1465e3050b3f76446a8f42b35d3)
+        ;
+
+        
+    
+    
+            var circle_marker_129483fb7761da8a4dbb1eacc6a902d6 = L.circleMarker(
+                [35.8997, -79.0725],
+                {"bubblingMouseEvents": true, "color": "#2c3e50", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#3498db", "fillOpacity": 0.5, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 36.954147509628186, "stroke": true, "weight": 2}
+            ).addTo(map_72df17649cee15fd2b5c37f15fc2320b);
+        
+    
+        var popup_cd01eeef1be0032c1404fd239fa8001e = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_9e5f3f1f9f6400b0faf030a1a3fd5cc9 = $(`<div id="html_9e5f3f1f9f6400b0faf030a1a3fd5cc9" style="width: 100.0%; height: 100.0%;"><b>Frank Porter Graham Bilingue</b><br>Raw 500m: 17.61<br>Rank: #2</div>`)[0];
+                popup_cd01eeef1be0032c1404fd239fa8001e.setContent(html_9e5f3f1f9f6400b0faf030a1a3fd5cc9);
+            
+        
+
+        circle_marker_129483fb7761da8a4dbb1eacc6a902d6.bindPopup(popup_cd01eeef1be0032c1404fd239fa8001e)
+        ;
+
+        
+    
+    
+            var circle_marker_8fee79121882c75ec577c3760e266a36 = L.circleMarker(
+                [35.9063, -79.0266],
+                {"bubblingMouseEvents": true, "color": "#2c3e50", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#3498db", "fillOpacity": 0.5, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 40.0, "stroke": true, "weight": 2}
+            ).addTo(map_72df17649cee15fd2b5c37f15fc2320b);
+        
+    
+        var popup_fad71d7f787de8975154d60b786ce5c7 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_c42d05020ab09881c52348a05aba529d = $(`<div id="html_c42d05020ab09881c52348a05aba529d" style="width: 100.0%; height: 100.0%;"><b>Glenwood Elementary</b><br>Raw 500m: 19.29<br>Rank: #1</div>`)[0];
+                popup_fad71d7f787de8975154d60b786ce5c7.setContent(html_c42d05020ab09881c52348a05aba529d);
+            
+        
+
+        circle_marker_8fee79121882c75ec577c3760e266a36.bindPopup(popup_fad71d7f787de8975154d60b786ce5c7)
+        ;
+
+        
+    
+    
+            var circle_marker_0274c756f102a995985dc1874114c48a = L.circleMarker(
+                [35.9297, -79.099011],
+                {"bubblingMouseEvents": true, "color": "#2c3e50", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#3498db", "fillOpacity": 0.5, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 10.675347159229329, "stroke": true, "weight": 2}
+            ).addTo(map_72df17649cee15fd2b5c37f15fc2320b);
+        
+    
+        var popup_85fbaa76584ed09b91a6ae75626ac2f5 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_2a16bdbcd81060cdd43c95b2fac52533 = $(`<div id="html_2a16bdbcd81060cdd43c95b2fac52533" style="width: 100.0%; height: 100.0%;"><b>McDougle Elementary</b><br>Raw 500m: 3.13<br>Rank: #6</div>`)[0];
+                popup_85fbaa76584ed09b91a6ae75626ac2f5.setContent(html_2a16bdbcd81060cdd43c95b2fac52533);
+            
+        
+
+        circle_marker_0274c756f102a995985dc1874114c48a.bindPopup(popup_85fbaa76584ed09b91a6ae75626ac2f5)
+        ;
+
+        
+    
+    
+            var circle_marker_d4c39e3a53f6d6c6bc262f960b7ea716 = L.circleMarker(
+                [35.8791, -79.0685],
+                {"bubblingMouseEvents": true, "color": "#2c3e50", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#3498db", "fillOpacity": 0.5, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 13.495513754192087, "stroke": true, "weight": 2}
+            ).addTo(map_72df17649cee15fd2b5c37f15fc2320b);
+        
+    
+        var popup_3631b7d9fb411693ac742b618abdead6 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_4fe451225f65995b0fb57ddd55536a15 = $(`<div id="html_4fe451225f65995b0fb57ddd55536a15" style="width: 100.0%; height: 100.0%;"><b>Scroggs Elementary</b><br>Raw 500m: 4.68<br>Rank: #3</div>`)[0];
+                popup_3631b7d9fb411693ac742b618abdead6.setContent(html_4fe451225f65995b0fb57ddd55536a15);
+            
+        
+
+        circle_marker_d4c39e3a53f6d6c6bc262f960b7ea716.bindPopup(popup_3631b7d9fb411693ac742b618abdead6)
+        ;
+
+        
+    
+    
+            var circle_marker_e5a1e5f361ec3b1348ffddb962eaf280 = L.circleMarker(
+                [35.9144, -79.0081],
+                {"bubblingMouseEvents": true, "color": "#2c3e50", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#3498db", "fillOpacity": 0.5, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 5.321475407286845, "stroke": true, "weight": 2}
+            ).addTo(map_72df17649cee15fd2b5c37f15fc2320b);
+        
+    
+        var popup_546b29973194b2f736884641a0df91d4 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_4c8804894b7094d051f3de637a4c7d2f = $(`<div id="html_4c8804894b7094d051f3de637a4c7d2f" style="width: 100.0%; height: 100.0%;"><b>Rashkis Elementary</b><br>Raw 500m: 0.18<br>Rank: #11</div>`)[0];
+                popup_546b29973194b2f736884641a0df91d4.setContent(html_4c8804894b7094d051f3de637a4c7d2f);
+            
+        
+
+        circle_marker_e5a1e5f361ec3b1348ffddb962eaf280.bindPopup(popup_546b29973194b2f736884641a0df91d4)
+        ;
+
+        
+    
+    
+            var circle_marker_2d19bc2bc554e18b2595e4f21bf8adb1 = L.circleMarker(
+                [35.9665, -79.1023],
+                {"bubblingMouseEvents": true, "color": "#2c3e50", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#3498db", "fillOpacity": 0.5, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 11.753886265504889, "stroke": true, "weight": 2}
+            ).addTo(map_72df17649cee15fd2b5c37f15fc2320b);
+        
+    
+        var popup_e5665ea00c40e995bea78ecff4a1dee0 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_e55245cae2a32f5266766213f93e3eb5 = $(`<div id="html_e55245cae2a32f5266766213f93e3eb5" style="width: 100.0%; height: 100.0%;"><b>Morris Grove Elementary</b><br>Raw 500m: 3.72<br>Rank: #5</div>`)[0];
+                popup_e5665ea00c40e995bea78ecff4a1dee0.setContent(html_e55245cae2a32f5266766213f93e3eb5);
+            
+        
+
+        circle_marker_2d19bc2bc554e18b2595e4f21bf8adb1.bindPopup(popup_e5665ea00c40e995bea78ecff4a1dee0)
+        ;
+
+        
+    
+    
+            var circle_marker_28b5b04c5e5f168e43db9d06cd9dd6d5 = L.circleMarker(
+                [35.917543, -79.063168],
+                {"bubblingMouseEvents": true, "color": "#2c3e50", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#3498db", "fillOpacity": 0.5, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7.1177101745255875, "stroke": true, "weight": 2}
+            ).addTo(map_72df17649cee15fd2b5c37f15fc2320b);
+        
+    
+        var popup_5a984dbfebe7cb52eba939f808bc04b8 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_1bc8659aa68f59ee6f4b11658f7252fe = $(`<div id="html_1bc8659aa68f59ee6f4b11658f7252fe" style="width: 100.0%; height: 100.0%;"><b>Northside Elementary</b><br>Raw 500m: 1.17<br>Rank: #9</div>`)[0];
+                popup_5a984dbfebe7cb52eba939f808bc04b8.setContent(html_1bc8659aa68f59ee6f4b11658f7252fe);
+            
+        
+
+        circle_marker_28b5b04c5e5f168e43db9d06cd9dd6d5.bindPopup(popup_5a984dbfebe7cb52eba939f808bc04b8)
+        ;
+
+        
+    
+</script>
+</html>
