@@ -285,3 +285,9 @@ python src/school_desert.py
 ```
 
 School locations and the district boundary are stable (NCES 2023-24 and Census 2023). Road networks may change between OSM downloads. All random seeds are deterministic (Dijkstra is deterministic given the same graph).
+
+---
+
+## See Also
+
+- **[School Closure Impact Analysis](SCHOOL_CLOSURE_ANALYSIS.md)** — Extends this travel-time methodology with traffic redistribution modeling, dasymetric children distribution, and route extraction using `dijkstra_predecessor_and_distance()`.

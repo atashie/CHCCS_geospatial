@@ -1,0 +1,222 @@
+# School Closure Impact Analysis — Methodology & Limitations
+
+Comprehensive analysis of how elementary school closures affect travel access and traffic distribution across the CHCCS district.
+
+---
+
+## Overview
+
+This analysis answers two questions:
+
+1. **Access impact**: How much farther must families travel if a school closes?
+2. **Traffic impact**: How does school closure redistribute vehicle traffic across the road network?
+
+**Script**: `src/school_closure_analysis.py`
+**Output map**: `assets/maps/school_closure_analysis.html`
+
+---
+
+## Part 1: Access Impact (Travel Time Analysis)
+
+### Methodology
+
+Identical travel-time model as `school_desert.py`, re-implemented with `dijkstra_predecessor_and_distance()` to enable route extraction while maintaining travel-time consistency.
+
+1. **Grid creation**: 100 m UTM grid (~16K points) inside the CHCCS district boundary
+2. **Edge snapping**: Each grid point snaps to the nearest road edge via Shapely STRtree (not just nearest node); travel time is interpolated along the matched edge
+3. **Dijkstra**: 33 runs (11 schools × 3 modes), each exploring the full graph with no cutoff
+4. **Pixel assignment**: For each pixel × scenario × mode, vectorized NumPy computation finds the nearest open school
+5. **Zone polygons**: Pixel assignments converted to 55 m UTM squares, dissolved by nearest school, clipped to district
+6. **Rasterization**: Values projected onto shared WGS84 pixel grid with rotation gap-filling and district masking
+
+### Speed Model
+
+| Mode | Speed | Source |
+|------|-------|--------|
+| Walk | 2.5 mph (1.12 m/s) | MUTCD 4E.06 / Fitzpatrick et al. (2006, FHWA-HRT-06-042), mid-range K-5 |
+| Bike | 12 mph (5.36 m/s) | Standard urban cycling speed |
+| Drive | By road type (10-60 mph effective) | HCM6 Ch.16, FHWA Urban Arterial Speed Studies |
+
+**Off-network access leg**: Walk 90%, Bike 80%, Drive 20% of modal speed.
+
+### Closure Scenarios
+
+12 scenarios: baseline (all 11 open) + one scenario per school closure. All schools treated equally.
+
+---
+
+## Part 2: Traffic Impact Analysis
+
+### Children Distribution (Dasymetric Downscaling)
+
+1. **ACS block group data**: Fetches `B01001_003E/027E` (children 0-4) and `B01001_004E/028E` (children 5-9) from ACS 5-Year
+2. **Block-level allocation**: BG counts allocated to Census blocks proportionally to residential parcel area (dasymetric weighting)
+3. **Pixel-level distribution**: Block children distributed to 100 m grid pixels via area intersection (pixel square ∩ block polygon)
+
+### Route Extraction
+
+Uses predecessor maps from `dijkstra_predecessor_and_distance()`:
+
+```
+path = reconstruct_path(pred, source_node, entry_node)
+```
+
+O(path_length) per pixel. Total for ~16K pixels: ~560K edge increments, completing in <1 second.
+
+### Traffic Aggregation
+
+Drive-mode only (bike/walk traffic is negligible for road network analysis):
+
+1. For each pixel with children, reconstruct driving route from pixel entry node to school source node
+2. For each edge in the path, add pixel's `children_0_4` and `children_5_9` to that edge's accumulator
+3. Result: per-edge traffic volume keyed by scenario, mask setting, zone setting, and age group
+
+### Walk Zone Masking
+
+When enabled, pixels inside CHCCS ESWALK polygons contribute zero children to traffic (they walk instead of driving). Both masked and unmasked results are pre-computed server-side.
+
+### Zone-Restricted Routing
+
+Two routing modes:
+
+- **Nearest school** (default): Each pixel routes to the geographically nearest open school. After closure, all pixels re-optimize.
+- **Current school zones**: Each pixel routes to its attendance zone school. On closure, only pixels in the closed school's zone are displaced to their next-nearest open school. All other pixels keep their original routes.
+
+The zone-restricted mode shows the most policy-relevant incremental traffic impact.
+
+### Difference Computation
+
+```
+delta_traffic[edge] = closure_traffic[edge] - baseline_traffic[edge]
+```
+
+Positive delta = more traffic on that segment due to the closure.
+
+---
+
+## Data Sources
+
+| Data | Source | Cache |
+|------|--------|-------|
+| School locations | NCES EDGE 2023-24 | `data/cache/nces_school_locations.csv` |
+| District boundary | Census TIGER/Line | `data/cache/chccs_district_boundary.gpkg` |
+| Road networks | OpenStreetMap via OSMnx | `data/cache/network_{mode}.graphml` |
+| Children counts | ACS 5-Year B01001 | `data/cache/closure_analysis/children_blockgroups.csv` |
+| Block geometries | TIGER/Line 2020 | `data/cache/tiger_blocks_orange.gpkg` |
+| Block group geometries | TIGER/Line 2023 | `data/cache/tiger_blockgroups_orange.gpkg` |
+| Residential parcels | Orange County GIS | `data/raw/properties/combined_data_polys.gpkg` |
+| Walk zones | CHCCS.shp (ESWALK='Y') | `data/raw/properties/CHCCS/CHCCS.shp` |
+| Attendance zones | CHCCS.shp (dissolve by ENAME) | `data/raw/properties/CHCCS/CHCCS.shp` |
+
+---
+
+## Output Files
+
+| File | Description |
+|------|-------------|
+| `assets/maps/school_closure_analysis.html` | Interactive map with all layers |
+| `data/processed/school_closure_assignments.csv` | Per-pixel: grid_id, lat, lon, scenario, mode, nearest_school, min_time, delta |
+| `data/processed/school_closure_traffic.csv` | Per-edge: edge_idx, scenario, mask, zone, age_group, children count |
+
+### Cache Files
+
+All under `data/cache/closure_analysis/`:
+
+| File | Contents |
+|------|----------|
+| `dijkstra_{mode}.pkl` | Predecessor + distance dicts per school |
+| `pixel_grid.csv` | Grid point coordinates |
+| `snap_{mode}.npz` | Edge-snapping arrays |
+| `pixel_children.csv` | Children 0-4 and 5-9 per pixel |
+| `children_blockgroups.csv` | ACS children by block group |
+| `pixel_zone_assignments.csv` | Attendance zone per pixel |
+
+---
+
+## Interactive Map Controls
+
+### Control Panel
+
+| Section | Controls |
+|---------|----------|
+| Scenario | Radio: Baseline + 11 closure scenarios |
+| Travel Mode | Radio: Drive, Bike, Walk |
+| Part 1 Layers | Checkboxes: heatmap, zone boundaries, delta |
+| Part 2 Layers | Checkboxes: traffic 5-9, traffic 0-4, difference |
+| Options | Checkboxes: walk zones, walk zone masking, zone routing |
+
+### Road Segment Visualization
+
+- **Sequential** (traffic volume): YlOrRd colormap, line weight 1-6px
+- **Diverging** (traffic difference): Blue (less) → Red (more traffic)
+- **Normalization**: 95th percentile (per project guidelines)
+
+### Hover Tooltips
+
+- Road segments: road name, highway type, children count
+- Heatmap: travel time in minutes
+
+---
+
+## Assumptions
+
+| Assumption | Rationale |
+|-----------|-----------|
+| Static travel speeds | Consistent, reproducible; effective speeds discount for signals/stops |
+| Walk speed 2.5 mph | Mid-range MUTCD/FHWA for K-5 children |
+| Drive traffic only | Bike/walk traffic is negligible for road network analysis |
+| All schools absorb displaced students | No capacity constraints modeled |
+| Dasymetric weighting uses residential parcels | More accurate than uniform area distribution |
+| Off-network access at reduced speed | Drive 20%, walk 90%, bike 80% of modal speed |
+| Grid points >200 m from road = unreachable | 2× grid resolution; filters lakes, parks |
+| Children distributed proportionally to residential area | Standard dasymetric assumption |
+
+---
+
+## Limitations
+
+1. **No capacity constraints**: Remaining schools assumed to absorb all displaced students.
+2. **No turn penalties**: Dijkstra uses edge-level times only; intersection delays approximated by effective speed reduction.
+3. **Static road network**: OSM snapshot fixed at download time.
+4. **No school choice or magnet effects**: Assumes geographic attendance.
+5. **ACS margins of error**: Block-group children counts have sampling uncertainty (typically ±20-40% for small counts).
+6. **Dasymetric imprecision**: Children within a block group are allocated proportionally to residential area, which may not reflect actual household density.
+7. **Attendance zone boundaries**: CHCCS.shp may not reflect the most current zone assignments.
+8. **Binary zone assignment**: Pixels at zone boundaries may be assigned incorrectly (nearest-centroid fallback).
+9. **No temporal variation**: Traffic volumes represent a single time point, not peak vs. off-peak.
+10. **Route fidelity**: Reconstructed routes use graph-theoretic shortest paths, not observed travel routes.
+11. **Children age estimation**: ACS age groups (0-4, 5-9) are proxies for actual enrollment ages.
+12. **Walk zone definition**: CHCCS ESWALK polygons may not match current walk eligibility criteria.
+13. **FPG has no attendance zone**: Frank Porter Graham Bilingue is a magnet/choice school with no attendance zone polygon in the CHCCS shapefile. In zone-restricted routing mode, closing FPG produces zero traffic difference because no pixels are assigned to its zone. The nearest-school routing mode still captures FPG closure impacts normally.
+
+---
+
+## CLI Interface
+
+```bash
+python src/school_closure_analysis.py                    # Full run
+python src/school_closure_analysis.py --cache-only       # Cached data only
+python src/school_closure_analysis.py --skip-traffic      # Part 1 only
+python src/school_closure_analysis.py --mode drive        # Single mode
+```
+
+---
+
+## Performance
+
+| Step | Time (cold) |
+|------|-------------|
+| Network loading (cached) | ~5s |
+| Dijkstra with predecessors (33 runs) | ~90s |
+| Grid creation + edge snapping | ~15s |
+| Pixel assignments (vectorized) | ~15s |
+| Polygon dissolution | ~30s |
+| Children distribution | ~60s |
+| Route extraction + traffic | ~20s |
+| Map generation | ~10s |
+| **Total** | **~4 min** |
+| **Cached re-run** | **~30s** |
+
+---
+
+*This document is maintained alongside `src/school_closure_analysis.py`. Update when methodology changes.*

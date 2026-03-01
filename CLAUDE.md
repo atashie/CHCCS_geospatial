@@ -42,6 +42,7 @@ CHCCS_geospatial/
 │   ├── property_data.py                  # Orange County parcel processing
 │   ├── affordable_housing.py             # Affordable housing data download & assessment
 │   ├── environmental_map.py              # Consolidated environmental map (TRAP + flood + UHI)
+│   ├── school_closure_analysis.py        # School closure impact (travel + traffic)
 │   ├── data_processing.py                # Shared data loading utilities
 │   └── maps.py                           # Map visualizations (TODO: needs restructuring)
 ├── data/
@@ -56,6 +57,7 @@ CHCCS_geospatial/
 ├── docs/                       # Methodology and limitations
 │   ├── ENVIRONMENTAL_ANALYSIS_README.md  # Consolidated env analysis (TRAP + flood + UHI + canopy)
 │   ├── GEOSPATIAL_ANALYSIS_GUIDELINES.md # CRS, spatial ops, and map visualization standards
+│   ├── SCHOOL_CLOSURE_ANALYSIS.md         # School closure impact methodology & limitations
 │   ├── SCHOOL_DESERT_ANALYSIS_AND_LIMITATIONS.md
 │   ├── SOCIOECONOMIC_ANALYSIS_AND_LIMITATIONS.md
 │   ├── IMPLEMENTATION_NOTES.md
@@ -98,6 +100,12 @@ python src/affordable_housing.py --cache-only  # cached data only
 # Generate consolidated environmental analysis map (TRAP + flood + UHI)
 python src/environmental_map.py
 python src/environmental_map.py --cache-only   # cached data only
+
+# School closure impact analysis (travel time + traffic redistribution)
+python src/school_closure_analysis.py
+python src/school_closure_analysis.py --cache-only    # cached data only
+python src/school_closure_analysis.py --skip-traffic  # Part 1 only
+python src/school_closure_analysis.py --mode drive    # single mode
 ```
 
 ---
@@ -119,6 +127,10 @@ python src/environmental_map.py --cache-only   # cached data only
 | UHI proxy scores | `data/processed/uhi_proxy_scores.csv` | Computed (ESA WorldCover proxy) |
 | TRAP grid cache | `data/cache/trap_grids.npz` | Computed (road_pollution grid) |
 | UHI grid cache | `data/cache/uhi_grid.npz` | Computed (ESA WorldCover proxy) |
+| Closure Dijkstra cache | `data/cache/closure_analysis/dijkstra_{mode}.pkl` | Computed (predecessors + distances) |
+| Pixel children | `data/cache/closure_analysis/pixel_children.csv` | Computed (dasymetric ACS → pixels) |
+| Closure assignments | `data/processed/school_closure_assignments.csv` | Computed (travel time per pixel) |
+| Closure traffic | `data/processed/school_closure_traffic.csv` | Computed (children per edge) |
 
 ---
 
@@ -126,6 +138,7 @@ python src/environmental_map.py --cache-only   # cached data only
 
 **All documentation must be fully updated whenever a substantial change is made to a workflow, dataset, or asset (map or chart).** This includes but is not limited to:
 
+- [`docs/SCHOOL_CLOSURE_ANALYSIS.md`](docs/SCHOOL_CLOSURE_ANALYSIS.md) — School closure impact (travel + traffic methodology, limitations)
 - [`docs/ENVIRONMENTAL_ANALYSIS_README.md`](docs/ENVIRONMENTAL_ANALYSIS_README.md) — TRAP, flood, UHI proxy, tree canopy, consolidated map
 - [`docs/GEOSPATIAL_ANALYSIS_GUIDELINES.md`](docs/GEOSPATIAL_ANALYSIS_GUIDELINES.md) — CRS discipline, spatial operations, map visualization standards
 - [`docs/IMPLEMENTATION_NOTES.md`](docs/IMPLEMENTATION_NOTES.md) — Technical implementation details for all modules

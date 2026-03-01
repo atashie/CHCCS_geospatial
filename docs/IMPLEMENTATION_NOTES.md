@@ -155,6 +155,49 @@ Consolidated interactive map combining TRAP pollution, flood risk, tree canopy, 
 
 ---
 
+## School Closure Impact Analysis
+
+### Overview
+
+Comprehensive analysis combining travel-time impacts with children-weighted traffic network analysis for all 11 CHCCS elementary school closure scenarios. Extends the school desert methodology with route extraction (via predecessor maps) and dasymetric children distribution.
+
+### Workflow
+
+1. **Load data** — NCES schools, district boundary, walk zones, attendance zones
+2. **Load networks** — Cached OSMnx drive/bike/walk graphs
+3. **Create grid** — 100 m UTM grid (~16K points) + school anchor points
+4. **Edge-snap** — Shapely STRtree batch nearest-edge with fractional interpolation
+5. **Dijkstra with predecessors** — `dijkstra_predecessor_and_distance()` returns both distances AND predecessor maps; ~4 MB total memory for 33 runs
+6. **Vectorized pixel assignment** — NumPy-based nearest-school computation (~10x faster than Python loop in school_desert.py)
+7. **Zone polygon generation** — Pixel assignments → 55 m squares → dissolve → clip
+8. **Rasterize + delta** — Shared WGS84 pixel grid, rotation gap-fill, boundary mask
+9. **Children distribution** — ACS B01001 → blocks (dasymetric) → pixels (area intersection)
+10. **Route extraction + traffic** — Reconstruct paths from predecessors, accumulate children on edges
+11. **Traffic variants** — 4 combinations: ±walk_mask × ±zone_routing, each for 12 scenarios × 2 age groups
+12. **Build map** — Folium + embedded JS with road GeoJSON, traffic Float32Arrays, heatmap ImageOverlays
+
+### Key Design Decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| `dijkstra_predecessor_and_distance()` instead of `single_source_dijkstra_path_length()` | Enables route reconstruction at O(V) memory cost instead of O(V×path_length) |
+| Vectorized pixel assignment with NumPy | ~10x speedup over per-pixel Python loop |
+| Pre-computed traffic for all mask/zone combinations | Avoids complex client-side recomputation; 4 combinations × 12 scenarios × 2 ages = 96 arrays |
+| Drive-only traffic analysis | Bike/walk traffic is negligible for road network impact |
+| Pickle for Dijkstra cache | Complex nested dict structure not suited for NPZ/CSV |
+
+### Key Outputs
+
+| File | Purpose |
+|------|---------|
+| `src/school_closure_analysis.py` | Self-contained standalone script |
+| `assets/maps/school_closure_analysis.html` | Interactive map with Part 1 + Part 2 layers |
+| `data/processed/school_closure_assignments.csv` | Per-pixel travel time assignments |
+| `data/processed/school_closure_traffic.csv` | Per-edge traffic aggregation |
+| `data/cache/closure_analysis/` | Cached Dijkstra results, grid, snap arrays, children data |
+
+---
+
 ## Affordable Housing Data
 
 ### Overview
