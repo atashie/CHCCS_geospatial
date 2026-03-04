@@ -87,6 +87,75 @@ CHCCS_geospatial/
 - **[Geospatial Analysis Guidelines](docs/GEOSPATIAL_ANALYSIS_GUIDELINES.md)** — CRS discipline, spatial operations, and map visualization standards
 - **[Implementation Notes](docs/IMPLEMENTATION_NOTES.md)** — Technical details and data pipeline notes
 
+## Frequently Asked Questions
+
+### What does "Census ACS 2022 5-Year" mean?
+
+**ACS** stands for **American Community Survey**, an ongoing survey conducted by the U.S. Census Bureau that collects detailed demographic, economic, and housing data annually.
+
+**5-Year** means the data is a rolling average of survey responses collected over 5 calendar years (2018–2022). This pooling increases sample size and statistical reliability, especially for small geographic areas like Census block groups.
+
+**2022** refers to the release year — the ACS 2022 5-Year estimates were published in December 2023.
+
+### What is an Attendance Zone?
+
+An **Attendance Zone** is the geographic boundary that determines which school students are assigned to by default based on their home address. These boundaries are set by CHCCS and may change over time.
+
+**Important:** Attendance zone demographics ≠ actual school enrollment. Students can attend schools outside their assigned zone through school choice programs, magnet programs, or transfers. The maps show *who lives in each zone*, not *who attends each school*.
+
+### What are "Blocks" vs "Blocks (est.)"?
+
+**Block** = Census block, the smallest Census geography (~500 people on average). Block-level race data comes directly from the 2020 Decennial Census.
+
+**Block (est.)** = "Estimated" block-level data. The ACS only publishes data at the block group level (~1,500 people), not individual blocks. We use **dasymetric interpolation** to estimate block-level values by distributing block group totals proportionally based on residential parcel area within each block.
+
+The **(est.)** suffix indicates derived estimates, not raw Census data.
+
+### Who is considered "Minority" in % Minority?
+
+**% Minority** is calculated as `100% − % White Non-Hispanic`. This includes all residents who identify as:
+- Black or African American
+- Hispanic or Latino (of any race)
+- Asian
+- Two or more races (Multiracial)
+- Native American, Pacific Islander, or other races
+
+**Why is this different from the Race/Ethnicity dots?** The dot-density map shows each racial/ethnic group as separate colored dots. % Minority aggregates all non-White-NH groups into a single metric for comparing zones at a glance.
+
+### What does "% Elementary Age (5-9)" measure?
+
+- **Numerator:** Population aged 5–9 years (elementary school age)
+- **Denominator:** Total population of all ages in the area
+
+This is *not* the percentage of children who are 5–9, but rather the percentage of *all residents* in that area who fall into this age range. A higher % means a greater concentration of elementary-age children relative to the total population.
+
+### What does "Travel Mode" (Walk/Bike/Drive) show in the School Closure Map?
+
+The Travel Mode selector shows **travel time to the geographically nearest open school** — not the child's assigned attendance zone school.
+
+- **Walk:** Time at 2.5 mph child walking speed
+- **Bike:** Time at 12 mph cycling speed
+- **Drive:** Time at effective driving speeds (18–60 mph depending on road type)
+
+Travel times are computed using Dijkstra shortest-path algorithm on actual road networks from OpenStreetMap, not straight-line distance.
+
+### What are "Walk Zones" in the School Closure Map?
+
+**Walk Zones** are CHCCS-designated geographic boundaries where students are considered close enough to walk to school (typically within ~1 mile). These are shown as semi-transparent blue overlays when toggled on.
+
+Walk zones turn red when a school is closed in a simulation to highlight affected walkable areas.
+
+### What is "Current school zone" vs "Closest school by driving" routing?
+
+In the Traffic tab of the School Closure Map:
+
+- **Current school zone:** Routes each child to their CHCCS-assigned attendance zone school, regardless of distance. This reflects how traffic would flow if all families drove to their assigned school.
+- **Closest school by driving:** Routes each child to the geographically nearest school by road network. This shows a "nearest-school" scenario that ignores zone boundaries.
+
+Comparing these modes reveals how attendance zone assignments affect traffic patterns.
+
+---
+
 ## Known TODOs
 
 - **`maps.py`**: Generates walkability, comparison, and childcare maps for all schools using NCES location data.

@@ -1,6 +1,6 @@
 # Affordable Housing Data — Source Documentation & Quality Assessment
 
-**Download date:** 2026-03-01
+**Download date:** 2026-03-04
 **Records:** 1168 housing units
 **Columns:** 44
 
@@ -33,48 +33,48 @@ Native CRS is NC State Plane (WKID 102719); downloaded with `outSR=4326` for WGS
 | Field | Type | Populated | Null | % Complete |
 |-------|------|-----------|------|------------|
 | AHDR | int64 | 1168 | 0 | 100.0% |
-| AMIServed | str | 1167 | 1 | 99.9% |
-| Address | str | 1168 | 0 | 100.0% |
+| AMIServed | object | 1167 | 1 | 99.9% |
+| Address | object | 1168 | 0 | 100.0% |
 | Affordability_End_Date | float64 | 240 | 928 | 20.5% |
 | Bedrooms | int64 | 1168 | 0 | 100.0% |
 | Bond | int64 | 1168 | 0 | 100.0% |
 | CDBG | int64 | 1168 | 0 | 100.0% |
 | Carrboro_AHR | int64 | 1168 | 0 | 100.0% |
-| City | str | 1168 | 0 | 100.0% |
-| DV | str | 1161 | 7 | 99.4% |
-| DV1 | str | 1131 | 37 | 96.8% |
-| Disability | str | 1162 | 6 | 99.5% |
-| Disability1 | str | 1161 | 7 | 99.4% |
+| City | object | 1168 | 0 | 100.0% |
+| DV | object | 1161 | 7 | 99.4% |
+| DV1 | object | 1131 | 37 | 96.8% |
+| Disability | object | 1162 | 6 | 99.5% |
+| Disability1 | object | 1161 | 7 | 99.4% |
 | EstSquareFeet | float64 | 631 | 537 | 54.0% |
 | HOME | int64 | 1168 | 0 | 100.0% |
 | HUD_Money | int64 | 1168 | 0 | 100.0% |
-| Homeless | str | 1162 | 6 | 99.5% |
-| Homeless1 | str | 1161 | 7 | 99.4% |
-| Jurisdiction | str | 1168 | 0 | 100.0% |
-| MonthlyRent | str | 784 | 384 | 67.1% |
-| Name2 | str | 1163 | 5 | 99.6% |
+| Homeless | object | 1162 | 6 | 99.5% |
+| Homeless1 | object | 1161 | 7 | 99.4% |
+| Jurisdiction | object | 1168 | 0 | 100.0% |
+| MonthlyRent | object | 784 | 384 | 67.1% |
+| Name2 | object | 1163 | 5 | 99.6% |
 | OBJECTID | int64 | 1168 | 0 | 100.0% |
 | Other | int64 | 1168 | 0 | 100.0% |
-| PIN | str | 1168 | 0 | 100.0% |
-| ProjectName | str | 1168 | 0 | 100.0% |
-| ProjectType | str | 1168 | 0 | 100.0% |
-| Provider | str | 1168 | 0 | 100.0% |
-| RentalOwnership | str | 1168 | 0 | 100.0% |
-| Restricted | str | 216 | 952 | 18.5% |
-| Restricted2 | str | 623 | 545 | 53.3% |
-| Seniors | str | 1160 | 8 | 99.3% |
-| Seniors1 | str | 1161 | 7 | 99.4% |
+| PIN | object | 1168 | 0 | 100.0% |
+| ProjectName | object | 1168 | 0 | 100.0% |
+| ProjectType | object | 1168 | 0 | 100.0% |
+| Provider | object | 1168 | 0 | 100.0% |
+| RentalOwnership | object | 1168 | 0 | 100.0% |
+| Restricted | object | 216 | 952 | 18.5% |
+| Restricted2 | object | 623 | 545 | 53.3% |
+| Seniors | object | 1160 | 8 | 99.3% |
+| Seniors1 | object | 1161 | 7 | 99.4% |
 | TOCH_AHR | int64 | 1168 | 0 | 100.0% |
-| Tenant_Subsidy_Accepted | str | 782 | 386 | 67.0% |
+| Tenant_Subsidy_Accepted | object | 782 | 386 | 67.0% |
 | Total | int64 | 1168 | 0 | 100.0% |
-| UnitStructure | str | 863 | 305 | 73.9% |
-| UnitType | str | 1167 | 1 | 99.9% |
-| Veteran | str | 1161 | 7 | 99.4% |
-| Veteran1 | str | 1161 | 7 | 99.4% |
+| UnitStructure | object | 853 | 305 | 73.0% |
+| UnitType | object | 1167 | 1 | 99.9% |
+| Veteran | object | 1161 | 7 | 99.4% |
+| Veteran1 | object | 1161 | 7 | 99.4% |
 | X | float64 | 1168 | 0 | 100.0% |
 | Y | float64 | 1168 | 0 | 100.0% |
-| YearBuilt | str | 1143 | 25 | 97.9% |
-| Zip | str | 1168 | 0 | 100.0% |
+| YearBuilt | object | 1143 | 25 | 97.9% |
+| Zip | object | 1168 | 0 | 100.0% |
 
 ## Geographic Coverage
 
@@ -97,7 +97,7 @@ Native CRS is NC State Plane (WKID 102719); downloaded with `outSR=4326` for WGS
 | 0-30% | 446 | 38.2% |
 | 60-80% | 179 | 15.3% |
 | 80%+ | 36 | 3.1% |
-| *(null)* | 1 | 0.1% |
+| None | 1 | 0.1% |
 
 ### RentalOwnership
 
@@ -158,7 +158,7 @@ Native CRS is NC State Plane (WKID 102719); downloaded with `outSR=4326` for WGS
 | Single Family | 186 | 15.9% |
 | Townhome | 108 | 9.2% |
 | Condo | 102 | 8.7% |
-| *(null)* | 1 | 0.1% |
+| None | 1 | 0.1% |
 
 ### City
 
