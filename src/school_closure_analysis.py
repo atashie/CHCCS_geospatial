@@ -1762,6 +1762,12 @@ def _build_control_html(
     font-size: 11px;
     text-transform: uppercase;
 }}
+#closure-controls .section-subtitle {{
+    font-size: 10px;
+    font-style: italic;
+    color: #888;
+    margin: -3px 0 5px 0;
+}}
 .legend-box {{
     margin-top: 10px;
     padding-top: 8px;
@@ -1824,8 +1830,132 @@ def _build_control_html(
     background: #e8f0fe;
     border-radius: 3px;
 }}
+#closure-banner {{
+    background: white;
+    padding: 10px 20px;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+    text-align: center;
+}}
+#closure-banner h1 {{
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+}}
+#closure-banner .subtitle {{
+    margin: 2px 0 0 0;
+    font-size: 12px;
+    color: #666;
+    display: inline;
+}}
+.faq-btn-closure {{
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 8px;
+    background: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-left: 10px;
+    vertical-align: middle;
+}}
+.faq-btn-closure:hover {{
+    background: #1976D2;
+}}
+.faq-btn-closure .faq-icon {{
+    font-size: 13px;
+}}
+.faq-panel-closure {{
+    display: none;
+    position: fixed;
+    top: 60px;
+    left: 20px;
+    z-index: 1002;
+    background: white;
+    padding: 12px 15px;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    max-width: 350px;
+    max-height: 70vh;
+    overflow-y: auto;
+    font-size: 11px;
+    line-height: 1.4;
+}}
+.faq-panel-closure.visible {{
+    display: block;
+}}
+.faq-panel-closure h5 {{
+    margin: 0 0 10px 0;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #eee;
+    font-size: 12px;
+}}
+.faq-panel-closure .faq-item {{
+    margin-bottom: 10px;
+}}
+.faq-panel-closure .faq-q {{
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 3px;
+}}
+.faq-panel-closure .faq-a {{
+    color: #666;
+}}
+.faq-close-closure {{
+    position: absolute;
+    top: 6px;
+    right: 10px;
+    cursor: pointer;
+    font-size: 16px;
+    color: #999;
+}}
+.faq-close-closure:hover {{
+    color: #333;
+}}
 </style>
 
+<div id="closure-banner">
+    <div>
+        <h1>CHCCS School Closure Impact Analysis</h1>
+        <p class="subtitle">Travel time and traffic redistribution modeling for elementary school closures
+            <button class="faq-btn-closure" onclick="toggleFaqPanelClosure()" title="Click for FAQ">
+                <span class="faq-icon">?</span> Help
+            </button>
+        </p>
+    </div>
+</div>
+<div class="faq-panel-closure" id="faq-panel-closure">
+    <span class="faq-close-closure" onclick="toggleFaqPanelClosure()">&times;</span>
+    <h5>Frequently Asked Questions</h5>
+    <div class="faq-item">
+        <div class="faq-q">What is an Attendance Zone?</div>
+        <div class="faq-a">Geographic boundary determining which school students are assigned to by default. Zone demographics &#8800; actual enrollment.</div>
+    </div>
+    <div class="faq-item">
+        <div class="faq-q">What does Travel Mode show?</div>
+        <div class="faq-a">Travel time to the <em>geographically nearest</em> open school (not assigned school). Uses Dijkstra shortest-path on actual road networks.</div>
+    </div>
+    <div class="faq-item">
+        <div class="faq-q">What are Walk Zones?</div>
+        <div class="faq-a">CHCCS-designated areas where students are considered close enough to walk to school. Traffic from walk zones is excluded when masking is enabled.</div>
+    </div>
+    <div class="faq-item">
+        <div class="faq-q">"Current school zone" vs "Closest school"?</div>
+        <div class="faq-a"><b>Current school zone</b>: Routes to assigned attendance zone school. <b>Closest school</b>: Routes to geographically nearest school.</div>
+    </div>
+    <div class="faq-item">
+        <div class="faq-q">What does "Mask Walk Zones" do?</div>
+        <div class="faq-a">Excludes traffic from children in walk zones of <b>open</b> schools (assumes they walk, not drive). Closed school walk zones are never masked since those children must now drive.</div>
+    </div>
+</div>
 <div id="closure-controls">
     <div class="tab-buttons">
         <button class="tab-btn" onclick="window.switchTab('part1')">Travel Time</button>
@@ -1838,6 +1968,7 @@ def _build_control_html(
         <div class="scenario-list" id="p1-scenario-list"></div>
 
         <div class="section-title">Travel Mode</div>
+        <div class="section-subtitle">Time to nearest open school</div>
         <div id="p1-mode-options"></div>
 
         <div class="section-title">View</div>
@@ -2254,6 +2385,21 @@ def _build_control_html(
         map.on('mouseout', function() {{ tooltip.style.display = 'none'; }});
     }}
 
+    // --- FAQ panel toggle ---
+    window.toggleFaqPanelClosure = function() {{
+        var panel = document.getElementById('faq-panel-closure');
+        if (panel) panel.classList.toggle('visible');
+    }};
+    // Close FAQ panel when clicking outside
+    document.addEventListener('click', function(e) {{
+        var panel = document.getElementById('faq-panel-closure');
+        var btn = document.querySelector('.faq-btn-closure');
+        if (panel && panel.classList.contains('visible') &&
+            !panel.contains(e.target) && !btn.contains(e.target)) {{
+            panel.classList.remove('visible');
+        }}
+    }});
+
     // --- Tab switching ---
     window.switchTab = function(tab) {{
         activeTab = tab;
@@ -2403,8 +2549,8 @@ def _build_control_html(
             diffRadio.parentElement.style.opacity = '1';
         }}
 
-        // Walk zone masking: all or nothing
-        var maskedSchools = wzMask ? SCHOOL_NAMES.slice() : [];
+        // Walk zone masking: only mask OPEN schools (closed schools' walk zone students must drive)
+        var maskedSchools = wzMask ? SCHOOL_NAMES.filter(function(s) {{ return closedSchools.indexOf(s) === -1; }}) : [];
 
         // Get unmasked traffic array
         var tKey = scenario + '|' + routing + '|' + ageGroup;
@@ -2434,10 +2580,11 @@ def _build_control_html(
             var baseArr = getTrafficArray(baseKey);
             if (!baseArr) return;
 
-            // Apply same masking to baseline
+            // In baseline, ALL schools are open, so mask ALL walk zones (not just open schools in scenario)
+            var baselineMaskedSchools = wzMask ? SCHOOL_NAMES.slice() : [];
             var baseDisplayed = new Float32Array(baseArr);
-            for (var mi = 0; mi < maskedSchools.length; mi++) {{
-                var wzKeyB = 'baseline|' + routing + '|' + ageGroup + '|' + maskedSchools[mi];
+            for (var mi = 0; mi < baselineMaskedSchools.length; mi++) {{
+                var wzKeyB = 'baseline|' + routing + '|' + ageGroup + '|' + baselineMaskedSchools[mi];
                 var contribB = WZ_CONTRIBUTIONS[wzKeyB];
                 if (contribB) {{
                     for (var edgeIdx in contribB) {{
@@ -2557,14 +2704,19 @@ def _build_control_html(
     setTimeout(function() {{
         var mapDiv = document.querySelector('.folium-map');
         var controls = document.getElementById('closure-controls');
+        var banner = document.getElementById('closure-banner');
+        var faqPanel = document.getElementById('faq-panel-closure');
         if (mapDiv) {{
             document.documentElement.style.cssText = 'height:100vh;margin:0;overflow:hidden';
             document.body.style.cssText = 'display:flex;flex-direction:row;height:100vh;margin:0;overflow:hidden';
             var wrapper = document.createElement('div');
             wrapper.id = 'main-column';
             mapDiv.parentNode.insertBefore(wrapper, mapDiv);
+            // Add banner at top of main column
+            if (banner) wrapper.appendChild(banner);
+            if (faqPanel) wrapper.appendChild(faqPanel);
             wrapper.appendChild(mapDiv);
-            mapDiv.style.cssText += ';flex:1;height:100vh;position:relative;';
+            mapDiv.style.cssText += ';flex:1;position:relative;';
             if (controls) document.body.appendChild(controls);
             var map = getMap();
             if (map) setTimeout(function() {{ map.invalidateSize(); }}, 100);
