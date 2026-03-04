@@ -76,13 +76,6 @@ CRS_UTM17N = "EPSG:32617"
 
 CHAPEL_HILL_CENTER = [35.9132, -79.0558]
 
-# Isochrone zone definitions: (mode, threshold_seconds, display_label)
-ISOCHRONE_DEFS = [
-    ("drive", 300, "Within 5-min Drive"),
-    ("bike", 600, "Within 10-min Bike"),
-    ("walk", 900, "Within 15-min Walk"),
-]
-
 # Orange County, NC FIPS (37 = NC, 135 = Orange County)
 # Note: 063 is Durham County — a common mistake
 STATE_FIPS = "37"
@@ -638,201 +631,6 @@ def _build_nearest_zones(
     return dissolved
 
 
-def _compute_per_school_grid_times(
-    mode: str, schools: pd.DataFrame, district: gpd.GeoDataFrame,
-) -> pd.DataFrame | None:
-    """Compute travel time from each school to each grid point via edge-interpolated snapping.
-
-    Uses the same grid-based, edge-interpolated methodology as school_desert.py:
-    rasterize district at 100m, snap each grid cell to the nearest road edge,
-    compute per-school travel times using Dijkstra + edge-fraction interpolation.
-
-    Returns DataFrame with columns: grid_id, lat, lon, <School1>, <School2>, ...
-    where each school column contains travel time in seconds (NaN if unreachable).
-
-    Caches result to data/cache/isochrone_grid_{mode}.csv.
-    """
-    cache_path = DATA_CACHE / f"isochrone_grid_{mode}.csv"
-    if cache_path.exists():
-        _progress(f"Loading cached per-school grid times: {cache_path.name}")
-        return pd.read_csv(cache_path)
-
-    import osmnx as ox
-    import shapely
-
-    sys.path.insert(0, str(Path(__file__).resolve().parent))
-    from school_desert import (
-        _add_travel_time_weights, _build_edge_index, _ensure_bidirectional,
-        compute_school_travel_times, create_grid,
-        WALK_SPEED_MPS, BIKE_SPEED_MPS, DEFAULT_DRIVE_EFFECTIVE_MPH,
-        GRID_RESOLUTION_M,
-    )
-
-    graph_path = DATA_CACHE / f"network_{mode}.graphml"
-    if not graph_path.exists():
-        _progress(f"Network graph {graph_path} not found — run school_desert.py first")
-        return None
-
-    _progress(f"Computing per-school grid travel times: {mode} ...")
-    G = ox.load_graphml(graph_path)
-    _add_travel_time_weights(G, mode)
-    _ensure_bidirectional(G)
-
-    # Convert schools to GeoDataFrame if needed
-    if not isinstance(schools, gpd.GeoDataFrame):
-        schools_gdf = gpd.GeoDataFrame(
-            schools,
-            geometry=gpd.points_from_xy(schools["lon"], schools["lat"]),
-            crs=CRS_WGS84,
-        )
-    else:
-        schools_gdf = schools
-
-    # Full-graph Dijkstra from each school
-    travel_times = compute_school_travel_times(G, schools_gdf)
-    school_names = list(travel_times.keys())
-
-    # Create 100m grid over district
-    grid = create_grid(district.geometry.iloc[0])
-    n_points = len(grid)
-    _progress(f"  Grid: {n_points} points at 100m resolution")
-
-    # Build edge spatial index for snap
-    eidx = _build_edge_index(G)
-    cos_lat = eidx["cos_lat"]
-
-    grid_lons = grid["lon"].values
-    grid_lats = grid["lat"].values
-
-    # Batch query: nearest edge for every grid point
-    query_pts = shapely.points(grid_lons * cos_lat, grid_lats)
-    nearest_ei = eidx["tree"].nearest(query_pts)
-
-    # Vectorized perpendicular distance (scaled degrees → meters)
-    matched_geoms = np.array(eidx["scaled_geoms"], dtype=object)[nearest_ei]
-    access_dist_m = shapely.distance(query_pts, matched_geoms) * 111_320.0
-
-    # Vectorized fraction along matched edge
-    snap_fracs = shapely.line_locate_point(matched_geoms, query_pts, normalized=True)
-
-    # Per-point endpoint IDs and edge travel times
-    snap_start = eidx["start_nodes"][nearest_ei]
-    snap_end = eidx["end_nodes"][nearest_ei]
-    snap_etime = eidx["edge_times"][nearest_ei]
-
-    # Access-leg speed (same factors as school_desert.py)
-    ACCESS_SPEED_FACTOR = {"walk": 0.9, "bike": 0.8, "drive": 0.2}[mode]
-    access_speed = ACCESS_SPEED_FACTOR * {
-        "walk": WALK_SPEED_MPS, "bike": BIKE_SPEED_MPS,
-        "drive": DEFAULT_DRIVE_EFFECTIVE_MPH * 0.44704,
-    }[mode]
-    max_access_m = 2 * GRID_RESOLUTION_M
-
-    # Compute per-school travel time for each grid point
-    school_times = {s: np.full(n_points, np.nan) for s in school_names}
-
-    for i in range(n_points):
-        if access_dist_m[i] > max_access_m:
-            continue  # too far from any road — unreachable
-
-        u_node = snap_start[i]
-        v_node = snap_end[i]
-        f = snap_fracs[i]
-        e_time = snap_etime[i]
-        access_time_s = access_dist_m[i] / access_speed
-
-        for school_name in school_names:
-            t_u = travel_times[school_name].get(u_node, np.inf)
-            t_v = travel_times[school_name].get(v_node, np.inf)
-            via_u = t_u + f * e_time
-            via_v = t_v + (1.0 - f) * e_time
-            total = min(via_u, via_v) + access_time_s
-            if total < np.inf:
-                school_times[school_name][i] = total
-
-    # Build result DataFrame
-    result = pd.DataFrame({
-        "grid_id": grid["grid_id"].values,
-        "lat": grid_lats,
-        "lon": grid_lons,
-    })
-    for s in school_names:
-        result[s] = school_times[s]
-
-    result.to_csv(cache_path, index=False)
-    _progress(f"  Saved per-school grid times ({n_points} pts × {len(school_names)} schools) to {cache_path.name}")
-    return result
-
-
-def _build_isochrone_zones(
-    mode: str, threshold_seconds: int,
-    schools: pd.DataFrame, district: gpd.GeoDataFrame,
-) -> gpd.GeoDataFrame | None:
-    """Build per-school isochrone polygons via grid-based edge-interpolated travel times.
-
-    Polygons OVERLAP — a location reachable from multiple schools
-    will appear in multiple school polygons.
-
-    Uses ~16K uniformly-spaced grid points with edge-interpolated travel times
-    instead of sparse graph nodes with concave hull approximation.
-
-    Caches result to data/cache/isochrone_v2_{mode}_{threshold}s.gpkg.
-    """
-    cache_path = DATA_CACHE / f"isochrone_v2_{mode}_{int(threshold_seconds)}s.gpkg"
-    if cache_path.exists():
-        _progress(f"Loading cached isochrone: {cache_path.name}")
-        return gpd.read_file(cache_path)
-
-    _progress(f"Building isochrone zones: {mode} @ {threshold_seconds}s ...")
-
-    # Get per-school grid travel times
-    grid_df = _compute_per_school_grid_times(mode, schools, district)
-    if grid_df is None:
-        return None
-
-    # School columns are everything after grid_id, lat, lon
-    school_cols = [c for c in grid_df.columns if c not in ("grid_id", "lat", "lon")]
-
-    rows = []
-    for school_name in school_cols:
-        # Filter grid points reachable within threshold
-        mask = grid_df[school_name] <= threshold_seconds
-        reachable = grid_df[mask]
-        if len(reachable) < 3:
-            _progress(f"  {school_name}: only {len(reachable)} reachable grid pts, skipping")
-            continue
-
-        # Convert to UTM points, buffer each by half grid cell into squares, dissolve
-        pts = gpd.GeoDataFrame(
-            geometry=gpd.points_from_xy(reachable["lon"], reachable["lat"]),
-            crs=CRS_WGS84,
-        ).to_crs(CRS_UTM17N)
-        half = 55  # slightly over half of 100m grid cell
-        pts["geometry"] = [box(g.x - half, g.y - half, g.x + half, g.y + half)
-                           for g in pts.geometry]
-        dissolved = pts.dissolve().reset_index(drop=True)
-        dissolved["school"] = school_name
-        rows.append(dissolved)
-        _progress(f"  {school_name}: {len(reachable)} reachable grid pts")
-
-    if not rows:
-        _progress(f"  No isochrone zones built for {mode}")
-        return None
-
-    result = gpd.GeoDataFrame(pd.concat(rows, ignore_index=True), crs=CRS_UTM17N)
-
-    # Clip to district boundary
-    dist_utm = district.to_crs(CRS_UTM17N)
-    result = gpd.clip(result, dist_utm)
-    mask = result.geometry.geom_type.isin(["Polygon", "MultiPolygon"])
-    result = result[mask].copy()
-    result = result[["school", "geometry"]].to_crs(CRS_WGS84)
-
-    result.to_file(cache_path, driver="GPKG")
-    _progress(f"  Saved {len(result)} isochrone zones to {cache_path.name}")
-    return result
-
-
 # ═══════════════════════════════════════════════════════════════════════════
 # Section 5: Spatial analysis
 # ═══════════════════════════════════════════════════════════════════════════
@@ -1107,19 +905,6 @@ def downscale_bg_to_blocks(
 
     # Clean up
     blocks.drop(columns=["weight", "parent_bg"], inplace=True)
-
-    # Clip block geometries to residential parcels for dasymetric display
-    if use_res and len(res_parcels) > 0:
-        _progress("  Clipping block geometries to residential parcels ...")
-        res_parcels_utm2 = res_parcels.to_crs(CRS_UTM17N)
-        res_union = res_parcels_utm2.geometry.union_all()
-        blocks_utm2 = blocks.to_crs(CRS_UTM17N)
-        blocks["dasymetric_geometry"] = blocks_utm2.geometry.intersection(res_union).to_crs(CRS_WGS84)
-        # Drop blocks with empty intersection
-        empty_mask = blocks["dasymetric_geometry"].is_empty | blocks["dasymetric_geometry"].isna()
-        n_before = len(blocks)
-        blocks = blocks[~empty_mask].copy()
-        _progress(f"  Clipped: {n_before} -> {len(blocks)} blocks with residential area")
 
     _progress(f"  Downscaled 5 ACS metrics to {len(blocks)} blocks")
     return blocks
@@ -1491,6 +1276,7 @@ METRIC_DOT_SPECS = [
     ("pct_zero_vehicle", "% Zero-Vehicle HH", "Reds", "", "%", ".0f"),
     ("pct_elementary_age", "% Elementary Age (5-9)", "BuPu", "", "%", ".1f"),
     ("pct_young_children", "% Young Children (0-4)", "PuRd", "", "%", ".1f"),
+    ("ah_units", "Affordable Housing", "Blues", "", " units", ",.0f"),
 ]
 
 
@@ -1682,13 +1468,7 @@ def create_socioeconomic_map(
             ("% Young Children (Block est.)", "pct_young_children", "PuRd", "", "%", ".1f", True),
         ]
 
-        blk_wgs = enriched_blocks.copy()
-        # Use dasymetric (residential-clipped) geometry if available
-        if "dasymetric_geometry" in blk_wgs.columns:
-            blk_wgs = blk_wgs[~blk_wgs["dasymetric_geometry"].is_empty].copy()
-            blk_wgs = blk_wgs.set_geometry("dasymetric_geometry").drop(columns=["geometry"])
-            blk_wgs = blk_wgs.rename_geometry("geometry")
-        blk_wgs = blk_wgs.to_crs(CRS_WGS84)
+        blk_wgs = enriched_blocks.to_crs(CRS_WGS84).copy()
         # Reduce coordinate precision for smaller HTML
         blk_wgs.geometry = blk_wgs.geometry.simplify(0.0001, preserve_topology=True)
         blk_fg_names = []  # JS variable names for Block FeatureGroups
@@ -1808,7 +1588,7 @@ def create_socioeconomic_map(
     all_school_names = sorted(schools["school"].tolist())
     school_color_map = {s: zone_colors[i % len(zone_colors)] for i, s in enumerate(all_school_names)}
 
-    def _make_zone_fg(gdf, label, show=False, is_multi=False):
+    def _make_zone_fg(gdf, label, show=False):
         """Create a FeatureGroup of zone polygons from a GeoDataFrame."""
         fg = folium.FeatureGroup(name=label, show=show)
         names = []
@@ -1816,48 +1596,42 @@ def create_socioeconomic_map(
             sn = row["school"]
             names.append(sn)
             c = school_color_map.get(sn, "#888888")
-            kwargs = dict(
-                data=gpd.GeoDataFrame([row], crs=CRS_WGS84).__geo_interface__,
+            folium.GeoJson(
+                gpd.GeoDataFrame([row], crs=CRS_WGS84).__geo_interface__,
                 style_function=lambda x, c=c: {
                     "fillColor": c, "fillOpacity": 0.08,
                     "color": c, "weight": 2.5,
                 },
-            )
-            if not is_multi:
-                kwargs["popup"] = folium.Popup(f"<b>{sn}</b>", max_width=300)
-                kwargs["tooltip"] = sn
-            folium.GeoJson(**kwargs).add_to(fg)
+                popup=folium.Popup(f"<b>{sn}</b>", max_width=300),
+                tooltip=sn,
+            ).add_to(fg)
         fg.add_to(m)
         return fg, names
 
     # Load extra zone GDFs
     walk_zones_gdf = _load_walk_zones()
+    walk_nearest_gdf = _build_nearest_zones(GRID_CSV, "walk", district)
+    bike_nearest_gdf = _build_nearest_zones(GRID_CSV, "bike", district)
+    drive_nearest_gdf = _build_nearest_zones(GRID_CSV, "drive", district)
 
-    # Build isochrone zones (overlapping — a location can be in multiple school zones)
-    isochrone_gdfs = {}
-    for iso_mode, iso_thresh, iso_label in ISOCHRONE_DEFS:
-        isochrone_gdfs[iso_label] = _build_isochrone_zones(
-            iso_mode, iso_thresh, schools, district
-        )
-
-    # Build list of zone type dicts: (key, label, gdf, is_multi)
+    # Build list of zone type dicts: (key, label, gdf)
     zone_type_defs = [
-        ("school", "Current CHCCS Zones", zones, False),
-        ("walk_zone", "Walk Zones", walk_zones_gdf, False),
-    ] + [
-        (f"iso_{m}_{t}", label, isochrone_gdfs.get(label), True)
-        for m, t, label in ISOCHRONE_DEFS
+        ("school", "School Zones", zones),
+        ("walk_zone", "Walk Zones", walk_zones_gdf),
+        ("walk", "Nearest Walk", walk_nearest_gdf),
+        ("bike", "Nearest Bike", bike_nearest_gdf),
+        ("drive", "Nearest Drive", drive_nearest_gdf),
     ]
 
-    zone_types = []  # [{key, label, fg_name, names, gdf, is_multi}, ...]
-    for zt_key, zt_label, zt_gdf, zt_multi in zone_type_defs:
+    zone_types = []  # [{key, label, fg_name, names}, ...]
+    for zt_key, zt_label, zt_gdf in zone_type_defs:
         if zt_gdf is not None and len(zt_gdf) > 0:
             show_initial = (zt_key == "school")
-            fg, names = _make_zone_fg(zt_gdf, zt_label, show=show_initial, is_multi=zt_multi)
+            fg, names = _make_zone_fg(zt_gdf, zt_label, show=show_initial)
             zone_types.append({
                 "key": zt_key, "label": zt_label,
                 "fg_name": fg.get_name(), "names": sorted(names),
-                "gdf": zt_gdf, "is_multi": zt_multi,
+                "gdf": zt_gdf,
             })
         else:
             _progress(f"  Skipping zone type '{zt_label}' — no data")
@@ -1888,22 +1662,50 @@ def create_socioeconomic_map(
     school_fg.add_to(m)
 
     # -- Affordable housing layer --
-    housing_fg = None
     if affordable_housing is not None and len(affordable_housing) > 0:
-        housing_fg = folium.FeatureGroup(name="Affordable Housing", show=False)
+        ah_fg = folium.FeatureGroup(name="Affordable Housing", show=False)
+
+        # AMI color scale
+        ami_colors = {
+            "0-30%": "#d73027",    # Deep red (deeply affordable)
+            "30-60%": "#fc8d59",   # Orange
+            "60-80%": "#fee090",   # Light yellow
+            "80%+": "#91bfdb",     # Light blue
+        }
+
         for _, row in affordable_housing.iterrows():
+            ami = row.get("AMIServed", "Unknown")
+            if pd.isna(ami):
+                ami = "Unknown"
+            color = ami_colors.get(ami, "#808080")
+
+            project_name = row.get("ProjectName", "Unknown")
+            unit_type = row.get("UnitType", "N/A")
+            bedrooms = row.get("Bedrooms", "N/A")
+            rental_own = row.get("RentalOwnership", "N/A")
+
+            popup_html = f"""
+            <b>{project_name}</b><br>
+            AMI Level: {ami}<br>
+            Type: {unit_type}<br>
+            Bedrooms: {bedrooms}<br>
+            {rental_own}
+            """
+
             folium.CircleMarker(
                 location=[row.geometry.y, row.geometry.x],
-                radius=3, color="#e74c3c", fillColor="#e74c3c", fillOpacity=0.6,
-                popup=folium.Popup(
-                    f"<b>{row.get('ProjectName', '')}</b><br>"
-                    f"Type: {row.get('ProjectType', '')}<br>"
-                    f"AMI: {row.get('AMIServed', '')}",
-                    max_width=250,
-                ),
-            ).add_to(housing_fg)
-        housing_fg.add_to(m)
-        _progress(f"  Added {len(affordable_housing)} affordable housing markers")
+                radius=5,
+                color=color,
+                weight=1,
+                fillColor=color,
+                fillOpacity=0.8,
+                popup=folium.Popup(popup_html, max_width=200),
+            ).add_to(ah_fg)
+
+        ah_fg.add_to(m)
+        _progress(f"Added {len(affordable_housing)} affordable housing markers")
+    else:
+        ah_fg = None
 
     # -- Custom control panel replaces Folium LayerControl --
 
@@ -1987,12 +1789,9 @@ def create_socioeconomic_map(
                 crs=CRS_WGS84,
             )
 
-        zone_type_is_multi = []  # track which zone types are multi-school
         for zt in zone_types:
             zt_names = zt["names"]
             all_zone_names.append(zt_names)
-            is_multi = zt.get("is_multi", False)
-            zone_type_is_multi.append(is_multi)
 
             if pts_gdf is not None and len(zt_names) > 0:
                 zt_gdf_wgs = zt["gdf"].to_crs(CRS_WGS84)
@@ -2000,31 +1799,13 @@ def create_socioeconomic_map(
                     pts_gdf, zt_gdf_wgs[["school", "geometry"]],
                     how="left", predicate="within",
                 )
-
-                if is_multi:
-                    # Multi-school: a dot can be in multiple overlapping isochrones
-                    grouped = joined.groupby(joined.index)["school"].apply(list)
-                    indices = []
-                    for i in range(len(dot_data)):
-                        if i in grouped.index:
-                            idx_list = [master_idx[s] for s in grouped.loc[i]
-                                        if pd.notna(s) and s in master_idx]
-                            indices.append(idx_list or [])
-                        else:
-                            indices.append([])
-                    n_assigned = sum(1 for z in indices if len(z) > 0)
-                    _progress(f"  Assigned {n_assigned:,} dots to {len(zt_names)} {zt['label']} zones (multi)")
-                else:
-                    joined = joined[~joined.index.duplicated(keep="first")]
-                    # Map to master school indices (not zone-local indices)
-                    indices = joined["school"].map(master_idx).fillna(-1).astype(int).tolist()
-                    n_assigned = sum(1 for z in indices if z >= 0)
-                    _progress(f"  Assigned {n_assigned:,} dots to {len(zt_names)} {zt['label']} zones")
+                joined = joined[~joined.index.duplicated(keep="first")]
+                # Map to master school indices (not zone-local indices)
+                indices = joined["school"].map(master_idx).fillna(-1).astype(int).tolist()
+                n_assigned = sum(1 for z in indices if z >= 0)
+                _progress(f"  Assigned {n_assigned:,} dots to {len(zt_names)} {zt['label']} zones")
             else:
-                if is_multi:
-                    indices = [[] for _ in range(len(dot_data))]
-                else:
-                    indices = [-1] * len(dot_data)
+                indices = [-1] * len(dot_data)
 
             all_dot_zones.append(indices)
 
@@ -2049,45 +1830,16 @@ def create_socioeconomic_map(
 
         all_legends = {"Race/Ethnicity": race_legend_html}
         all_legends.update(metric_legends)
-        # Housing legend
-        housing_legend_html = (
-            '<div style="padding: 6px 10px; background: white; border-radius: 4px;'
-            ' box-shadow: 0 1px 4px rgba(0,0,0,0.3); max-width: 200px; font-size: 11px;">'
-            '<b>Affordable Housing</b><br>'
-            '<span style="display:inline-block; width:10px; height:10px; '
-            'background:#e74c3c; border-radius:50%; margin-right:4px;"></span>'
-            'Housing Unit</div>'
-        )
-        all_legends["Affordable Housing"] = housing_legend_html
 
         # ── JS data serialization ──
         dot_fg_name = dot_fg.get_name()
         map_name = m.get_name()
+        ah_fg_name = ah_fg.get_name() if ah_fg is not None else "null"
 
         race_colors_list = [color for color, label in RACE_CATEGORIES.values()]
-        metric_names = ["Race/Ethnicity"] + [spec[1] for spec in METRIC_DOT_SPECS] + ["Affordable Housing"]
-        metric_prefixes = [""] + [spec[3] for spec in METRIC_DOT_SPECS] + [""]
-        metric_suffixes = [""] + [spec[4] for spec in METRIC_DOT_SPECS] + [""]
-
-        # Pre-compute affordable housing counts per school per zone type
-        housing_counts = {}  # {zone_type_idx: {school_idx: count}}
-        if affordable_housing is not None and len(affordable_housing) > 0:
-            ah_gdf = affordable_housing.to_crs(CRS_WGS84)
-            for zi, zt in enumerate(zone_types):
-                zt_gdf_wgs = zt["gdf"].to_crs(CRS_WGS84)
-                try:
-                    joined = gpd.sjoin(ah_gdf, zt_gdf_wgs[["school", "geometry"]], predicate="within")
-                    if zt.get("is_multi", False):
-                        counts = joined.groupby("school").size().to_dict()
-                    else:
-                        joined = joined[~joined.index.duplicated(keep="first")]
-                        counts = joined.groupby("school").size().to_dict()
-                except Exception:
-                    counts = {}
-                housing_counts[zi] = [counts.get(s, 0) for s in master_school_names]
-        else:
-            for zi in range(len(zone_types)):
-                housing_counts[zi] = [0] * len(master_school_names)
+        metric_names = ["Race/Ethnicity"] + [spec[1] for spec in METRIC_DOT_SPECS]
+        metric_prefixes = [""] + [spec[3] for spec in METRIC_DOT_SPECS]
+        metric_suffixes = [""] + [spec[4] for spec in METRIC_DOT_SPECS]
 
         # Metric radio button labels
         radio_html = ""
@@ -2117,8 +1869,6 @@ def create_socioeconomic_map(
         metric_names_js = _json.dumps(metric_names, separators=(",", ":"))
         metric_prefixes_js = _json.dumps(metric_prefixes, separators=(",", ":"))
         metric_suffixes_js = _json.dumps(metric_suffixes, separators=(",", ":"))
-        # Add a dummy range for affordable housing (not used, but keeps indices safe)
-        metric_ranges.append((0, 1))
         metric_ranges_js = _json.dumps(metric_ranges, separators=(",", ":"))
 
         # Multi-zone-type arrays
@@ -2127,10 +1877,15 @@ def create_socioeconomic_map(
         master_schools_js = _json.dumps(master_school_names, separators=(",", ":"))
         zone_fg_names_js = "[" + ",".join(zt["fg_name"] for zt in zone_types) + "]"
         zone_type_labels_js = _json.dumps([zt["label"] for zt in zone_types], separators=(",", ":"))
-        zone_type_is_multi_js = _json.dumps(zone_type_is_multi, separators=(",", ":"))
-        school_color_map_js = _json.dumps(school_color_map, separators=(",", ":"))
-        housing_counts_js = _json.dumps(housing_counts, separators=(",", ":"))
-        housing_fg_name_js = housing_fg.get_name() if housing_fg is not None else "null"
+
+        # Zone-level affordable housing totals (in master_school_names order)
+        ah_by_zone_list = []
+        if zone_demographics is not None and "ah_total_units" in zone_demographics.columns:
+            zd_dict = zone_demographics.set_index("school")["ah_total_units"].to_dict()
+            ah_by_zone_list = [int(zd_dict.get(s, 0)) for s in master_school_names]
+        else:
+            ah_by_zone_list = [0] * len(master_school_names)
+        ah_by_zone_js = _json.dumps(ah_by_zone_list, separators=(",", ":"))
 
         # BG / Block layer JS refs
         bg_layers_js = "[" + ",".join(bg_fg_names) + "]"
@@ -2191,6 +1946,22 @@ def create_socioeconomic_map(
                 position: fixed; top: 50%; left: 10px; z-index: 1002;
                 transform: translateY(-50%);
             }}
+            #ah-legend {{
+                position: fixed; bottom: 30px; left: 10px; z-index: 1002;
+                background: white; padding: 8px 10px; border-radius: 5px;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.2); font-size: 11px;
+                display: none;  /* Hidden initially - shown when AH metric selected */
+            }}
+            #ah-legend b {{
+                display: block; margin-bottom: 4px;
+            }}
+            .ah-leg-row {{
+                display: flex; align-items: center; margin: 2px 0;
+            }}
+            .ah-leg-dot {{
+                width: 10px; height: 10px; border-radius: 50%;
+                margin-right: 6px; flex-shrink: 0;
+            }}
             .barplot-title {{
                 font-weight: bold; font-size: 12px; text-align: center;
                 margin-bottom: 4px; color: #555;
@@ -2212,27 +1983,15 @@ def create_socioeconomic_map(
             </div>
             <div class="ctrl-section">
                 <b>Layers</b>
-                <div id="layer-dots-group" style="display:none">
-                    <label style="display:block;margin:1px 0;cursor:pointer;">
-                        <input type="checkbox" id="chk-dots" checked> Population Dots
-                    </label>
-                </div>
-                <div id="layer-census-group">
-                    <label style="display:block;margin:1px 0;cursor:pointer;">
-                        <input type="checkbox" id="chk-bg"> Raw Data (Block Group)
-                    </label>
-                    <label style="display:block;margin:1px 0;cursor:pointer;">
-                        <input type="checkbox" id="chk-blk"> Dasymetric (Block)
-                    </label>
-                </div>
-                <div id="layer-housing-group" style="display:none">
-                    <label style="display:block;margin:1px 0;cursor:pointer;">
-                        <input type="checkbox" id="chk-housing" checked> Housing Units
-                    </label>
-                </div>
+                <label style="display:block;margin:1px 0;cursor:pointer;">
+                    <input type="checkbox" id="chk-bg"> Block Groups
+                </label>
+                <label style="display:block;margin:1px 0;cursor:pointer;">
+                    <input type="checkbox" id="chk-blk"> Blocks (est.)
+                </label>
             </div>
             <div class="ctrl-section">
-                <b>Community Zones</b>
+                <b>School Community Zones</b>
                 <div id="zone-type-radios" style="margin-left:4px">
                     {zone_type_radio_html}
                 </div>
@@ -2240,6 +1999,13 @@ def create_socioeconomic_map(
         </div>
         <div id="zone-strip"></div>
         <div id="dot-legend-box"></div>
+        <div id="ah-legend">
+            <b>Affordable Housing (AMI)</b>
+            <div class="ah-leg-row"><span class="ah-leg-dot" style="background:#d73027;"></span>0-30% (Deeply Affordable)</div>
+            <div class="ah-leg-row"><span class="ah-leg-dot" style="background:#fc8d59;"></span>30-60%</div>
+            <div class="ah-leg-row"><span class="ah-leg-dot" style="background:#fee090;"></span>60-80%</div>
+            <div class="ah-leg-row"><span class="ah-leg-dot" style="background:#91bfdb;"></span>80%+</div>
+        </div>
         <script>
         document.addEventListener('DOMContentLoaded', function() {{
             var map = {map_name};
@@ -2247,14 +2013,12 @@ def create_socioeconomic_map(
             var zoneFgs = {zone_fg_names_js};
             var bgLayers = {bg_layers_js};
             var blkLayers = {blk_layers_js};
+            var ahFg = {ah_fg_name};
             var dots = {data_js};
             var allDotZones = {all_dot_zones_js};
             var allZoneNames = {all_zone_names_js};
-            var zoneTypeIsMulti = {zone_type_is_multi_js};
-            var housingFg = {housing_fg_name_js};
-            var housingCounts = {housing_counts_js};
             var masterSchools = {master_schools_js};
-            var schoolColorMap = {school_color_map_js};
+            var ahByZone = {ah_by_zone_js};
             var blockColors = {block_colors_js};
             var blockValues = {block_values_js};
             var raceColors = {race_colors_js};
@@ -2276,7 +2040,7 @@ def create_socioeconomic_map(
                 marker.addTo(dotFg);
                 markers.push(marker);
             }}
-            if (!map.hasLayer(dotFg)) dotFg.addTo(map);
+            // Dots not added to map initially - only shown in Race/Ethnicity mode
 
             var legendBox = document.getElementById('dot-legend-box');
             var zoneStrip = document.getElementById('zone-strip');
@@ -2286,13 +2050,14 @@ def create_socioeconomic_map(
             if (mapDiv) mapDiv.parentElement.appendChild(zoneStrip);
 
             // ── Zone card rebuild ──
-            var currentLayout = '';  // 'histogram', 'barplot', or 'race'
+            var currentLayout = '';  // 'histogram', 'barplot', 'housing', or 'race'
+            var lastMetricIdx = metricNames.length - 1;
             function rebuildZoneCards() {{
                 zoneStrip.innerHTML = '';
                 var isRace = (currentMetric === 0);
-                var lastMetricIdx2 = metricNames.length - 1;
-                var isHousing2 = (currentMetric === lastMetricIdx2 && metricNames[lastMetricIdx2] === 'Affordable Housing');
-                var isIncome = (!isRace && !isHousing2 && metricPrefixes[currentMetric] === '$');
+                var isHousing = (currentMetric === lastMetricIdx && metricNames[lastMetricIdx] === 'Affordable Housing');
+                var isIncome = (!isRace && !isHousing && metricPrefixes[currentMetric] === '$');
+                var isPct = (!isRace && !isIncome && !isHousing);
 
                 if (isRace) {{
                     currentLayout = 'race';
@@ -2301,16 +2066,14 @@ def create_socioeconomic_map(
                     card.className = 'zone-card';
                     card.innerHTML = '<div class="zone-card-avg" style="padding:10px;">Select a metric to see zone distributions</div>';
                     zoneStrip.appendChild(card);
-                }} else if (isHousing2) {{
-                    currentLayout = 'barplot';
+                }} else if (isHousing) {{
+                    currentLayout = 'housing';
+                    // Single barplot for affordable housing totals
                     zoneStrip.innerHTML =
                         '<div id="barplot-panel" style="display:flex;gap:12px;width:100%;">' +
-                        '  <div style="flex:1;">' +
-                        '    <div class="barplot-title">Affordable Housing Units</div>' +
-                        '    <canvas id="bar-left" width="460" height="320"></canvas>' +
-                        '  </div>' +
-                        '  <div style="flex:1;">' +
-                        '    <canvas id="bar-right" width="460" height="320"></canvas>' +
+                        '  <div style="flex:1;max-width:500px;margin:0 auto;">' +
+                        '    <div class="barplot-title">Total Affordable Housing Units by Zone</div>' +
+                        '    <canvas id="bar-ah" width="460" height="320"></canvas>' +
                         '  </div>' +
                         '</div>';
                 }} else if (isIncome) {{
@@ -2382,15 +2145,6 @@ def create_socioeconomic_map(
                 if (chk.checked && currentMetric > 0) {{
                     var idx = currentMetric - 1;
                     if (idx < blkLayers.length) blkLayers[idx].addTo(map);
-                }}
-            }}
-
-            function toggleDots() {{
-                var chk = document.getElementById('chk-dots');
-                if (chk.checked) {{
-                    if (!map.hasLayer(dotFg)) dotFg.addTo(map);
-                }} else {{
-                    if (map.hasLayer(dotFg)) map.removeLayer(dotFg);
                 }}
             }}
 
@@ -2559,29 +2313,44 @@ def create_socioeconomic_map(
                 var dotZones = allDotZones[currentZoneType];
                 if (currentMetric === 0) return;  // race mode: nothing to draw
 
-                var lastMetricIdx = metricNames.length - 1;
-                var isHousing = (currentMetric === lastMetricIdx && metricNames[lastMetricIdx] === 'Affordable Housing');
-
-                if (isHousing) {{
-                    // Affordable Housing: show barplot of unit counts per school
-                    var counts = housingCounts[String(currentZoneType)] || [];
-                    drawBarplot('bar-left', masterSchools, counts, 'count');
-                    // Right chart: leave empty or reuse
-                    var canvas = document.getElementById('bar-right');
-                    if (canvas) {{
-                        var ctx = canvas.getContext('2d');
-                        ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    }}
-                    return;
-                }}
-
                 var mi = currentMetric - 1;
-                var vmin = metricRanges[mi][0];
-                var vmax = metricRanges[mi][1];
                 var pfx = metricPrefixes[currentMetric];
                 var sfx = metricSuffixes[currentMetric];
                 var isIncome = (pfx === '$');
+                var isHousing = (currentMetric === lastMetricIdx && metricNames[lastMetricIdx] === 'Affordable Housing');
                 var nSchools = masterSchools.length;
+                var zoneNames = allZoneNames[currentZoneType];
+                var nZones = zoneNames.length;
+
+                // Special case: Affordable Housing - compute zone totals dynamically
+                if (isHousing) {{
+                    // Sum ah_units per zone (using unique blocks per zone)
+                    var ahMi = lastMetricIdx - 1;  // blockValues index for ah_units
+                    var zoneTotals = [];
+                    var seenBlocks = [];  // Track which blocks counted per zone
+                    for (var zi = 0; zi < nZones; zi++) {{
+                        zoneTotals.push(0);
+                        seenBlocks.push({{}});
+                    }}
+                    for (var i = 0; i < dots.length; i++) {{
+                        var zi = dotZones[i];
+                        if (zi >= 0 && zi < nZones) {{
+                            var bi = dots[i][3];  // block index
+                            if (!seenBlocks[zi][bi]) {{
+                                seenBlocks[zi][bi] = true;
+                                var ahVal = blockValues[bi] && blockValues[bi][ahMi];
+                                if (ahVal !== null && ahVal !== undefined) {{
+                                    zoneTotals[zi] += ahVal;
+                                }}
+                            }}
+                        }}
+                    }}
+                    drawBarplot('bar-ah', zoneNames, zoneTotals, 'count');
+                    return;
+                }}
+
+                var vmin = metricRanges[mi][0];
+                var vmax = metricRanges[mi][1];
 
                 // Collect per-school values (always all 11 schools via master indices)
                 var schoolVals = [];
@@ -2590,26 +2359,12 @@ def create_socioeconomic_map(
                     schoolVals.push([]);
                     schoolDotCounts.push(0);
                 }}
-                var isMulti = zoneTypeIsMulti[currentZoneType];
                 for (var i = 0; i < dots.length; i++) {{
-                    if (isMulti) {{
-                        // Multi-school: dotZones[i] is an array of school indices
-                        var siList = dotZones[i];
-                        for (var j = 0; j < siList.length; j++) {{
-                            var si = siList[j];
-                            if (si >= 0 && si < nSchools) {{
-                                schoolDotCounts[si]++;
-                                var v = blockValues[dots[i][3]][mi];
-                                if (v !== null) schoolVals[si].push(v);
-                            }}
-                        }}
-                    }} else {{
-                        var si = dotZones[i];
-                        if (si >= 0 && si < nSchools) {{
-                            schoolDotCounts[si]++;
-                            var v = blockValues[dots[i][3]][mi];
-                            if (v !== null) schoolVals[si].push(v);
-                        }}
+                    var si = dotZones[i];
+                    if (si >= 0 && si < nSchools) {{
+                        schoolDotCounts[si]++;
+                        var v = blockValues[dots[i][3]][mi];
+                        if (v !== null) schoolVals[si].push(v);
                     }}
                 }}
 
@@ -2661,61 +2416,39 @@ def create_socioeconomic_map(
                 }}
             }}
 
-            function removeHousingLayer() {{
-                if (typeof housingFg !== 'undefined' && map.hasLayer(housingFg)) map.removeLayer(housingFg);
-            }}
-
             function updateMetric(idx) {{
                 var prevLayout = currentLayout;
                 currentMetric = idx;
-                var lastMetricIdx = metricNames.length - 1;
+                // Determine what the new layout should be
                 var isRace = (idx === 0);
                 var isHousing = (idx === lastMetricIdx && metricNames[lastMetricIdx] === 'Affordable Housing');
                 var isIncome = (!isRace && !isHousing && metricPrefixes[idx] === '$');
-                var needLayout = isRace ? 'race' : (isHousing ? 'barplot' : (isIncome ? 'histogram' : 'barplot'));
+                var needLayout = isRace ? 'race' : (isHousing ? 'housing' : (isIncome ? 'histogram' : 'barplot'));
                 if (needLayout !== prevLayout) {{
                     rebuildZoneCards();
                 }}
 
-                // Show/hide layer control groups
-                document.getElementById('layer-dots-group').style.display = isRace ? 'block' : 'none';
-                document.getElementById('layer-census-group').style.display = (!isRace && !isHousing) ? 'block' : 'none';
-                document.getElementById('layer-housing-group').style.display = isHousing ? 'block' : 'none';
-
-                // Toggle map layers accordingly
+                // Population dots only visible in Race/Ethnicity mode
                 if (isRace) {{
-                    // Show dots, hide bg/blk/housing
-                    if (document.getElementById('chk-dots').checked && !map.hasLayer(dotFg)) dotFg.addTo(map);
-                    for (var i = 0; i < bgLayers.length; i++) {{
-                        if (map.hasLayer(bgLayers[i])) map.removeLayer(bgLayers[i]);
-                    }}
-                    for (var i = 0; i < blkLayers.length; i++) {{
-                        if (map.hasLayer(blkLayers[i])) map.removeLayer(blkLayers[i]);
-                    }}
-                    removeHousingLayer();
-                    recolorDots();
-                }} else if (isHousing) {{
-                    // Show housing, hide dots/bg/blk
-                    if (map.hasLayer(dotFg)) map.removeLayer(dotFg);
-                    for (var i = 0; i < bgLayers.length; i++) {{
-                        if (map.hasLayer(bgLayers[i])) map.removeLayer(bgLayers[i]);
-                    }}
-                    for (var i = 0; i < blkLayers.length; i++) {{
-                        if (map.hasLayer(blkLayers[i])) map.removeLayer(blkLayers[i]);
-                    }}
-                    if (typeof housingFg !== 'undefined' && document.getElementById('chk-housing').checked) {{
-                        housingFg.addTo(map);
-                    }}
+                    if (!map.hasLayer(dotFg)) dotFg.addTo(map);
                 }} else {{
-                    // Census metric: show bg/blk per checkboxes, hide dots/housing
                     if (map.hasLayer(dotFg)) map.removeLayer(dotFg);
-                    removeHousingLayer();
-                    recolorDots();
-                    updateBGLayer();
-                    updateBlkLayer();
                 }}
 
+                // Affordable Housing markers only visible in AH mode
+                var ahLegend = document.getElementById('ah-legend');
+                if (isHousing && ahFg) {{
+                    if (!map.hasLayer(ahFg)) ahFg.addTo(map);
+                    if (ahLegend) ahLegend.style.display = 'block';
+                }} else if (ahFg) {{
+                    if (map.hasLayer(ahFg)) map.removeLayer(ahFg);
+                    if (ahLegend) ahLegend.style.display = 'none';
+                }}
+
+                recolorDots();
                 updateLegend();
+                updateBGLayer();
+                updateBlkLayer();
                 updateHistograms();
             }}
 
@@ -2734,103 +2467,12 @@ def create_socioeconomic_map(
                 }});
             }}
 
-            document.getElementById('chk-dots').addEventListener('change', toggleDots);
             document.getElementById('chk-bg').addEventListener('change', function() {{ updateBGLayer(); }});
             document.getElementById('chk-blk').addEventListener('change', function() {{ updateBlkLayer(); }});
-            document.getElementById('chk-housing').addEventListener('change', function() {{
-                if (typeof housingFg !== 'undefined') {{
-                    if (this.checked) {{ housingFg.addTo(map); }} else {{ if (map.hasLayer(housingFg)) map.removeLayer(housingFg); }}
-                }}
-            }});
             // Zones always visible — toggled by zone-type radios only
 
-            // ── Multi-school click popup (ray-casting point-in-polygon) ──
-            function pointInRing(lat, lng, ring) {{
-                var inside = false;
-                for (var i = 0, j = ring.length - 1; i < ring.length; j = i++) {{
-                    var yi = ring[i][1], xi = ring[i][0];
-                    var yj = ring[j][1], xj = ring[j][0];
-                    if ((yi > lat) !== (yj > lat) &&
-                        lng < (xj - xi) * (lat - yi) / (yj - yi) + xi) {{
-                        inside = !inside;
-                    }}
-                }}
-                return inside;
-            }}
-            function pointInGeometry(lat, lng, geom) {{
-                if (geom.type === 'Polygon') {{
-                    if (!pointInRing(lat, lng, geom.coordinates[0])) return false;
-                    for (var h = 1; h < geom.coordinates.length; h++) {{
-                        if (pointInRing(lat, lng, geom.coordinates[h])) return false;
-                    }}
-                    return true;
-                }} else if (geom.type === 'MultiPolygon') {{
-                    for (var p = 0; p < geom.coordinates.length; p++) {{
-                        var poly = geom.coordinates[p];
-                        if (pointInRing(lat, lng, poly[0])) {{
-                            var inHole = false;
-                            for (var h = 1; h < poly.length; h++) {{
-                                if (pointInRing(lat, lng, poly[h])) {{ inHole = true; break; }}
-                            }}
-                            if (!inHole) return true;
-                        }}
-                    }}
-                }}
-                return false;
-            }}
-            function findSchoolsAt(lat, lng) {{
-                var schools = [];
-                zoneFgs[currentZoneType].eachLayer(function(geoJsonGroup) {{
-                    geoJsonGroup.eachLayer(function(layer) {{
-                        if (layer.feature && layer.feature.geometry) {{
-                            if (pointInGeometry(lat, lng, layer.feature.geometry)) {{
-                                var sn = layer.feature.properties.school;
-                                if (sn && schools.indexOf(sn) === -1) schools.push(sn);
-                            }}
-                        }}
-                    }});
-                }});
-                schools.sort();
-                return schools;
-            }}
-            function schoolsHtml(schools) {{
-                var html = '<b>Schools within range:</b><br>';
-                for (var i = 0; i < schools.length; i++) {{
-                    var c = schoolColorMap[schools[i]] || '#888';
-                    html += '<span style="color:' + c + '">&#9632;</span> ' + schools[i] + '<br>';
-                }}
-                return html;
-            }}
-            map.on('click', function(e) {{
-                if (!zoneTypeIsMulti[currentZoneType]) return;
-                var schools = findSchoolsAt(e.latlng.lat, e.latlng.lng);
-                if (schools.length > 0) {{
-                    L.popup().setLatLng(e.latlng).setContent(schoolsHtml(schools)).openOn(map);
-                }}
-            }});
-            var multiTooltip = L.tooltip({{sticky: false, direction: 'top', offset: [0, -10]}});
-            var multiTooltipOpen = false;
-            map.on('mousemove', function(e) {{
-                if (!zoneTypeIsMulti[currentZoneType]) {{
-                    if (multiTooltipOpen) {{ map.closeTooltip(multiTooltip); multiTooltipOpen = false; }}
-                    return;
-                }}
-                var schools = findSchoolsAt(e.latlng.lat, e.latlng.lng);
-                if (schools.length > 0) {{
-                    multiTooltip.setLatLng(e.latlng).setContent(schoolsHtml(schools));
-                    if (!multiTooltipOpen) {{ multiTooltip.addTo(map); multiTooltipOpen = true; }}
-                }} else if (multiTooltipOpen) {{
-                    map.closeTooltip(multiTooltip);
-                    multiTooltipOpen = false;
-                }}
-            }});
-            map.on('mouseout', function() {{
-                if (multiTooltipOpen) {{ map.closeTooltip(multiTooltip); multiTooltipOpen = false; }}
-            }});
-
             // ── Initial state ──
-            // Trigger updateMetric to set layer visibility for initial metric
-            updateMetric(currentMetric);
+            updateMetric(0);  // Initialize with Race/Ethnicity selected
         }});
         </script>
         """
@@ -3205,6 +2847,15 @@ def main():
     print("\n[5/8] Fetching Decennial block data ...")
     blocks = fetch_decennial_block_data(cache_only=args.cache_only)
 
+    # ── 5a. Load affordable housing data ───────────────────────────────
+    affordable_housing = None
+    ah_path = DATA_CACHE / "affordable_housing.gpkg"
+    if ah_path.exists():
+        affordable_housing = gpd.read_file(ah_path)
+        _progress(f"Loaded {len(affordable_housing)} affordable housing units")
+    else:
+        _progress("Note: affordable_housing.gpkg not found (run affordable_housing.py to download)")
+
     # ── 5. Spatial analysis ───────────────────────────────────────────
     print("\n[6/8] Performing spatial analysis ...")
 
@@ -3243,6 +2894,30 @@ def main():
         fragments = intersect_zones_with_blockgroups(zones, bg_clipped, parcels=parcels)
         zone_demographics = aggregate_zone_demographics(fragments, zones)
 
+        # Add affordable housing counts per zone
+        if affordable_housing is not None and len(affordable_housing) > 0:
+            # Ensure CRS matches
+            ah_wgs = affordable_housing.to_crs(CRS_WGS84)
+            zones_wgs = zones.to_crs(CRS_WGS84)
+
+            # Spatial join: which zone does each unit fall in?
+            ah_with_zones = gpd.sjoin(
+                ah_wgs,
+                zones_wgs[["school", "geometry"]],
+                how="left",
+                predicate="within"
+            )
+
+            # Aggregate: total units per zone
+            ah_by_zone = ah_with_zones.groupby("school").size().reset_index(name="ah_total_units")
+
+            # Merge into zone_demographics
+            zone_demographics = zone_demographics.merge(
+                ah_by_zone, on="school", how="left"
+            )
+            zone_demographics["ah_total_units"] = zone_demographics["ah_total_units"].fillna(0).astype(int)
+            _progress(f"Added affordable housing counts to {len(ah_by_zone)} zones")
+
         # Save per-school demographics
         zone_demographics.to_csv(OUTPUT_SCHOOL_CSV, index=False)
         _progress(f"Saved per-school demographics to {OUTPUT_SCHOOL_CSV}")
@@ -3265,6 +2940,25 @@ def main():
         print("\n  Downscaling ACS block-group metrics to blocks ...")
         enriched_blocks = downscale_bg_to_blocks(bg_clipped, blocks_clipped, parcels=parcels)
 
+        # Add block-level affordable housing counts
+        if affordable_housing is not None and len(affordable_housing) > 0:
+            ah_wgs = affordable_housing.to_crs(CRS_WGS84)
+            blocks_wgs = enriched_blocks.to_crs(CRS_WGS84)
+
+            # Spatial join: count AH units per block
+            ah_with_blocks = gpd.sjoin(
+                ah_wgs[["geometry"]],
+                blocks_wgs[["GEOID20", "geometry"]],
+                how="left",
+                predicate="within"
+            )
+            ah_by_block = ah_with_blocks.groupby("GEOID20").size().reset_index(name="ah_units")
+
+            # Merge into enriched_blocks
+            enriched_blocks = enriched_blocks.merge(ah_by_block, on="GEOID20", how="left")
+            enriched_blocks["ah_units"] = enriched_blocks["ah_units"].fillna(0).astype(int)
+            _progress(f"  Added AH counts to {(enriched_blocks['ah_units'] > 0).sum()} blocks")
+
     # ── 6b. Dot-density generation ────────────────────────────────────
     racial_dots = None
     if not args.skip_dots and not args.skip_maps:
@@ -3280,25 +2974,6 @@ def main():
         )
     else:
         print("\n[7/8] Skipping dot-density generation")
-
-    # ── 6c. Load affordable housing ──────────────────────────────────
-    affordable_housing = None
-    ah_path = DATA_CACHE / "affordable_housing.gpkg"
-    if ah_path.exists():
-        _progress("Loading affordable housing data ...")
-        affordable_housing = gpd.read_file(ah_path)
-        # Keep only point geometries within district
-        affordable_housing = affordable_housing[affordable_housing.geometry.geom_type == "Point"].copy()
-        dist_wgs = district.to_crs(CRS_WGS84)
-        affordable_housing = gpd.sjoin(
-            affordable_housing.to_crs(CRS_WGS84),
-            dist_wgs[["geometry"]],
-            predicate="within",
-            how="inner",
-        ).drop(columns=["index_right"], errors="ignore")
-        _progress(f"  Loaded {len(affordable_housing)} affordable housing units within district")
-    else:
-        _progress("No affordable housing data found (run affordable_housing.py first)")
 
     # ── 7. Interactive map ────────────────────────────────────────────
     if not args.skip_maps:
