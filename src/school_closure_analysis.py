@@ -226,6 +226,42 @@ def ensure_directories():
         d.mkdir(parents=True, exist_ok=True)
 
 
+# Grid algorithm version — bump when create_grid() changes to auto-invalidate
+# grid-dependent caches. Dijkstra caches (per-node distances) and
+# children_blockgroups.csv (Census data) are grid-independent and kept.
+_GRID_VERSION = "2"  # v2 = WGS84-native grid (was v1 = UTM grid)
+
+_GRID_DEPENDENT_CACHES = [
+    "pixel_grid.csv",
+    "snap_drive.npz", "snap_bike.npz", "snap_walk.npz",
+    "pixel_children.csv",
+    "pixel_walk_zone_assignments.csv",
+    "pixel_zone_assignments.csv",
+]
+
+
+def _check_grid_version():
+    """Auto-invalidate grid-dependent caches when the grid algorithm changes."""
+    version_file = CLOSURE_CACHE / "grid_version.txt"
+    if version_file.exists():
+        existing = version_file.read_text().strip()
+        if existing == _GRID_VERSION:
+            return  # up to date
+        _progress(f"Grid version changed ({existing} → {_GRID_VERSION}), clearing grid-dependent caches")
+    else:
+        # First run with versioning — check if old caches exist
+        if (CLOSURE_CACHE / "pixel_grid.csv").exists():
+            _progress(f"Adding grid version sentinel, clearing old grid-dependent caches")
+
+    for name in _GRID_DEPENDENT_CACHES:
+        path = CLOSURE_CACHE / name
+        if path.exists():
+            path.unlink()
+            _progress(f"  Deleted: {name}")
+
+    version_file.write_text(_GRID_VERSION)
+
+
 def _get_census_api_key():
     """Get Census API key from environment or .env file."""
     key = os.environ.get("CENSUS_API_KEY")
@@ -490,26 +526,68 @@ def _graph_to_geojson_with_ids(G: nx.MultiDiGraph) -> tuple[dict, dict]:
     return geojson, edge_id_map
 
 
+def _graph_to_display_geojson(G: nx.MultiDiGraph) -> dict:
+    """Convert graph edges to lightweight GeoJSON for display only (no properties).
+
+    Used for bike/walk network overlays in Part 1.  Strips all feature
+    properties to minimise serialised size (~30-40 % smaller than the
+    full-property variant).
+    """
+    seen: set[tuple[int, int]] = set()
+    features: list[dict] = []
+
+    for u, v, data in G.edges(data=True):
+        edge_key = (min(u, v), max(u, v))
+        if edge_key in seen:
+            continue
+        seen.add(edge_key)
+
+        if "geometry" in data:
+            coords = [[round(c[0], 5), round(c[1], 5)]
+                      for c in data["geometry"].coords]
+        else:
+            coords = [
+                [round(G.nodes[u]["x"], 5), round(G.nodes[u]["y"], 5)],
+                [round(G.nodes[v]["x"], 5), round(G.nodes[v]["y"], 5)],
+            ]
+
+        features.append({
+            "type": "Feature",
+            "geometry": {"type": "LineString", "coordinates": coords},
+            "properties": {},
+        })
+
+    return {"type": "FeatureCollection", "features": features}
+
+
 # ═══════════════════════════════════════════════════════════════════════════
 # Section 3: Grid Creation and Edge Snapping
 # ═══════════════════════════════════════════════════════════════════════════
 
 def create_grid(district_polygon, resolution_m: int = GRID_RESOLUTION_M) -> gpd.GeoDataFrame:
-    """Create a regular point grid over the district at given resolution."""
-    district_gdf = gpd.GeoDataFrame(geometry=[district_polygon], crs=CRS_WGS84)
-    district_utm = district_gdf.to_crs(CRS_UTM17N).geometry.iloc[0]
+    """Create a regular WGS84 point grid over the district at given resolution.
 
-    minx, miny, maxx, maxy = district_utm.bounds
-    xs = np.arange(minx, maxx, resolution_m)
-    ys = np.arange(miny, maxy, resolution_m)
+    Grid is built directly in WGS84 using latitude-corrected degree spacing,
+    matching the proven approach in road_pollution.py and environmental_map.py.
+    This eliminates the ~1° convergence-angle rotation that occurs when creating
+    a grid in UTM and reprojecting to WGS84.
+    """
+    center_lat = (district_polygon.bounds[1] + district_polygon.bounds[3]) / 2
+    dlat = resolution_m / 111_320.0
+    dlon = resolution_m / (111_320.0 * np.cos(np.radians(center_lat)))
 
+    minlon, minlat, maxlon, maxlat = district_polygon.bounds
+    lons = np.arange(minlon, maxlon, dlon)
+    lats = np.arange(minlat, maxlat, dlat)
+
+    prepared = prep(district_polygon)
     points = []
     grid_ids = []
     idx = 0
-    for x in xs:
-        for y in ys:
-            pt = Point(x, y)
-            if district_utm.contains(pt):
+    for lon in lons:
+        for lat in lats:
+            pt = Point(lon, lat)
+            if prepared.contains(pt):
                 points.append(pt)
                 grid_ids.append(idx)
                 idx += 1
@@ -517,8 +595,8 @@ def create_grid(district_polygon, resolution_m: int = GRID_RESOLUTION_M) -> gpd.
     _progress(f"Created grid with {len(points)} points at {resolution_m}m resolution")
 
     gdf = gpd.GeoDataFrame(
-        {"grid_id": grid_ids}, geometry=points, crs=CRS_UTM17N,
-    ).to_crs(CRS_WGS84)
+        {"grid_id": grid_ids}, geometry=points, crs=CRS_WGS84,
+    )
     gdf["lat"] = gdf.geometry.y
     gdf["lon"] = gdf.geometry.x
     return gdf
@@ -785,7 +863,7 @@ def rasterize_grid(
     all_row_idx = np.clip(((maxlat - all_lats) / dlat).astype(int), 0, nrows - 1)
     has_point[all_row_idx, all_col_idx] = True
 
-    # Fill rotation gaps only
+    # Safety-net gap fill (no-op with WGS84-native grid; kept for robustness)
     for _ in range(2):
         rotation_gap = np.isnan(values_2d) & ~has_point
         if not rotation_gap.any():
@@ -836,6 +914,87 @@ def colorize_raster(values_2d, vmin, vmax, cmap_name) -> str | None:
 def encode_value_grid(values_2d: np.ndarray) -> str:
     """Encode a 2D float32 array as base64 for JS hover lookup."""
     return base64.b64encode(values_2d.astype(np.float32).tobytes()).decode("utf-8")
+
+
+def _generate_cmap_lut(cmap_name: str, n: int = 256) -> str:
+    """Generate a colormap lookup table as base64 RGBA bytes for client-side rendering.
+
+    Returns base64-encoded array of n*4 bytes (RGBA for each of 256 levels).
+    """
+    cmap = plt.get_cmap(cmap_name)
+    indices = np.linspace(0, 1, n)
+    rgba = (cmap(indices) * 255).astype(np.uint8)  # shape (n, 4)
+    return base64.b64encode(rgba.tobytes()).decode("utf-8")
+
+
+def compute_per_school_grids(
+    snap: SnapResult,
+    dijkstra_results: dict,
+    grid: gpd.GeoDataFrame,
+    school_names: list[str],
+    school_anchor_ids: dict,
+    district_polygon,
+    shared_grid_params: dict,
+) -> tuple[dict[str, str], dict]:
+    """Compute per-school travel time grids for client-side nearest-school computation.
+
+    For each school, computes a rasterized float32 grid of travel times (minutes)
+    from every pixel to that school. Client-side JS takes min() across open schools
+    to produce the nearest-school heatmap.
+
+    Returns:
+        (grids_b64, grid_meta)
+        grids_b64: {school_name: base64-encoded float32 2D array}
+        grid_meta: dict with lonMin, latMin, lonMax, latMax, nRows, nCols
+    """
+    n_points = len(snap.start_nodes)
+    grid_ids = grid["grid_id"].values
+    grid_meta = None
+
+    grids_b64 = {}
+    for school_name in school_names:
+        dij = dijkstra_results[school_name]
+        dist = dij["dist"]
+
+        # Vectorized distance lookup (same logic as assign_pixels_to_schools)
+        t_u = np.array([dist.get(u, np.inf) for u in snap.start_nodes])
+        t_v = np.array([dist.get(v, np.inf) for v in snap.end_nodes])
+
+        via_u = t_u + snap.fractions * snap.edge_times
+        via_v = t_v + (1.0 - snap.fractions) * snap.edge_times
+
+        best_via = np.minimum(via_u, via_v)
+        total_seconds = best_via + snap.access_times
+        total_seconds[~snap.reachable] = np.inf
+
+        # Zero out the school's own anchor point
+        for gid, sname in school_anchor_ids.items():
+            if sname == school_name:
+                idx = np.where(grid_ids == gid)[0]
+                if len(idx) > 0:
+                    total_seconds[idx[0]] = 0.0
+
+        total_minutes = total_seconds / 60.0
+        total_minutes[np.isinf(total_minutes)] = np.nan
+
+        # Rasterize
+        result_df = grid[["grid_id", "lat", "lon"]].copy()
+        result_df["value"] = total_minutes
+        vals_2d, meta, _bounds = rasterize_grid(
+            result_df, "value",
+            district_polygon=district_polygon,
+            grid_params=shared_grid_params,
+        )
+        if meta is not None and grid_meta is None:
+            grid_meta = meta
+
+        if vals_2d is not None:
+            grids_b64[school_name] = base64.b64encode(
+                vals_2d.astype(np.float32).tobytes()
+            ).decode("utf-8")
+
+    _progress(f"Computed {len(grids_b64)} per-school travel grids")
+    return grids_b64, grid_meta
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -1081,7 +1240,8 @@ def distribute_children_to_pixels(
         ]
         blocks_gdf["weight"] = blocks_gdf["weight"].clip(upper=1.0)
 
-    # Map BG children to blocks
+    # Map BG children to blocks (ensure GEOID types match — CSV may load as int)
+    bg_children["GEOID"] = bg_children["GEOID"].astype(str)
     bg_lookup = bg_children.set_index("GEOID")
     blocks_gdf["children_0_4"] = (
         blocks_gdf["parent_bg"].map(bg_lookup["children_0_4"]).fillna(0) *
@@ -1181,19 +1341,26 @@ def compute_traffic(
     entry_nodes: np.ndarray,
     nearest_schools: np.ndarray,
     walk_zones_gdf: gpd.GeoDataFrame | None = None,
-    walk_zone_mask_enabled: bool = False,
     zone_schools: np.ndarray | None = None,
     closed_schools: list[str] | None = None,
-) -> dict:
+    pixel_walk_zone: np.ndarray | None = None,
+) -> tuple[dict, dict]:
     """Aggregate children-weighted traffic on each road edge.
+
+    Also tracks per-walk-zone contributions for client-side masking:
+    for each walk zone school, records how many children from pixels inside
+    that walk zone traverse each edge.
 
     Args:
         zone_schools: If provided, pixel_zone_school[i] for zone-restricted routing.
-            Only used when determining which school each pixel routes to.
         closed_schools: Schools closed in this scenario (for zone-restricted routing).
+        pixel_walk_zone: Pre-computed array mapping pixel index → walk zone school name
+            (or None if pixel is not in any walk zone). Used for contribution tracking.
 
     Returns:
-        {edge_feature_idx: {"children_0_4": float, "children_5_9": float}}
+        (traffic, walk_zone_contributions)
+        traffic: {edge_feature_idx: {"children_0_4": float, "children_5_9": float}}
+        walk_zone_contributions: {walk_zone_school: {edge_idx: {"children_0_4": float, "children_5_9": float}}}
     """
     n_pixels = len(grid)
     grid_ids = grid["grid_id"].values
@@ -1201,18 +1368,10 @@ def compute_traffic(
     # Build pixel children lookup
     children_lookup = pixel_children.set_index("grid_id")
 
-    # Walk zone mask: precompute which pixels are inside walk zones
-    pixel_in_walk = np.zeros(n_pixels, dtype=bool)
-    if walk_zone_mask_enabled and walk_zones_gdf is not None:
-        _progress("  Computing walk zone pixel mask ...")
-        grid_pts = grid.geometry.values
-        wz_union = walk_zones_gdf.union_all()
-        wz_prepared = prep(wz_union)
-        pixel_in_walk = np.array([wz_prepared.contains(p) for p in grid_pts])
-        _progress(f"  {pixel_in_walk.sum()} pixels inside walk zones")
-
     # Traffic accumulator
     traffic = {}
+    # Per-walk-zone contribution accumulators
+    wz_contributions = {}
 
     # Determine actual school for each pixel
     actual_schools = nearest_schools.copy()
@@ -1241,7 +1400,6 @@ def compute_traffic(
                 pass
             # else: no zone assignment, use nearest_schools default
 
-    skipped = 0
     processed = 0
 
     for i in range(n_pixels):
@@ -1250,11 +1408,6 @@ def compute_traffic(
 
         school = actual_schools[i]
         if school is None or school not in dijkstra_results:
-            continue
-
-        # Walk zone mask
-        if walk_zone_mask_enabled and pixel_in_walk[i]:
-            skipped += 1
             continue
 
         # Get children count
@@ -1267,6 +1420,9 @@ def compute_traffic(
 
         if c04 + c59 < 0.001:
             continue
+
+        # Determine walk zone membership for this pixel
+        wz_school = pixel_walk_zone[i] if pixel_walk_zone is not None else None
 
         # Reconstruct path from entry_node to school source_node
         dij = dijkstra_results[school]
@@ -1290,11 +1446,69 @@ def compute_traffic(
             traffic[feat_idx]["children_0_4"] += c04
             traffic[feat_idx]["children_5_9"] += c59
 
+            # Track walk zone contribution
+            if wz_school is not None:
+                if wz_school not in wz_contributions:
+                    wz_contributions[wz_school] = {}
+                wz_edges = wz_contributions[wz_school]
+                if feat_idx not in wz_edges:
+                    wz_edges[feat_idx] = {"children_0_4": 0.0, "children_5_9": 0.0}
+                wz_edges[feat_idx]["children_0_4"] += c04
+                wz_edges[feat_idx]["children_5_9"] += c59
+
         processed += 1
 
-    _progress(f"  Traffic: {processed} pixels routed, {skipped} walk-masked, "
-              f"{len(traffic)} edges with traffic")
-    return traffic
+    _progress(f"  Traffic: {processed} pixels routed, "
+              f"{len(traffic)} edges with traffic, "
+              f"{len(wz_contributions)} walk zones tracked")
+    return traffic, wz_contributions
+
+
+def precompute_pixel_walk_zones(
+    grid: gpd.GeoDataFrame,
+    walk_zones_gdf: gpd.GeoDataFrame | None,
+) -> np.ndarray | None:
+    """Assign each pixel to its walk zone school (if any).
+
+    Returns array of school names (None for pixels outside all walk zones).
+    Cached to closure_analysis directory.
+    """
+    if walk_zones_gdf is None:
+        return None
+
+    cache_path = CLOSURE_CACHE / "pixel_walk_zone_assignments.csv"
+    if cache_path.exists():
+        _progress(f"Loading cached walk zone assignments: {cache_path.name}")
+        df = pd.read_csv(cache_path)
+        result = np.empty(len(grid), dtype=object)
+        lookup = dict(zip(df["grid_id"], df["walk_zone_school"]))
+        for i, gid in enumerate(grid["grid_id"].values):
+            val = lookup.get(gid)
+            result[i] = val if pd.notna(val) else None
+        return result
+
+    _progress("Assigning pixels to walk zones ...")
+    joined = gpd.sjoin(
+        grid[["grid_id", "geometry"]], walk_zones_gdf[["school", "geometry"]],
+        how="left", predicate="within"
+    )
+    deduped = joined.drop_duplicates(subset=["grid_id"], keep="first")
+    zone_map = dict(zip(deduped["grid_id"], deduped["school"]))
+
+    result = np.empty(len(grid), dtype=object)
+    for i, gid in enumerate(grid["grid_id"].values):
+        val = zone_map.get(gid)
+        result[i] = val if pd.notna(val) else None
+
+    n_assigned = sum(1 for v in result if v is not None)
+    _progress(f"  {n_assigned}/{len(grid)} pixels in walk zones")
+
+    cache_df = pd.DataFrame({
+        "grid_id": grid["grid_id"].values,
+        "walk_zone_school": result,
+    })
+    cache_df.to_csv(cache_path, index=False)
+    return result
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -1355,19 +1569,35 @@ def assign_pixels_to_zones(
 # ═══════════════════════════════════════════════════════════════════════════
 
 def create_map(
-    heatmap_data: dict,
+    heatmap_overlays: dict,
+    per_school_grids: dict[str, dict[str, str]],
+    grid_meta: dict,
     schools: gpd.GeoDataFrame,
     district_gdf: gpd.GeoDataFrame,
-    bounds: list,
-    hover_grids: dict,
-    grid_meta: dict,
+    zone_polygons: dict,
     road_geojson: dict,
     traffic_arrays: dict,
+    walk_zone_contributions: dict,
     n_edges: int,
-    zone_polygons: dict,
     walk_zones_geojson: dict | None,
+    network_geojson: dict | None = None,
 ) -> folium.Map:
-    """Create interactive Folium map with all layers."""
+    """Create interactive Folium map with tabbed sidebar.
+
+    Args:
+        heatmap_overlays: {scenario|mode|view: (base64_png, bounds)} — pre-rendered PNGs
+        per_school_grids: {mode: {school_name: base64 float32 grid}} — for hover tooltips
+        grid_meta: dict with lonMin, latMin, lonMax, latMax, nRows, nCols
+        schools: GeoDataFrame of school locations
+        district_gdf: GeoDataFrame of district boundary
+        zone_polygons: {scenario|mode: GeoJSON dict}
+        road_geojson: GeoJSON of road network edges
+        traffic_arrays: {scenario|zone|age: base64 float32 array} — unmasked only
+        walk_zone_contributions: {scenario|zone|age|walk_school: sparse JSON}
+        n_edges: number of road edges
+        walk_zones_geojson: GeoJSON of walk zone polygons
+        network_geojson: {mode: GeoJSON} — per-mode network for Part 1 overlay
+    """
     m = folium.Map(
         location=CHAPEL_HILL_CENTER,
         zoom_start=12,
@@ -1399,30 +1629,32 @@ def create_map(
         })
 
     control_html = _build_control_html(
-        heatmap_data, school_data, hover_grids, grid_meta,
-        road_geojson, traffic_arrays, n_edges,
-        zone_polygons, walk_zones_geojson,
+        heatmap_overlays, per_school_grids, grid_meta, school_data,
+        road_geojson, traffic_arrays, walk_zone_contributions,
+        n_edges, zone_polygons, walk_zones_geojson,
+        network_geojson=network_geojson,
     )
     m.get_root().html.add_child(folium.Element(control_html))
     return m
 
 
 def _build_control_html(
-    heatmap_data: dict, schools: list,
-    hover_grids: dict, grid_meta: dict,
+    heatmap_overlays: dict, per_school_grids: dict, grid_meta: dict,
+    schools: list,
     road_geojson: dict, traffic_arrays: dict,
+    walk_zone_contributions: dict,
     n_edges: int,
     zone_polygons: dict,
     walk_zones_geojson: dict | None,
+    network_geojson: dict | None = None,
 ) -> str:
-    """Build HTML/CSS/JS for the control panel and interactive layers."""
+    """Build HTML/CSS/JS for the tabbed control panel with pre-rendered image overlays."""
 
-    # Build overlay data for JS
+    # Build overlay data for JS — keyed by "scenario|mode|type"
     overlays_data = {}
-    for (scenario, mode, layer_type), (b64, img_bounds) in heatmap_data.items():
+    for key, (b64, img_bounds) in heatmap_overlays.items():
         if b64 is None:
             continue
-        key = f"{scenario}|{mode}|{layer_type}"
         overlays_data[key] = {
             "url": f"data:image/png;base64,{b64}",
             "bounds": img_bounds,
@@ -1434,33 +1666,41 @@ def _build_control_html(
     mode_labels_json = json.dumps(MODE_LABELS)
     mode_ranges_json = json.dumps(MODE_RANGES)
     schools_json = json.dumps(schools)
-    hover_grids_json = json.dumps(hover_grids)
     grid_meta_json = json.dumps(grid_meta) if grid_meta else "null"
+    per_school_grids_json = json.dumps(per_school_grids)
     road_geojson_json = json.dumps(road_geojson)
     traffic_arrays_json = json.dumps(traffic_arrays)
     n_edges_json = json.dumps(n_edges)
     zone_polygons_json = json.dumps(zone_polygons)
     walk_zones_json = json.dumps(walk_zones_geojson or {})
+    walk_zone_contributions_json = json.dumps(walk_zone_contributions)
+    network_geojson_json = json.dumps(network_geojson or {})
+
+    # Build list of all school names for walk zone checkboxes
+    school_names = [s["name"] for s in schools]
+    school_names_json = json.dumps(school_names)
 
     return f"""
 <style>
+/* Force crisp pixel rendering on all Leaflet image overlays */
 .leaflet-image-layer {{
     image-rendering: pixelated;
     image-rendering: -moz-crisp-edges;
     image-rendering: crisp-edges;
 }}
 #closure-controls {{
-    flex: 0 0 300px;
-    width: 300px;
+    flex: 0 0 320px;
+    width: 320px;
     height: 100vh;
     overflow-y: auto;
     background: white;
-    padding: 15px;
     border-left: 1px solid #dee2e6;
     box-shadow: -2px 0 8px rgba(0,0,0,0.1);
     font-family: 'Segoe UI', Tahoma, sans-serif;
     font-size: 13px;
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
 }}
 #main-column {{
     flex: 1;
@@ -1470,12 +1710,39 @@ def _build_control_html(
     height: 100vh;
     overflow: hidden;
 }}
-#closure-controls h3 {{
-    margin: 0 0 10px 0;
-    font-size: 15px;
-    color: #333;
+.tab-buttons {{
+    display: flex;
+    border-bottom: 2px solid #dee2e6;
+    flex-shrink: 0;
+}}
+.tab-btn {{
+    flex: 1;
+    padding: 10px 8px;
+    border: none;
+    background: #f8f9fa;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+    color: #666;
+    transition: all 0.2s;
+}}
+.tab-btn.active {{
+    background: white;
+    color: {ACCENT_COLOR};
     border-bottom: 2px solid {ACCENT_COLOR};
-    padding-bottom: 5px;
+    margin-bottom: -2px;
+}}
+.tab-btn:hover:not(.active) {{
+    background: #e9ecef;
+}}
+.tab-content {{
+    display: none;
+    padding: 12px 15px;
+    flex: 1;
+    overflow-y: auto;
+}}
+.tab-content.active {{
+    display: block;
 }}
 #closure-controls label {{
     display: block;
@@ -1495,17 +1762,17 @@ def _build_control_html(
     font-size: 11px;
     text-transform: uppercase;
 }}
-#closure-legend {{
+.legend-box {{
     margin-top: 10px;
     padding-top: 8px;
     border-top: 1px solid #ddd;
 }}
-#closure-legend .gradient-bar {{
+.legend-box .gradient-bar {{
     height: 12px;
     border-radius: 3px;
     margin: 4px 0;
 }}
-#closure-legend .range-labels {{
+.legend-box .range-labels {{
     display: flex;
     justify-content: space-between;
     font-size: 11px;
@@ -1534,82 +1801,116 @@ def _build_control_html(
     pointer-events: none;
     display: none;
     white-space: nowrap;
-    max-width: 300px;
-}}
-#traffic-legend {{
-    display: none;
-    margin-top: 8px;
-    padding-top: 6px;
-    border-top: 1px solid #eee;
-}}
-#traffic-legend .gradient-bar {{
-    height: 10px;
-    border-radius: 3px;
-    margin: 3px 0;
-}}
-#traffic-legend .range-labels {{
-    display: flex;
-    justify-content: space-between;
-    font-size: 10px;
-    color: #666;
+    max-width: 350px;
 }}
 .subsection {{
     margin-left: 8px;
     padding-left: 8px;
     border-left: 2px solid #eee;
 }}
+.scenario-list {{
+    max-height: 220px;
+    overflow-y: auto;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    padding: 2px;
+    margin-top: 4px;
+}}
+.scenario-list label {{
+    font-size: 11px !important;
+    padding: 3px 6px !important;
+}}
+.scenario-list label.selected {{
+    background: #e8f0fe;
+    border-radius: 3px;
+}}
 </style>
 
 <div id="closure-controls">
-    <h3>School Closure Impact</h3>
-
-    <div class="section-title">Scenario</div>
-    <div id="scenario-options"></div>
-
-    <div class="section-title">Travel Mode</div>
-    <div id="mode-options"></div>
-
-    <div class="section-title">Part 1: Access Layers</div>
-    <div class="subsection">
-        <label><input type="checkbox" id="show-heatmap" onchange="window.updateClosureMap()"> Travel time heatmap</label>
-        <label><input type="checkbox" id="show-zones" onchange="window.updateClosureMap()"> School zone boundaries</label>
-        <label><input type="checkbox" id="show-delta" onchange="window.updateClosureMap()"> Travel time change</label>
+    <div class="tab-buttons">
+        <button class="tab-btn" onclick="window.switchTab('part1')">Travel Time</button>
+        <button class="tab-btn active" onclick="window.switchTab('part2')">Traffic</button>
     </div>
 
-    <div class="section-title">Part 2: Traffic Layers</div>
-    <div class="subsection">
-        <label><input type="checkbox" id="show-traffic-59" onchange="window.updateClosureMap()"> Traffic: Children 5-9</label>
-        <label><input type="checkbox" id="show-traffic-04" onchange="window.updateClosureMap()"> Traffic: Children 0-4</label>
-        <label><input type="checkbox" id="show-traffic-diff" onchange="window.updateClosureMap()"> Traffic difference</label>
-    </div>
+    <!-- Part 1: Travel Time -->
+    <div class="tab-content" id="tab-part1">
+        <div class="section-title">Closure Scenario</div>
+        <div class="scenario-list" id="p1-scenario-list"></div>
 
-    <div class="section-title">Options</div>
-    <div class="subsection">
-        <label><input type="checkbox" id="show-walk-zones" onchange="window.updateClosureMap()"> Show walk zones</label>
-        <label><input type="checkbox" id="walk-zone-mask" onchange="window.updateClosureMap()"> Walk zone masking</label>
-        <label><input type="checkbox" id="zone-routing" onchange="window.updateClosureMap()"> Use current school zones</label>
-    </div>
+        <div class="section-title">Travel Mode</div>
+        <div id="p1-mode-options"></div>
 
-    <div id="closure-legend">
-        <div class="section-title">Legend</div>
-        <div id="legend-label"></div>
-        <div class="gradient-bar" id="legend-bar"></div>
-        <div class="range-labels">
-            <span id="legend-min"></span>
-            <span id="legend-max"></span>
+        <div class="section-title">View</div>
+        <div class="subsection">
+            <label><input type="radio" name="p1-view" value="abs" checked onchange="window.updatePart1()"> Absolute travel time</label>
+            <label><input type="radio" name="p1-view" value="delta" onchange="window.updatePart1()"> Increase vs. baseline</label>
         </div>
-    </div>
 
-    <div id="traffic-legend">
-        <div class="section-title" id="traffic-legend-title">Traffic</div>
-        <div class="gradient-bar" id="traffic-legend-bar"></div>
-        <div class="range-labels">
-            <span id="traffic-legend-min"></span>
-            <span id="traffic-legend-max"></span>
+        <div class="section-title">Layers</div>
+        <div class="subsection">
+            <label><input type="checkbox" id="p1-show-zones" checked onchange="window.updatePart1()"> Zone boundaries</label>
+            <label><input type="checkbox" id="p1-show-network" onchange="window.updatePart1()"> Road network</label>
         </div>
+
+        <div class="legend-box" id="p1-legend">
+            <div class="section-title">Legend</div>
+            <div id="p1-legend-label"></div>
+            <div class="gradient-bar" id="p1-legend-bar"></div>
+            <div class="range-labels">
+                <span id="p1-legend-min"></span>
+                <span id="p1-legend-max"></span>
+            </div>
+        </div>
+
+        <div class="school-marker-info" id="p1-school-info"></div>
     </div>
 
-    <div class="school-marker-info" id="school-info"></div>
+    <!-- Part 2: Traffic -->
+    <div class="tab-content active" id="tab-part2">
+        <div class="section-title">Closure Scenario</div>
+        <div class="scenario-list" id="p2-scenario-list"></div>
+
+        <div class="section-title">Age Group</div>
+        <div class="subsection">
+            <label><input type="radio" name="p2-age" value="5_9" checked onchange="window.updatePart2()"> Children 5-9</label>
+            <label><input type="radio" name="p2-age" value="0_4" onchange="window.updatePart2()"> Children 0-4</label>
+        </div>
+
+        <div class="section-title">School Community Definition</div>
+        <div class="subsection">
+            <label><input type="radio" name="p2-routing" value="zone" checked onchange="window.updatePart2()"> Current school zone</label>
+            <label><input type="radio" name="p2-routing" value="nearest" onchange="window.updatePart2()"> Closest school by driving</label>
+        </div>
+
+        <div class="section-title">Choose Map Type</div>
+        <div class="subsection">
+            <label><input type="radio" name="p2-view" value="abs" checked onchange="window.updatePart2()"> Estimated traffic</label>
+            <label><input type="radio" name="p2-view" value="diff" onchange="window.updatePart2()"> Estimated change in traffic</label>
+        </div>
+
+        <div class="section-title">Mask Walk Zones</div>
+        <div class="subsection">
+            <label><input type="radio" name="p2-wzmask" value="no" checked onchange="window.updatePart2()"> No</label>
+            <label><input type="radio" name="p2-wzmask" value="yes" onchange="window.updatePart2()"> Yes</label>
+        </div>
+
+        <div class="section-title">Show Walk Zone Polygons</div>
+        <div class="subsection">
+            <label><input type="radio" name="p2-showwz" value="no" checked onchange="window.updatePart2()"> No</label>
+            <label><input type="radio" name="p2-showwz" value="yes" onchange="window.updatePart2()"> Yes</label>
+        </div>
+
+        <div class="legend-box" id="p2-legend">
+            <div class="section-title" id="p2-legend-title">Traffic</div>
+            <div class="gradient-bar" id="p2-legend-bar"></div>
+            <div class="range-labels">
+                <span id="p2-legend-min"></span>
+                <span id="p2-legend-max"></span>
+            </div>
+        </div>
+
+        <div class="school-marker-info" id="p2-school-info"></div>
+    </div>
 </div>
 <div id="closure-tooltip"></div>
 
@@ -1619,65 +1920,122 @@ def _build_control_html(
     var SCENARIO_LABELS = {scenario_labels_json};
     var MODE_LABELS = {mode_labels_json};
     var MODE_RANGES = {mode_ranges_json};
-    var OVERLAYS_DATA = {overlays_data_json};
     var SCHOOLS = {schools_json};
-    var HOVER_GRIDS_B64 = {hover_grids_json};
+    var SCHOOL_NAMES = {school_names_json};
     var GRID_META = {grid_meta_json};
+    var PER_SCHOOL_GRIDS_B64 = {per_school_grids_json};
+    var OVERLAYS_DATA = {overlays_data_json};
     var ROAD_GEOJSON = {road_geojson_json};
     var TRAFFIC_ARRAYS_B64 = {traffic_arrays_json};
+    var WZ_CONTRIBUTIONS = {walk_zone_contributions_json};
     var N_EDGES = {n_edges_json};
     var ZONE_POLYGONS = {zone_polygons_json};
     var WALK_ZONES_GEO = {walk_zones_json};
+    var NETWORK_GEOJSON = {network_geojson_json};
 
-    var overlayLayers = {{}};
     var schoolMarkers = [];
-    var currentOverlayKey = null;
     var tooltip = document.getElementById('closure-tooltip');
     var roadLayer = null;
+    var networkLayer = null;  // Part 1 display-only network overlay
     var walkZoneLayer = null;
     var zoneLayer = null;
-    var activeTrafficMode = null;
+    var overlayLayers = {{}};  // key -> L.imageOverlay
+    var activeOverlayKey = null;
+    var activeTab = 'part2';
+    var mapRef = null;
+    var initialized = false;
+    var currentTrafficArr = null;  // Float32Array displayed on Part 2 (for hover)
+
+    // --- Decode caches ---
+    var decodedSchoolGrids = {{}};  // mode|school -> Float32Array
     var decodedTraffic = {{}};
 
-    // --- Decode helpers ---
-    var decodedGrids = {{}};
-    function decodeGrid(key) {{
-        if (decodedGrids[key]) return decodedGrids[key];
-        var b64 = HOVER_GRIDS_B64[key];
-        if (!b64) return null;
+    function b64ToFloat32(b64) {{
         var raw = atob(b64);
         var buf = new ArrayBuffer(raw.length);
         var u8 = new Uint8Array(buf);
         for (var i = 0; i < raw.length; i++) u8[i] = raw.charCodeAt(i);
-        decodedGrids[key] = new Float32Array(buf);
-        return decodedGrids[key];
+        return new Float32Array(buf);
     }}
 
-    function decodeTrafficArray(key) {{
-        if (decodedTraffic[key]) return decodedTraffic[key];
-        var b64 = TRAFFIC_ARRAYS_B64[key];
-        if (!b64) return null;
-        var raw = atob(b64);
-        var buf = new ArrayBuffer(raw.length);
-        var u8 = new Uint8Array(buf);
-        for (var i = 0; i < raw.length; i++) u8[i] = raw.charCodeAt(i);
-        decodedTraffic[key] = new Float32Array(buf);
+    function getSchoolGrid(mode, school) {{
+        var key = mode + '|' + school;
+        if (!decodedSchoolGrids[key]) {{
+            var grids = PER_SCHOOL_GRIDS_B64[mode];
+            if (!grids || !grids[school]) return null;
+            decodedSchoolGrids[key] = b64ToFloat32(grids[school]);
+        }}
+        return decodedSchoolGrids[key];
+    }}
+
+    function getTrafficArray(key) {{
+        if (!decodedTraffic[key]) {{
+            if (!TRAFFIC_ARRAYS_B64[key]) return null;
+            decodedTraffic[key] = b64ToFloat32(TRAFFIC_ARRAYS_B64[key]);
+        }}
         return decodedTraffic[key];
     }}
 
-    function getGridValue(lat, lon) {{
-        if (!currentOverlayKey || !GRID_META) return null;
-        var grid = decodeGrid(currentOverlayKey);
-        if (!grid) return null;
-        var fracX = (lon - GRID_META.lonMin) / (GRID_META.lonMax - GRID_META.lonMin);
-        var fracY = (lat - GRID_META.latMin) / (GRID_META.latMax - GRID_META.latMin);
-        var col = Math.floor(fracX * GRID_META.nCols);
-        var row = Math.floor((1 - fracY) * GRID_META.nRows);
-        if (row < 0 || row >= GRID_META.nRows || col < 0 || col >= GRID_META.nCols) return null;
-        var val = grid[row * GRID_META.nCols + col];
-        return isNaN(val) ? null : val;
+    // --- Client-side grid computations (hover tooltips only) ---
+    function computeNearestSchoolGrid(mode, closedSchools) {{
+        if (!GRID_META) return null;
+        var nPx = GRID_META.nRows * GRID_META.nCols;
+        var result = new Float32Array(nPx);
+        result.fill(Infinity);
+        var nearestNames = new Array(nPx);
+
+        var schoolList = SCHOOL_NAMES.filter(function(s) {{
+            return closedSchools.indexOf(s) === -1;
+        }});
+
+        for (var si = 0; si < schoolList.length; si++) {{
+            var grid = getSchoolGrid(mode, schoolList[si]);
+            if (!grid) continue;
+            for (var j = 0; j < nPx; j++) {{
+                if (!isNaN(grid[j]) && grid[j] < result[j]) {{
+                    result[j] = grid[j];
+                    nearestNames[j] = schoolList[si];
+                }}
+            }}
+        }}
+
+        // Replace Infinity with NaN
+        for (var j = 0; j < nPx; j++) {{
+            if (result[j] === Infinity) {{ result[j] = NaN; nearestNames[j] = null; }}
+        }}
+        return {{ values: result, names: nearestNames }};
     }}
 
+    // --- Pre-rendered heatmap overlays (Python-side plt.imsave) ---
+    function initOverlays(map) {{
+        for (var key in OVERLAYS_DATA) {{
+            var d = OVERLAYS_DATA[key];
+            overlayLayers[key] = L.imageOverlay(d.url, d.bounds, {{
+                opacity: 0,
+                interactive: false,
+                pane: 'heatmapPane',
+            }}).addTo(map);
+        }}
+    }}
+
+    function showOverlay(key) {{
+        if (activeOverlayKey && overlayLayers[activeOverlayKey]) {{
+            overlayLayers[activeOverlayKey].setOpacity(0);
+        }}
+        activeOverlayKey = key;
+        if (key && overlayLayers[key]) {{
+            overlayLayers[key].setOpacity(1);
+        }}
+    }}
+
+    function clearHeatmapOverlay() {{
+        if (activeOverlayKey && overlayLayers[activeOverlayKey]) {{
+            overlayLayers[activeOverlayKey].setOpacity(0);
+        }}
+        activeOverlayKey = null;
+    }}
+
+    // --- Helpers ---
     function getSelectedValue(name) {{
         var radios = document.querySelectorAll('input[name="' + name + '"]');
         for (var i = 0; i < radios.length; i++) {{
@@ -1687,10 +2045,12 @@ def _build_control_html(
     }}
 
     function getMap() {{
+        if (mapRef) return mapRef;
         for (var key in window) {{
             try {{
                 if (window[key] && window[key]._leaflet_id && window[key].getZoom) {{
-                    return window[key];
+                    mapRef = window[key];
+                    return mapRef;
                 }}
             }} catch(e) {{}}
         }}
@@ -1701,111 +2061,56 @@ def _build_control_html(
     function trafficColor(val, maxVal, isDiff) {{
         if (val === 0 || isNaN(val)) return {{ color: 'transparent', weight: 0, opacity: 0 }};
         if (isDiff) {{
-            // Diverging: blue (negative) to red (positive)
             var t = Math.max(-1, Math.min(1, val / maxVal));
             var r, g, b;
             if (t < 0) {{
-                // Blue side
                 var s = -t;
-                r = Math.round(255 * (1 - s) + 49 * s);
-                g = Math.round(255 * (1 - s) + 130 * s);
-                b = Math.round(255 * (1 - s) + 189 * s);
+                r = Math.round(255*(1-s) + 49*s);
+                g = Math.round(255*(1-s) + 130*s);
+                b = Math.round(255*(1-s) + 189*s);
             }} else {{
-                // Red side
                 var s = t;
-                r = Math.round(255 * (1 - s) + 215 * s);
-                g = Math.round(255 * (1 - s) + 48 * s);
-                b = Math.round(255 * (1 - s) + 39 * s);
+                r = Math.round(255*(1-s) + 215*s);
+                g = Math.round(255*(1-s) + 48*s);
+                b = Math.round(255*(1-s) + 39*s);
             }}
             var w = 1 + Math.abs(t) * 5;
-            return {{ color: 'rgb(' + r + ',' + g + ',' + b + ')', weight: w, opacity: 0.8 }};
+            return {{ color: 'rgb('+r+','+g+','+b+')', weight: w, opacity: 0.8 }};
         }} else {{
-            // Sequential: YlOrRd
             var t = Math.min(1, val / maxVal);
             var r, g, b;
             if (t < 0.33) {{
                 var s = t / 0.33;
-                r = Math.round(255 * (1 - s) + 254 * s);
-                g = Math.round(255 * (1 - s) + 178 * s);
-                b = Math.round(204 * (1 - s) + 76 * s);
+                r = Math.round(255*(1-s) + 254*s);
+                g = Math.round(255*(1-s) + 178*s);
+                b = Math.round(204*(1-s) + 76*s);
             }} else if (t < 0.66) {{
                 var s = (t - 0.33) / 0.33;
-                r = Math.round(254 * (1 - s) + 240 * s);
-                g = Math.round(178 * (1 - s) + 59 * s);
-                b = Math.round(76 * (1 - s) + 32 * s);
+                r = Math.round(254*(1-s) + 240*s);
+                g = Math.round(178*(1-s) + 59*s);
+                b = Math.round(76*(1-s) + 32*s);
             }} else {{
                 var s = (t - 0.66) / 0.34;
-                r = Math.round(240 * (1 - s) + 189 * s);
-                g = Math.round(59 * (1 - s) + 0 * s);
-                b = Math.round(32 * (1 - s) + 38 * s);
+                r = Math.round(240*(1-s) + 189*s);
+                g = Math.round(59*(1-s) + 0*s);
+                b = Math.round(32*(1-s) + 38*s);
             }}
             var w = 1 + t * 5;
-            return {{ color: 'rgb(' + r + ',' + g + ',' + b + ')', weight: w, opacity: 0.8 }};
+            return {{ color: 'rgb('+r+','+g+','+b+')', weight: w, opacity: 0.8 }};
         }}
     }}
 
-    // --- Initialize layers ---
-    function initOverlays(map) {{
-        for (var key in OVERLAYS_DATA) {{
-            var d = OVERLAYS_DATA[key];
-            overlayLayers[key] = L.imageOverlay(d.url, d.bounds, {{opacity: 0}}).addTo(map);
-        }}
-        // Road layer
-        roadLayer = L.geoJSON(ROAD_GEOJSON, {{
-            style: {{ color: 'transparent', weight: 0, opacity: 0 }},
-            onEachFeature: function(feature, layer) {{
-                layer.on('mouseover', function(e) {{
-                    var idx = feature.properties.idx;
-                    var name = feature.properties.name || 'Unnamed road';
-                    var hw = feature.properties.highway || '';
-                    var lines = ['<b>' + name + '</b> (' + hw + ')'];
-                    if (activeTrafficMode && decodedTraffic[activeTrafficMode]) {{
-                        var arr = decodedTraffic[activeTrafficMode];
-                        if (idx < arr.length) {{
-                            lines.push('Traffic: ' + arr[idx].toFixed(1) + ' children');
-                        }}
-                    }}
-                    tooltip.innerHTML = lines.join('<br>');
-                    tooltip.style.left = (e.originalEvent.pageX + 15) + 'px';
-                    tooltip.style.top = (e.originalEvent.pageY - 10) + 'px';
-                    tooltip.style.display = 'block';
-                }});
-                layer.on('mouseout', function() {{
-                    tooltip.style.display = 'none';
-                }});
-            }}
-        }}).addTo(map);
-
-        // Hover on heatmap
-        map.on('mousemove', function(e) {{
-            if (activeTrafficMode) return; // road tooltip takes priority
-            var val = getGridValue(e.latlng.lat, e.latlng.lng);
-            if (val !== null) {{
-                var showDelta = document.getElementById('show-delta');
-                var label = (showDelta && showDelta.checked) ? '+' + val.toFixed(1) + ' min' : val.toFixed(1) + ' min';
-                tooltip.textContent = label;
-                tooltip.style.left = (e.originalEvent.pageX + 15) + 'px';
-                tooltip.style.top = (e.originalEvent.pageY - 10) + 'px';
-                tooltip.style.display = 'block';
-            }} else if (!activeTrafficMode) {{
-                tooltip.style.display = 'none';
-            }}
-        }});
-        map.on('mouseout', function() {{ tooltip.style.display = 'none'; }});
-    }}
-
-    function updateSchoolMarkers(map, scenario) {{
+    // --- School markers ---
+    function updateSchoolMarkers(map, closedSchools) {{
         schoolMarkers.forEach(function(m) {{ map.removeLayer(m); }});
         schoolMarkers = [];
-        var closedSchools = SCENARIOS[scenario] || [];
         SCHOOLS.forEach(function(school) {{
             var isClosed = closedSchools.indexOf(school.name) !== -1;
             var marker = L.circleMarker([school.lat, school.lon], {{
                 radius: isClosed ? 8 : 7,
                 fillColor: isClosed ? '#dc3545' : '#0d6efd',
                 color: isClosed ? '#dc3545' : '#0a58ca',
-                weight: 2,
-                opacity: 1,
+                weight: 2, opacity: 1,
                 fillOpacity: isClosed ? 0.3 : 0.8,
                 dashArray: isClosed ? '4,4' : null,
             }});
@@ -1815,32 +2120,27 @@ def _build_control_html(
                 var xIcon = L.divIcon({{
                     html: '<span style="color:#dc3545;font-size:18px;font-weight:bold;">&times;</span>',
                     className: 'closed-school-x',
-                    iconSize: [20, 20],
-                    iconAnchor: [10, 10],
+                    iconSize: [20, 20], iconAnchor: [10, 10],
                 }});
-                var xMarker = L.marker([school.lat, school.lon], {{icon: xIcon}});
-                xMarker.addTo(map);
-                schoolMarkers.push(xMarker);
+                var xm = L.marker([school.lat, school.lon], {{icon: xIcon}}).addTo(map);
+                schoolMarkers.push(xm);
             }}
             marker.addTo(map);
             schoolMarkers.push(marker);
         }});
     }}
 
-    // Walk zone layer
-    function updateWalkZones(map, scenario, show) {{
+    // --- Walk zone layer ---
+    function updateWalkZones(map, closedSchools, show) {{
         if (walkZoneLayer) {{ map.removeLayer(walkZoneLayer); walkZoneLayer = null; }}
         if (!show || !WALK_ZONES_GEO || !WALK_ZONES_GEO.features) return;
-        var closedSchools = SCENARIOS[scenario] || [];
         walkZoneLayer = L.geoJSON(WALK_ZONES_GEO, {{
             style: function(feature) {{
                 var isClosed = closedSchools.indexOf(feature.properties.school) !== -1;
                 return {{
                     fillColor: isClosed ? 'rgba(231,76,60,0.25)' : 'rgba(52,152,219,0.25)',
                     color: isClosed ? '#e74c3c' : '#3498db',
-                    weight: 2,
-                    fillOpacity: 0.25,
-                    opacity: 0.8
+                    weight: 2, fillOpacity: 0.25, opacity: 0.8
                 }};
             }},
             onEachFeature: function(feature, layer) {{
@@ -1851,14 +2151,13 @@ def _build_control_html(
         }}).addTo(map);
     }}
 
-    // Zone polygons layer
+    // --- Zone polygons layer ---
     function updateZonePolygons(map, scenario, mode, show) {{
         if (zoneLayer) {{ map.removeLayer(zoneLayer); zoneLayer = null; }}
         if (!show) return;
         var key = scenario + '|' + mode;
         var geo = ZONE_POLYGONS[key];
         if (!geo || !geo.features) return;
-        // Assign colors
         var colors = [
             '#1f77b4','#ff7f0e','#2ca02c','#d62728','#9467bd',
             '#8c564b','#e377c2','#7f7f7f','#bcbd22','#17becf','#aec7e8'
@@ -1872,11 +2171,9 @@ def _build_control_html(
         zoneLayer = L.geoJSON(geo, {{
             style: function(feature) {{
                 return {{
-                    fillColor: schoolColors[feature.properties.school] || '#ccc',
-                    color: '#333',
-                    weight: 1.5,
-                    fillOpacity: 0.2,
-                    opacity: 0.7
+                    fillColor: 'transparent',
+                    color: schoolColors[feature.properties.school] || '#ccc',
+                    weight: 2.5, fillOpacity: 0, opacity: 0.8
                 }};
             }},
             onEachFeature: function(feature, layer) {{
@@ -1885,172 +2182,191 @@ def _build_control_html(
         }}).addTo(map);
     }}
 
-    // --- Main update function ---
-    window.updateClosureMap = function() {{
-        var scenario = getSelectedValue('scenario');
-        var mode = getSelectedValue('mode');
-        if (!scenario || !mode) return;
+    // --- Initialize ---
+    function initMap(map) {{
+        if (initialized) return;
+        initialized = true;
 
+        // Create custom pane so heatmap renders below polygons and markers
+        map.createPane('heatmapPane');
+        map.getPane('heatmapPane').style.zIndex = 250;
+        map.getPane('heatmapPane').style.pointerEvents = 'none';
+
+        // Initialize pre-rendered heatmap overlays (all start hidden)
+        initOverlays(map);
+
+        // Road layer for Part 2
+        roadLayer = L.geoJSON(ROAD_GEOJSON, {{
+            style: {{ color: 'transparent', weight: 0, opacity: 0 }},
+            onEachFeature: function(feature, layer) {{
+                layer.on('mouseover', function(e) {{
+                    var idx = feature.properties.idx;
+                    var name = feature.properties.name || 'Unnamed road';
+                    var hw = feature.properties.highway || '';
+                    var lines = '<b>' + name + '</b> (' + hw + ')';
+                    if (currentTrafficArr && idx < currentTrafficArr.length) {{
+                        var val = currentTrafficArr[idx];
+                        if (val !== 0) {{
+                            lines += '<br>Students: ' + val.toFixed(1);
+                        }}
+                    }}
+                    tooltip.innerHTML = lines;
+                    tooltip.style.left = (e.originalEvent.pageX + 15) + 'px';
+                    tooltip.style.top = (e.originalEvent.pageY - 10) + 'px';
+                    tooltip.style.display = 'block';
+                }});
+                layer.on('mouseout', function() {{ tooltip.style.display = 'none'; }});
+            }}
+        }}).addTo(map);
+
+        // Grid hover for Part 1
+        var currentGridResult = null;
+        window._setGridResult = function(r) {{ currentGridResult = r; }};
+
+        map.on('mousemove', function(e) {{
+            if (activeTab !== 'part1' || !currentGridResult || !GRID_META) return;
+            var lat = e.latlng.lat, lon = e.latlng.lng;
+            var fracX = (lon - GRID_META.lonMin) / (GRID_META.lonMax - GRID_META.lonMin);
+            var fracY = (lat - GRID_META.latMin) / (GRID_META.latMax - GRID_META.latMin);
+            var col = Math.floor(fracX * GRID_META.nCols);
+            var row = Math.floor((1 - fracY) * GRID_META.nRows);
+            if (row < 0 || row >= GRID_META.nRows || col < 0 || col >= GRID_META.nCols) {{
+                tooltip.style.display = 'none'; return;
+            }}
+            var idx = row * GRID_META.nCols + col;
+            var val = currentGridResult.values[idx];
+            var name = currentGridResult.names ? currentGridResult.names[idx] : null;
+            if (isNaN(val) || val === null) {{ tooltip.style.display = 'none'; return; }}
+
+            var view = getSelectedValue('p1-view');
+            var lines = [];
+            if (name) lines.push('Nearest: ' + name);
+            if (view === 'delta') {{
+                lines.push('+' + val.toFixed(1) + ' min increase');
+            }} else {{
+                lines.push(val.toFixed(1) + ' min');
+            }}
+            tooltip.innerHTML = lines.join('<br>');
+            tooltip.style.left = (e.originalEvent.pageX + 15) + 'px';
+            tooltip.style.top = (e.originalEvent.pageY - 10) + 'px';
+            tooltip.style.display = 'block';
+        }});
+        map.on('mouseout', function() {{ tooltip.style.display = 'none'; }});
+    }}
+
+    // --- Tab switching ---
+    window.switchTab = function(tab) {{
+        activeTab = tab;
+        document.querySelectorAll('.tab-btn').forEach(function(b) {{ b.classList.remove('active'); }});
+        document.querySelectorAll('.tab-content').forEach(function(c) {{ c.classList.remove('active'); }});
+        if (tab === 'part1') {{
+            document.querySelectorAll('.tab-btn')[0].classList.add('active');
+            document.getElementById('tab-part1').classList.add('active');
+            // Hide road layer
+            if (roadLayer) roadLayer.eachLayer(function(l) {{
+                l.setStyle({{ color: 'transparent', weight: 0, opacity: 0 }});
+            }});
+            updateWalkZones(getMap(), [], false);
+            window.updatePart1();
+        }} else {{
+            document.querySelectorAll('.tab-btn')[1].classList.add('active');
+            document.getElementById('tab-part2').classList.add('active');
+            // Hide canvas overlay and Part 1 network layer
+            clearHeatmapOverlay();
+            if (networkLayer) {{ getMap().removeLayer(networkLayer); networkLayer = null; }}
+            if (zoneLayer) {{ getMap().removeLayer(zoneLayer); zoneLayer = null; }}
+            window.updatePart2();
+        }}
+    }};
+
+    // --- Part 1 update ---
+    window.updatePart1 = function() {{
         var map = getMap();
         if (!map) return;
+        initMap(map);
 
-        if (Object.keys(overlayLayers).length === 0) {{
-            initOverlays(map);
-        }}
+        var scenario = getSelectedValue('p1-scenario');
+        var mode = getSelectedValue('p1-mode');
+        var view = getSelectedValue('p1-view');
+        var showZones = document.getElementById('p1-show-zones').checked;
+        if (!scenario || !mode) return;
 
-        var showHeatmap = document.getElementById('show-heatmap').checked;
-        var showZones = document.getElementById('show-zones').checked;
-        var showDelta = document.getElementById('show-delta').checked;
-        var showTraffic59 = document.getElementById('show-traffic-59').checked;
-        var showTraffic04 = document.getElementById('show-traffic-04').checked;
-        var showTrafficDiff = document.getElementById('show-traffic-diff').checked;
-        var showWalkZones = document.getElementById('show-walk-zones').checked;
-        var walkMask = document.getElementById('walk-zone-mask').checked;
-        var zoneRouting = document.getElementById('zone-routing').checked;
+        var closedSchools = SCENARIOS[scenario] || [];
 
         // Disable delta for baseline
-        var deltaEl = document.getElementById('show-delta');
+        var deltaRadio = document.querySelector('input[name="p1-view"][value="delta"]');
         if (scenario === 'baseline') {{
-            deltaEl.checked = false;
-            showDelta = false;
-            deltaEl.disabled = true;
-            deltaEl.parentElement.style.opacity = '0.4';
+            if (view === 'delta') {{
+                document.querySelector('input[name="p1-view"][value="abs"]').checked = true;
+                view = 'abs';
+            }}
+            deltaRadio.disabled = true;
+            deltaRadio.parentElement.style.opacity = '0.4';
         }} else {{
-            deltaEl.disabled = false;
-            deltaEl.parentElement.style.opacity = '1';
+            deltaRadio.disabled = false;
+            deltaRadio.parentElement.style.opacity = '1';
         }}
 
-        // Hide all overlays
-        for (var key in overlayLayers) {{
-            overlayLayers[key].setOpacity(0);
-        }}
+        // Show pre-rendered overlay
+        var overlayKey = scenario + '|' + mode + '|' + view;
+        showOverlay(overlayKey);
 
-        // Show selected heatmap
-        currentOverlayKey = null;
-        if (showHeatmap) {{
-            var hKey = scenario + '|' + mode + '|abs';
-            if (overlayLayers[hKey]) {{
-                overlayLayers[hKey].setOpacity(0.7);
-                currentOverlayKey = hKey;
+        // Compute hover grid (client-side from per-school grids)
+        if (view === 'abs') {{
+            var result = computeNearestSchoolGrid(mode, closedSchools);
+            if (result) window._setGridResult(result);
+        }} else {{
+            var baseResult = computeNearestSchoolGrid(mode, []);
+            var closureResult = computeNearestSchoolGrid(mode, closedSchools);
+            if (closureResult && baseResult) {{
+                var nPx = closureResult.values.length;
+                var delta = new Float32Array(nPx);
+                for (var i = 0; i < nPx; i++) {{
+                    var cv = closureResult.values[i];
+                    var bv = baseResult.values[i];
+                    if (isNaN(cv) || isNaN(bv)) {{ delta[i] = NaN; }}
+                    else {{
+                        var d = cv - bv;
+                        delta[i] = d > 0.01 ? d : NaN;
+                    }}
+                }}
+                var hoverResult = {{ values: delta, names: closureResult.names }};
+                window._setGridResult(hoverResult);
             }}
         }}
-        if (showDelta) {{
-            var dKey = scenario + '|' + mode + '|delta';
-            if (overlayLayers[dKey]) {{
-                overlayLayers[dKey].setOpacity(0.7);
-                currentOverlayKey = dKey;
-            }}
-        }}
-
-        // Update school markers
-        updateSchoolMarkers(map, scenario);
-
-        // Walk zones
-        updateWalkZones(map, scenario, showWalkZones);
 
         // Zone polygons
         updateZonePolygons(map, scenario, mode, showZones);
 
-        // Traffic layer
-        activeTrafficMode = null;
-        var maskStr = walkMask ? 'masked' : 'unmasked';
-        var zoneStr = zoneRouting ? 'zone' : 'nearest';
-
-        if (showTrafficDiff && scenario !== 'baseline') {{
-            // Difference mode
-            var ageGroup = showTraffic59 ? '5_9' : '0_4';
-            var closureKey = scenario + '|' + maskStr + '|' + zoneStr + '|' + ageGroup;
-            var baseKey = 'baseline|' + maskStr + '|' + zoneStr + '|' + ageGroup;
-            var closureArr = decodeTrafficArray(closureKey);
-            var baseArr = decodeTrafficArray(baseKey);
-            if (closureArr && baseArr && roadLayer) {{
-                var diffArr = new Float32Array(N_EDGES);
-                var maxDiff = 0;
-                for (var i = 0; i < N_EDGES; i++) {{
-                    diffArr[i] = closureArr[i] - baseArr[i];
-                    if (Math.abs(diffArr[i]) > maxDiff) maxDiff = Math.abs(diffArr[i]);
-                }}
-                // 95th percentile for normalization
-                var sorted = Array.from(diffArr).map(Math.abs).filter(function(v){{return v>0}}).sort(function(a,b){{return a-b}});
-                var p95 = sorted.length > 0 ? sorted[Math.floor(sorted.length * 0.95)] : 1;
-                if (p95 < 0.1) p95 = maxDiff || 1;
-                roadLayer.eachLayer(function(layer) {{
-                    var idx = layer.feature.properties.idx;
-                    var val = idx < diffArr.length ? diffArr[idx] : 0;
-                    var style = trafficColor(val, p95, true);
-                    layer.setStyle(style);
-                }});
-                activeTrafficMode = closureKey; // for tooltip
-                decodedTraffic[closureKey + '_diff'] = diffArr;
-                // Update traffic legend
-                var tLeg = document.getElementById('traffic-legend');
-                tLeg.style.display = 'block';
-                document.getElementById('traffic-legend-title').textContent = 'Traffic Difference';
-                document.getElementById('traffic-legend-bar').style.background = 'linear-gradient(to right, #3182bd, #fff, #d73027)';
-                document.getElementById('traffic-legend-min').textContent = '-' + p95.toFixed(1);
-                document.getElementById('traffic-legend-max').textContent = '+' + p95.toFixed(1);
-            }}
-        }} else if (showTraffic59 || showTraffic04) {{
-            var ageGroup = showTraffic59 ? '5_9' : '0_4';
-            var tKey = scenario + '|' + maskStr + '|' + zoneStr + '|' + ageGroup;
-            var arr = decodeTrafficArray(tKey);
-            if (arr && roadLayer) {{
-                // 95th percentile normalization
-                var nonzero = [];
-                for (var i = 0; i < arr.length; i++) {{
-                    if (arr[i] > 0) nonzero.push(arr[i]);
-                }}
-                nonzero.sort(function(a,b){{return a-b}});
-                var p95 = nonzero.length > 0 ? nonzero[Math.floor(nonzero.length * 0.95)] : 1;
-                if (p95 < 0.1) p95 = 1;
-                roadLayer.eachLayer(function(layer) {{
-                    var idx = layer.feature.properties.idx;
-                    var val = idx < arr.length ? arr[idx] : 0;
-                    var style = trafficColor(val, p95, false);
-                    layer.setStyle(style);
-                }});
-                activeTrafficMode = tKey;
-                // Update traffic legend
-                var tLeg = document.getElementById('traffic-legend');
-                tLeg.style.display = 'block';
-                document.getElementById('traffic-legend-title').textContent = 'Children ' + (ageGroup === '5_9' ? '5-9' : '0-4') + ' traffic';
-                document.getElementById('traffic-legend-bar').style.background = 'linear-gradient(to right, #ffffcc, #fd8d3c, #bd0026)';
-                document.getElementById('traffic-legend-min').textContent = '0';
-                document.getElementById('traffic-legend-max').textContent = p95.toFixed(1);
-            }}
-        }} else {{
-            // No traffic layer — hide road colors
-            if (roadLayer) {{
-                roadLayer.eachLayer(function(layer) {{
-                    layer.setStyle({{ color: 'transparent', weight: 0, opacity: 0 }});
-                }});
-            }}
-            document.getElementById('traffic-legend').style.display = 'none';
+        // Network overlay
+        var showNetwork = document.getElementById('p1-show-network').checked;
+        if (networkLayer) {{ map.removeLayer(networkLayer); networkLayer = null; }}
+        if (showNetwork && NETWORK_GEOJSON[mode]) {{
+            networkLayer = L.geoJSON(NETWORK_GEOJSON[mode], {{
+                style: {{ color: '#333', weight: 1, opacity: 0.4 }},
+                interactive: false
+            }}).addTo(map);
         }}
 
-        // Update heatmap legend
-        var legendDiv = document.getElementById('closure-legend');
-        if (showHeatmap || showDelta) {{
-            legendDiv.style.display = 'block';
-            var ranges = MODE_RANGES[mode];
-            if (showDelta) {{
-                document.getElementById('legend-label').textContent = 'Added minutes (vs baseline)';
-                document.getElementById('legend-bar').style.background = 'linear-gradient(to right, #fff5eb, #fdbe85, #fd8d3c, #e6550d, #a63603)';
-                document.getElementById('legend-min').textContent = ranges['delta'][0] + ' min';
-                document.getElementById('legend-max').textContent = ranges['delta'][1] + ' min';
-            }} else {{
-                document.getElementById('legend-label').textContent = 'Minutes to nearest school';
-                document.getElementById('legend-bar').style.background = 'linear-gradient(to right, #1a9850, #a6d96a, #ffffbf, #fdae61, #d73027)';
-                document.getElementById('legend-min').textContent = ranges['abs'][0] + ' min';
-                document.getElementById('legend-max').textContent = ranges['abs'][1] + ' min';
-            }}
+        // School markers
+        updateSchoolMarkers(map, closedSchools);
+
+        // Legend
+        var ranges = MODE_RANGES[mode];
+        if (view === 'delta') {{
+            document.getElementById('p1-legend-label').textContent = 'Added minutes (vs baseline)';
+            document.getElementById('p1-legend-bar').style.background = 'linear-gradient(to right, #fff5eb, #fdbe85, #fd8d3c, #e6550d, #a63603)';
+            document.getElementById('p1-legend-min').textContent = ranges.delta[0] + ' min';
+            document.getElementById('p1-legend-max').textContent = ranges.delta[1] + ' min';
         }} else {{
-            legendDiv.style.display = 'none';
+            document.getElementById('p1-legend-label').textContent = 'Minutes to nearest school';
+            document.getElementById('p1-legend-bar').style.background = 'linear-gradient(to right, #ffffcc, #feb24c, #fd8d3c, #fc4e2a, #bd0026)';
+            document.getElementById('p1-legend-min').textContent = ranges.abs[0] + ' min';
+            document.getElementById('p1-legend-max').textContent = ranges.abs[1] + ' min';
         }}
 
         // School info
-        var closedSchools = SCENARIOS[scenario] || [];
-        var infoDiv = document.getElementById('school-info');
+        var infoDiv = document.getElementById('p1-school-info');
         if (closedSchools.length > 0) {{
             infoDiv.innerHTML = '<span class="closed">Closed:</span> ' + closedSchools.join(', ');
         }} else {{
@@ -2058,31 +2374,179 @@ def _build_control_html(
         }}
     }};
 
-    // Populate radios
-    var scenarioDiv = document.getElementById('scenario-options');
-    var first = true;
-    for (var key in SCENARIO_LABELS) {{
-        var label = document.createElement('label');
-        var radio = document.createElement('input');
-        radio.type = 'radio';
-        radio.name = 'scenario';
-        radio.value = key;
-        radio.onchange = function() {{ window.updateClosureMap(); }};
-        if (first) {{ radio.checked = true; first = false; }}
-        label.appendChild(radio);
-        label.appendChild(document.createTextNode(' ' + SCENARIO_LABELS[key]));
-        scenarioDiv.appendChild(label);
-    }}
+    // --- Part 2 update ---
+    window.updatePart2 = function() {{
+        var map = getMap();
+        if (!map) return;
+        initMap(map);
 
-    var modeDiv = document.getElementById('mode-options');
-    first = true;
+        var scenario = getSelectedValue('p2-scenario');
+        var ageGroup = getSelectedValue('p2-age');
+        var routing = getSelectedValue('p2-routing');
+        var view = getSelectedValue('p2-view');
+        var wzMask = getSelectedValue('p2-wzmask') === 'yes';
+        if (!scenario || !ageGroup || !routing) return;
+
+        var closedSchools = SCENARIOS[scenario] || [];
+
+        // Disable diff for baseline
+        var diffRadio = document.querySelector('input[name="p2-view"][value="diff"]');
+        if (scenario === 'baseline') {{
+            if (view === 'diff') {{
+                document.querySelector('input[name="p2-view"][value="abs"]').checked = true;
+                view = 'abs';
+            }}
+            diffRadio.disabled = true;
+            diffRadio.parentElement.style.opacity = '0.4';
+        }} else {{
+            diffRadio.disabled = false;
+            diffRadio.parentElement.style.opacity = '1';
+        }}
+
+        // Walk zone masking: all or nothing
+        var maskedSchools = wzMask ? SCHOOL_NAMES.slice() : [];
+
+        // Get unmasked traffic array
+        var tKey = scenario + '|' + routing + '|' + ageGroup;
+        var arr = getTrafficArray(tKey);
+        if (!arr || !roadLayer) return;
+
+        // Apply walk zone masking client-side
+        var displayed = new Float32Array(arr);
+        for (var mi = 0; mi < maskedSchools.length; mi++) {{
+            var wzKey = tKey + '|' + maskedSchools[mi];
+            var contrib = WZ_CONTRIBUTIONS[wzKey];
+            if (contrib) {{
+                for (var edgeIdx in contrib) {{
+                    var ei = parseInt(edgeIdx);
+                    var cv = contrib[edgeIdx];
+                    var ageKey = 'children_' + ageGroup;
+                    if (cv[ageKey] && ei < displayed.length) {{
+                        displayed[ei] = Math.max(0, displayed[ei] - cv[ageKey]);
+                    }}
+                }}
+            }}
+        }}
+
+        if (view === 'diff' && scenario !== 'baseline') {{
+            // Difference: closure - baseline
+            var baseKey = 'baseline|' + routing + '|' + ageGroup;
+            var baseArr = getTrafficArray(baseKey);
+            if (!baseArr) return;
+
+            // Apply same masking to baseline
+            var baseDisplayed = new Float32Array(baseArr);
+            for (var mi = 0; mi < maskedSchools.length; mi++) {{
+                var wzKeyB = 'baseline|' + routing + '|' + ageGroup + '|' + maskedSchools[mi];
+                var contribB = WZ_CONTRIBUTIONS[wzKeyB];
+                if (contribB) {{
+                    for (var edgeIdx in contribB) {{
+                        var ei = parseInt(edgeIdx);
+                        var cv = contribB[edgeIdx];
+                        var ageKey = 'children_' + ageGroup;
+                        if (cv[ageKey] && ei < baseDisplayed.length) {{
+                            baseDisplayed[ei] = Math.max(0, baseDisplayed[ei] - cv[ageKey]);
+                        }}
+                    }}
+                }}
+            }}
+
+            var diffArr = new Float32Array(N_EDGES);
+            var maxDiff = 0;
+            for (var i = 0; i < N_EDGES; i++) {{
+                diffArr[i] = displayed[i] - baseDisplayed[i];
+                if (Math.abs(diffArr[i]) > maxDiff) maxDiff = Math.abs(diffArr[i]);
+            }}
+            var sorted = Array.from(diffArr).map(Math.abs).filter(function(v){{return v>0}}).sort(function(a,b){{return a-b}});
+            var p95 = sorted.length > 0 ? sorted[Math.floor(sorted.length * 0.95)] : 1;
+            if (p95 < 0.1) p95 = maxDiff || 1;
+
+            roadLayer.eachLayer(function(layer) {{
+                var idx = layer.feature.properties.idx;
+                var val = idx < diffArr.length ? diffArr[idx] : 0;
+                layer.setStyle(trafficColor(val, p95, true));
+            }});
+
+            document.getElementById('p2-legend-title').textContent = 'Traffic Difference';
+            document.getElementById('p2-legend-bar').style.background = 'linear-gradient(to right, #3182bd, #fff, #d73027)';
+            document.getElementById('p2-legend-min').textContent = '-' + p95.toFixed(1);
+            document.getElementById('p2-legend-max').textContent = '+' + p95.toFixed(1);
+            currentTrafficArr = diffArr;
+        }} else {{
+            // Absolute
+            var nonzero = [];
+            for (var i = 0; i < displayed.length; i++) {{
+                if (displayed[i] > 0) nonzero.push(displayed[i]);
+            }}
+            nonzero.sort(function(a,b){{return a-b}});
+            var p95 = nonzero.length > 0 ? nonzero[Math.floor(nonzero.length * 0.95)] : 1;
+            if (p95 < 0.1) p95 = 1;
+
+            roadLayer.eachLayer(function(layer) {{
+                var idx = layer.feature.properties.idx;
+                var val = idx < displayed.length ? displayed[idx] : 0;
+                layer.setStyle(trafficColor(val, p95, false));
+            }});
+
+            var ageLabel = ageGroup === '5_9' ? '5-9' : '0-4';
+            document.getElementById('p2-legend-title').textContent = 'Children ' + ageLabel + ' traffic';
+            document.getElementById('p2-legend-bar').style.background = 'linear-gradient(to right, #ffffcc, #fd8d3c, #bd0026)';
+            document.getElementById('p2-legend-min').textContent = '0';
+            document.getElementById('p2-legend-max').textContent = p95.toFixed(1);
+            currentTrafficArr = displayed;
+        }}
+
+        // Walk zone polygons — separate toggle from masking
+        var showWZ = getSelectedValue('p2-showwz') === 'yes';
+        updateWalkZones(map, closedSchools, showWZ);
+
+        // School markers
+        updateSchoolMarkers(map, closedSchools);
+
+        // School info
+        var infoDiv = document.getElementById('p2-school-info');
+        if (closedSchools.length > 0) {{
+            infoDiv.innerHTML = '<span class="closed">Closed:</span> ' + closedSchools.join(', ');
+        }} else {{
+            infoDiv.innerHTML = 'All 11 schools open';
+        }}
+    }};
+
+    // --- Populate controls ---
+    function populateScenarioList(containerId, radioName, onchangeFn) {{
+        var container = document.getElementById(containerId);
+        var first = true;
+        for (var key in SCENARIO_LABELS) {{
+            var label = document.createElement('label');
+            var radio = document.createElement('input');
+            radio.type = 'radio';
+            radio.name = radioName;
+            radio.value = key;
+            radio.onchange = function() {{
+                // Highlight selected label
+                container.querySelectorAll('label').forEach(function(l) {{ l.classList.remove('selected'); }});
+                this.parentElement.classList.add('selected');
+                onchangeFn();
+            }};
+            if (first) {{ radio.checked = true; label.classList.add('selected'); first = false; }}
+            label.appendChild(radio);
+            label.appendChild(document.createTextNode(' ' + SCENARIO_LABELS[key]));
+            container.appendChild(label);
+        }}
+    }}
+    populateScenarioList('p1-scenario-list', 'p1-scenario', function() {{ window.updatePart1(); }});
+    populateScenarioList('p2-scenario-list', 'p2-scenario', function() {{ window.updatePart2(); }});
+
+    // Part 1 mode radios
+    var modeDiv = document.getElementById('p1-mode-options');
+    var first = true;
     for (var key in MODE_LABELS) {{
         var label = document.createElement('label');
         var radio = document.createElement('input');
         radio.type = 'radio';
-        radio.name = 'mode';
+        radio.name = 'p1-mode';
         radio.value = key;
-        radio.onchange = function() {{ window.updateClosureMap(); }};
+        radio.onchange = function() {{ window.updatePart1(); }};
         if (first) {{ radio.checked = true; first = false; }}
         label.appendChild(radio);
         label.appendChild(document.createTextNode(' ' + MODE_LABELS[key]));
@@ -2105,7 +2569,7 @@ def _build_control_html(
             var map = getMap();
             if (map) setTimeout(function() {{ map.invalidateSize(); }}, 100);
         }}
-        window.updateClosureMap();
+        window.updatePart2();
     }}, 500);
 }})();
 </script>
@@ -2131,6 +2595,7 @@ def main():
     print("=" * 60)
 
     ensure_directories()
+    _check_grid_version()
     cache_only = args.cache_only
     modes = [args.mode] if args.mode else ["drive", "bike", "walk"]
 
@@ -2158,6 +2623,16 @@ def main():
     )
     n_edges = len(road_geojson["features"])
     _progress(f"Road GeoJSON: {n_edges} edges")
+
+    # Build lightweight display GeoJSON per mode (for Part 1 network overlay)
+    network_geojson: dict[str, dict] = {"drive": road_geojson}
+    for mode in modes:
+        if mode != "drive":
+            network_geojson[mode] = _graph_to_display_geojson(graphs[mode])
+            _progress(
+                f"  {mode} network: "
+                f"{len(network_geojson[mode]['features'])} edges (display)"
+            )
 
     # ── Step 3: Create grid ──────────────────────────────────────────
     print("\n[5/10] Creating analysis grid ...")
@@ -2209,15 +2684,12 @@ def main():
             graphs[mode], schools, mode
         )
 
-    # ── Step 6: Pixel assignments & zone polygons ────────────────────
-    print("\n[8/10] Computing pixel assignments for all scenarios ...")
+    # ── Step 6: Per-school grids, pixel assignments & zone polygons ──
+    print("\n[8/10] Computing per-school grids and zone polygons ...")
     all_schools = list(dijkstra_by_mode[modes[0]].keys())
     all_results = []
-    heatmap_data = {}
-    hover_grids = {}
     zone_polygons = {}
     grid_meta = None
-    common_bounds = None
 
     # Pre-compute shared grid params for rasterization
     unique_pts = grid[["lat", "lon"]].drop_duplicates()
@@ -2230,8 +2702,6 @@ def main():
     _maxlat = _all_lats.max() + _dlat / 2
     _maxlon = _all_lons.max() + _dlon / 2
     _minlat = _all_lats.min() - _dlat / 2
-    _school_fracs = ((schools["lon"].values - _minlon) / _dlon) % 1
-    _minlon -= (0.5 - _school_fracs.mean()) * _dlon
     _ncols = int(np.ceil((_maxlon - _minlon) / _dlon))
     _nrows = int(np.ceil((_maxlat - _minlat) / _dlat))
     _maxlon = _minlon + _ncols * _dlon
@@ -2243,8 +2713,21 @@ def main():
         "dlat": _dlat, "dlon": _dlon,
     }
 
-    # Store pixel assignment results for traffic analysis
-    pixel_assignments = {}  # (scenario, mode) → (min_times, nearest_schools, entry_nodes)
+    # Compute per-school travel time grids (for client-side rendering)
+    per_school_grids = {}  # {mode: {school: base64}}
+    for mode in modes:
+        grids_b64, meta = compute_per_school_grids(
+            snaps[mode], dijkstra_by_mode[mode], grid,
+            all_schools, school_anchor_ids,
+            district_polygon, shared_grid_params,
+        )
+        per_school_grids[mode] = grids_b64
+        if meta is not None and grid_meta is None:
+            grid_meta = meta
+        _progress(f"  {mode}: {len(grids_b64)} per-school grids computed")
+
+    # Store pixel assignment results for traffic analysis + zone polygons
+    pixel_assignments = {}
 
     for scenario_name, closed_schools in SCENARIOS.items():
         open_schools = [s for s in all_schools if s not in closed_schools]
@@ -2267,7 +2750,7 @@ def main():
 
             pixel_assignments[(scenario_name, mode)] = (min_times, nearest_schools, entry_nodes)
 
-            # Build result rows
+            # Build result rows for CSV output
             min_minutes = min_times / 60.0
             min_minutes[np.isinf(min_minutes)] = np.nan
 
@@ -2279,23 +2762,6 @@ def main():
             result_df["min_time_minutes"] = min_minutes
             all_results.append(result_df)
 
-            # Rasterize absolute time
-            vmin, vmax = MODE_RANGES[mode]["abs"]
-            vals_2d, meta, bounds = rasterize_grid(
-                result_df, "min_time_minutes",
-                district_polygon=district_polygon,
-                grid_params=shared_grid_params,
-            )
-            if meta is not None and grid_meta is None:
-                grid_meta = meta
-            if bounds is not None and common_bounds is None:
-                common_bounds = bounds
-
-            if vals_2d is not None:
-                hover_grids[f"{scenario_name}|{mode}|abs"] = encode_value_grid(vals_2d)
-            b64 = colorize_raster(vals_2d, vmin, vmax, "RdYlGn_r")
-            heatmap_data[(scenario_name, mode, "abs")] = (b64, bounds)
-
             # Build zone polygons
             zone_gdf = build_zone_polygons(
                 grid, nearest_schools, snaps[mode].reachable, district_gdf,
@@ -2305,9 +2771,8 @@ def main():
                     zone_gdf.to_json()
                 )
 
-    # Merge all results and compute deltas
+    # Save assignments CSV
     scores_df = pd.concat(all_results, ignore_index=True)
-
     baseline = scores_df[scores_df["scenario"] == "baseline"][
         ["grid_id", "mode", "min_time_seconds"]
     ].rename(columns={"min_time_seconds": "baseline_time"})
@@ -2315,35 +2780,55 @@ def main():
     scores_df["delta_seconds"] = scores_df["min_time_seconds"] - scores_df["baseline_time"]
     scores_df["delta_minutes"] = scores_df["delta_seconds"] / 60.0
 
-    # Rasterize delta layers
-    for scenario_name in SCENARIOS:
-        if scenario_name == "baseline":
-            for mode in modes:
-                heatmap_data[(scenario_name, mode, "delta")] = (None, None)
-            continue
-
-        for mode in modes:
-            subset = scores_df[
-                (scores_df["scenario"] == scenario_name) & (scores_df["mode"] == mode)
-            ].copy()
-            vmin_d, vmax_d = MODE_RANGES[mode]["delta"]
-            vals_d, meta_d, bounds_d = rasterize_grid(
-                subset, "delta_minutes",
-                district_polygon=district_polygon,
-                grid_params=shared_grid_params,
-            )
-            if vals_d is not None:
-                hover_grids[f"{scenario_name}|{mode}|delta"] = encode_value_grid(vals_d)
-            b64_d = colorize_raster(vals_d, vmin_d, vmax_d, "Oranges")
-            heatmap_data[(scenario_name, mode, "delta")] = (b64_d, bounds_d)
-
-    # Save assignments CSV
     csv_path = DATA_PROCESSED / "school_closure_assignments.csv"
     scores_df.to_csv(csv_path, index=False)
     _progress(f"Saved {len(scores_df)} assignment rows to {csv_path.name}")
 
+    # Pre-render heatmap overlays in Python (proven alignment via plt.imsave)
+    _progress("Pre-rendering heatmap overlays ...")
+    heatmap_overlays = {}  # {scenario|mode|view: (base64_png, bounds)}
+    common_bounds = None
+    for scenario_name in SCENARIOS:
+        for mode in modes:
+            subset = scores_df[
+                (scores_df["scenario"] == scenario_name) & (scores_df["mode"] == mode)
+            ].copy()
+
+            # Absolute travel time layer
+            vmin, vmax = MODE_RANGES[mode]["abs"]
+            vals_2d, meta, bounds = rasterize_grid(
+                subset, "min_time_minutes",
+                district_polygon=district_polygon,
+                grid_params=shared_grid_params,
+            )
+            if bounds is not None and common_bounds is None:
+                common_bounds = bounds
+
+            b64 = colorize_raster(vals_2d, vmin, vmax, "YlOrRd")
+            heatmap_overlays[f"{scenario_name}|{mode}|abs"] = (b64, bounds)
+
+            # Delta layer (skip baseline — delta is zero)
+            if scenario_name != "baseline":
+                vmin_d, vmax_d = MODE_RANGES[mode]["delta"]
+                # Filter out non-positive deltas for cleaner visualization
+                delta_col = subset["delta_minutes"].copy()
+                delta_col[delta_col <= 0.01] = np.nan
+                subset_d = subset.copy()
+                subset_d["delta_pos"] = delta_col
+                vals_d, meta_d, bounds_d = rasterize_grid(
+                    subset_d, "delta_pos",
+                    district_polygon=district_polygon,
+                    grid_params=shared_grid_params,
+                )
+                b64_d = colorize_raster(vals_d, vmin_d, vmax_d, "Oranges")
+                heatmap_overlays[f"{scenario_name}|{mode}|delta"] = (b64_d, bounds_d)
+
+    n_overlays = sum(1 for v in heatmap_overlays.values() if v[0] is not None)
+    _progress(f"Pre-rendered {n_overlays} heatmap overlays")
+
     # ── Step 7: Traffic analysis (Part 2) ────────────────────────────
     traffic_arrays = {}
+    walk_zone_contributions = {}
 
     if not args.skip_traffic and "drive" in modes:
         print("\n[9/10] Computing traffic analysis ...")
@@ -2353,68 +2838,72 @@ def main():
             grid, district_gdf, cache_only=cache_only,
         )
 
-        # Assign pixels to attendance zones
+        # Assign pixels to attendance zones and walk zones
         zone_schools = assign_pixels_to_zones(grid, attendance_zones)
+        pixel_walk_zone = precompute_pixel_walk_zones(grid, walk_zones_gdf)
 
-        # Compute traffic for all scenarios × mask × zone combinations
+        # Compute UNMASKED traffic for all scenarios × zone combinations
+        # Walk zone masking is now handled client-side via sparse contributions
         for scenario_name, closed_schools in SCENARIOS.items():
             open_schools = [s for s in all_schools if s not in closed_schools]
             min_times, nearest_schools, entry_nodes = pixel_assignments[(scenario_name, "drive")]
 
-            for mask_enabled in [False, True]:
-                mask_str = "masked" if mask_enabled else "unmasked"
+            for zone_enabled in [False, True]:
+                zone_str = "zone" if zone_enabled else "nearest"
 
-                for zone_enabled in [False, True]:
-                    zone_str = "zone" if zone_enabled else "nearest"
+                _progress(f"  Traffic: {scenario_name} / {zone_str} ...")
 
-                    _progress(f"  Traffic: {scenario_name} / {mask_str} / {zone_str} ...")
+                zs = zone_schools if zone_enabled else None
 
-                    # For zone-restricted routing, re-assign if needed
-                    actual_nearest = nearest_schools
-                    actual_entries = entry_nodes
-                    if zone_enabled and zone_schools is not None:
-                        # Re-assign using zone schools
-                        actual_nearest_z = nearest_schools.copy()
-                        actual_entries_z = entry_nodes.copy()
-                        # Handled inside compute_traffic
-                        zs = zone_schools
-                    else:
-                        zs = None
+                traffic, wz_contribs = compute_traffic(
+                    grid, snaps["drive"], dijkstra_by_mode["drive"],
+                    pixel_children, edge_id_map,
+                    open_schools, entry_nodes, nearest_schools,
+                    walk_zones_gdf=walk_zones_gdf,
+                    zone_schools=zs if zone_enabled else None,
+                    closed_schools=closed_schools if zone_enabled else None,
+                    pixel_walk_zone=pixel_walk_zone,
+                )
 
-                    traffic = compute_traffic(
-                        grid, snaps["drive"], dijkstra_by_mode["drive"],
-                        pixel_children, edge_id_map,
-                        open_schools, entry_nodes, nearest_schools,
-                        walk_zones_gdf=walk_zones_gdf,
-                        walk_zone_mask_enabled=mask_enabled,
-                        zone_schools=zs if zone_enabled else None,
-                        closed_schools=closed_schools if zone_enabled else None,
-                    )
+                # Encode unmasked traffic as Float32Array for each age group
+                for age_group in ["0_4", "5_9"]:
+                    arr = np.zeros(n_edges, dtype=np.float32)
+                    for feat_idx, counts in traffic.items():
+                        child_key = f"children_{age_group}"
+                        arr[feat_idx] = counts.get(child_key, 0)
 
-                    # Encode as Float32Array for each age group
-                    for age_group in ["0_4", "5_9"]:
-                        arr = np.zeros(n_edges, dtype=np.float32)
-                        for feat_idx, counts in traffic.items():
-                            child_key = f"children_{age_group}"
-                            arr[feat_idx] = counts.get(child_key, 0)
+                    key = f"{scenario_name}|{zone_str}|{age_group}"
+                    traffic_arrays[key] = base64.b64encode(
+                        arr.tobytes()
+                    ).decode("utf-8")
 
-                        key = f"{scenario_name}|{mask_str}|{zone_str}|{age_group}"
-                        traffic_arrays[key] = base64.b64encode(
-                            arr.tobytes()
-                        ).decode("utf-8")
+                    # Encode per-walk-zone contributions as sparse JSON
+                    for wz_school, wz_edges in wz_contribs.items():
+                        sparse = {}
+                        for feat_idx, edge_counts in wz_edges.items():
+                            c = edge_counts.get(f"children_{age_group}", 0)
+                            if c > 0.001:
+                                sparse[str(feat_idx)] = {
+                                    f"children_{age_group}": round(c, 4)
+                                }
+                        if sparse:
+                            wz_key = f"{key}|{wz_school}"
+                            walk_zone_contributions[wz_key] = sparse
 
-        # Save traffic CSV
+        _progress(f"  Traffic arrays: {len(traffic_arrays)}, "
+                  f"walk zone contribution sets: {len(walk_zone_contributions)}")
+
+        # Save traffic CSV (unmasked only)
         traffic_rows = []
         for key, b64 in traffic_arrays.items():
             parts = key.split("|")
-            scenario, mask, zone, age = parts
+            scenario, zone, age = parts
             arr = np.frombuffer(base64.b64decode(b64), dtype=np.float32)
             for idx in range(len(arr)):
                 if arr[idx] > 0:
                     traffic_rows.append({
                         "edge_idx": idx,
                         "scenario": scenario,
-                        "mask": mask,
                         "zone": zone,
                         "age_group": age,
                         "children": float(arr[idx]),
@@ -2443,17 +2932,18 @@ def main():
     # ── Step 9: Build map ────────────────────────────────────────────
     print("\n[10/10] Building interactive map ...")
     m = create_map(
-        heatmap_data=heatmap_data,
+        heatmap_overlays=heatmap_overlays,
+        per_school_grids=per_school_grids,
+        grid_meta=grid_meta,
         schools=schools,
         district_gdf=district_gdf,
-        bounds=common_bounds,
-        hover_grids=hover_grids,
-        grid_meta=grid_meta,
+        zone_polygons=zone_polygons,
         road_geojson=road_geojson,
         traffic_arrays=traffic_arrays,
+        walk_zone_contributions=walk_zone_contributions,
         n_edges=n_edges,
-        zone_polygons=zone_polygons,
         walk_zones_geojson=walk_zones_geojson,
+        network_geojson=network_geojson,
     )
 
     map_path = ASSETS_MAPS / "school_closure_analysis.html"

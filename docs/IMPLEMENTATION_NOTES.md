@@ -53,10 +53,10 @@ Interactive map (`school_community_map.html`) showing travel-time impacts of clo
 2. **Load district boundary** — Census TIGER/Line GEOID 3700720 (cached as GeoPackage)
 3. **Download road networks** — OSMnx drive/bike/walk graphs, cached as GraphML; reverse edges added for bidirectional traversal
 4. **Dijkstra from each school** — 33 runs (11 schools x 3 modes), each exploring the full graph (no cutoff)
-5. **Create grid** — 100 m resolution point grid inside district polygon (~16K points); school locations injected as zero-time anchor points
+5. **Create grid** — 100 m WGS84-native point grid inside district polygon (~16K points) using latitude-corrected degree spacing; school locations injected as zero-time anchor points
 6. **Edge-snap grid points** — Each grid point snaps to the nearest road edge via Shapely STRtree (not just nearest node); travel time is interpolated along the matched edge using fractional position; off-network access leg adds time at a mode-specific fraction of modal speed (walk 90%, bike 80%, drive 20%)
 7. **Compute desert scores** — For each grid point x scenario x mode, take min travel time across open schools; delta = scenario time - baseline time
-8. **Rasterize** — Grid values projected onto a shared pixel grid (WGS84), gap-filled for UTM->WGS84 rotation artifacts, masked to district polygon; colorized with RdYlGn_r (absolute) or Oranges (delta); saved as GeoTIFF + base64 PNG for Leaflet image overlays
+8. **Rasterize** — Grid values projected onto a shared pixel grid (WGS84), masked to district polygon; colorized with RdYlGn_r (absolute) or Oranges (delta); saved as GeoTIFF + base64 PNG for Leaflet image overlays
 9. **Load property centroids** — ~21K residential parcels from Orange County GIS (`combined_data_centroids.gpkg`), clipped to district boundary
 10. **Snap centroids to grid** — cKDTree with cos(lat) longitude scaling; each parcel assigned its nearest `grid_id`
 11. **Compute affected parcels** — For each non-baseline scenario x mode, parcels whose grid point has `delta_minutes > 0` are "affected"
@@ -165,16 +165,14 @@ Comprehensive analysis combining travel-time impacts with children-weighted traf
 
 1. **Load data** — NCES schools, district boundary, walk zones, attendance zones
 2. **Load networks** — Cached OSMnx drive/bike/walk graphs
-3. **Create grid** — 100 m UTM grid (~16K points) + school anchor points
+3. **Create grid** — 100 m WGS84-native grid (~16K points) using latitude-corrected degree spacing + school anchor points
 4. **Edge-snap** — Shapely STRtree batch nearest-edge with fractional interpolation
 5. **Dijkstra with predecessors** — `dijkstra_predecessor_and_distance()` returns both distances AND predecessor maps; ~4 MB total memory for 33 runs
-6. **Vectorized pixel assignment** — NumPy-based nearest-school computation (~10x faster than Python loop in school_desert.py)
-7. **Zone polygon generation** — Pixel assignments → 55 m squares → dissolve → clip
-8. **Rasterize + delta** — Shared WGS84 pixel grid, rotation gap-fill, boundary mask
-9. **Children distribution** — ACS B01001 → blocks (dasymetric) → pixels (area intersection)
-10. **Route extraction + traffic** — Reconstruct paths from predecessors, accumulate children on edges
-11. **Traffic variants** — 4 combinations: ±walk_mask × ±zone_routing, each for 12 scenarios × 2 age groups
-12. **Build map** — Folium + embedded JS with road GeoJSON, traffic Float32Arrays, heatmap ImageOverlays
+6. **Per-school travel grids** — For each school × mode, rasterize travel time to float32 2D array (~2.8 MB total for 33 grids). These replace pre-rendered PNG overlays.
+7. **Zone polygon generation** — Pixel assignments → 55 m squares → dissolve → clip → GeoJSON (36 sets: 12 scenarios × 3 modes)
+8. **Children distribution** — ACS B01001 → blocks (dasymetric) → pixels (area intersection)
+9. **Route extraction + traffic** — Reconstruct paths from predecessors, accumulate children on edges. Simultaneously tracks per-walk-zone contributions as sparse arrays.
+10. **Build map** — Folium + client-side canvas rendering with embedded per-school float32 grids, colormap LUTs, road GeoJSON, traffic arrays, sparse walk zone contributions
 
 ### Key Design Decisions
 
@@ -182,7 +180,10 @@ Comprehensive analysis combining travel-time impacts with children-weighted traf
 |----------|-----------|
 | `dijkstra_predecessor_and_distance()` instead of `single_source_dijkstra_path_length()` | Enables route reconstruction at O(V) memory cost instead of O(V×path_length) |
 | Vectorized pixel assignment with NumPy | ~10x speedup over per-pixel Python loop |
-| Pre-computed traffic for all mask/zone combinations | Avoids complex client-side recomputation; 4 combinations × 12 scenarios × 2 ages = 96 arrays |
+| Client-side canvas rendering from per-school grids | Eliminates 72 pre-rendered PNGs; JS computes `min(open_schools)` in ~5 ms for any closure scenario |
+| Colormap LUTs (256-entry RGBA arrays from matplotlib) | Client-side coloring without hand-coded RGB ramps; faithful to matplotlib colormaps |
+| Unmasked traffic + sparse walk zone contributions | Client-side masking via subtraction; 2 zone modes × 12 scenarios × 2 ages = 48 arrays (down from 96), plus ~528 sparse contribution sets (~1 MB) |
+| Tabbed sidebar UI (Part 1 / Part 2) | Separates travel time and traffic controls into focused views instead of 17+ mixed controls |
 | Drive-only traffic analysis | Bike/walk traffic is negligible for road network impact |
 | Pickle for Dijkstra cache | Complex nested dict structure not suited for NPZ/CSV |
 

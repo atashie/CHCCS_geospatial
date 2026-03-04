@@ -80,6 +80,7 @@ import pandas as pd
 from scipy.spatial import cKDTree
 import shapely                      # for points(), STRtree, distance, line_locate_point
 from shapely.geometry import LineString, Point
+from shapely.prepared import prep
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 matplotlib.use("Agg")
@@ -516,22 +517,29 @@ def compute_school_travel_times(
 # 5. Create analysis grid
 # ---------------------------------------------------------------------------
 def create_grid(district_polygon, resolution_m: int = GRID_RESOLUTION_M) -> gpd.GeoDataFrame:
-    """Create a regular point grid over the district at given resolution."""
-    # Project to UTM for meter-based grid
-    district_gdf = gpd.GeoDataFrame(geometry=[district_polygon], crs=CRS_WGS84)
-    district_utm = district_gdf.to_crs(CRS_UTM17N).geometry.iloc[0]
+    """Create a regular WGS84 point grid over the district at given resolution.
 
-    minx, miny, maxx, maxy = district_utm.bounds
-    xs = np.arange(minx, maxx, resolution_m)
-    ys = np.arange(miny, maxy, resolution_m)
+    Grid is built directly in WGS84 using latitude-corrected degree spacing,
+    matching the proven approach in road_pollution.py and environmental_map.py.
+    This eliminates the ~1° convergence-angle rotation that occurs when creating
+    a grid in UTM and reprojecting to WGS84.
+    """
+    center_lat = (district_polygon.bounds[1] + district_polygon.bounds[3]) / 2
+    dlat = resolution_m / 111_320.0
+    dlon = resolution_m / (111_320.0 * np.cos(np.radians(center_lat)))
 
+    minlon, minlat, maxlon, maxlat = district_polygon.bounds
+    lons = np.arange(minlon, maxlon, dlon)
+    lats = np.arange(minlat, maxlat, dlat)
+
+    prepared = prep(district_polygon)
     points = []
     grid_ids = []
     idx = 0
-    for x in xs:
-        for y in ys:
-            pt = Point(x, y)
-            if district_utm.contains(pt):
+    for lon in lons:
+        for lat in lats:
+            pt = Point(lon, lat)
+            if prepared.contains(pt):
                 points.append(pt)
                 grid_ids.append(idx)
                 idx += 1
@@ -539,11 +547,8 @@ def create_grid(district_polygon, resolution_m: int = GRID_RESOLUTION_M) -> gpd.
     _progress(f"Created grid with {len(points)} points at {resolution_m}m resolution")
 
     gdf = gpd.GeoDataFrame(
-        {"grid_id": grid_ids},
-        geometry=points,
-        crs=CRS_UTM17N,
-    ).to_crs(CRS_WGS84)
-
+        {"grid_id": grid_ids}, geometry=points, crs=CRS_WGS84,
+    )
     gdf["lat"] = gdf.geometry.y
     gdf["lon"] = gdf.geometry.x
 
@@ -748,8 +753,7 @@ def rasterize_grid(
     values_2d[np.isinf(values_2d)] = np.nan
 
     # Track which pixels have ANY grid point (including routing NaNs).
-    # This lets us distinguish rotation gaps (no grid point mapped here)
-    # from routing gaps (grid point exists but Dijkstra found no path).
+    # Distinguishes empty pixels from routing gaps (Dijkstra found no path).
     all_lats = grid_df["lat"].values
     all_lons = grid_df["lon"].values
     has_point = np.zeros((nrows, ncols), dtype=bool)
@@ -757,8 +761,7 @@ def rasterize_grid(
     all_row_idx = np.clip(((maxlat - all_lats) / dlat).astype(int), 0, nrows - 1)
     has_point[all_row_idx, all_col_idx] = True
 
-    # Fill ONLY rotation gaps: NaN pixels with no grid point assigned.
-    # These are ~1 pixel wide from UTM→WGS84 coordinate misalignment.
+    # Safety-net gap fill (no-op with WGS84-native grid; kept for robustness).
     # Routing NaN gaps (where Dijkstra found no path) are preserved.
     from scipy.ndimage import uniform_filter
     for _ in range(2):
@@ -1882,8 +1885,6 @@ def main():
     print("\n[8/9] Rendering heatmaps (GeoTIFF -> PNG) ...")
 
     # Pre-compute a single pixel grid shared by all scenarios/modes.
-    # Shift minlon so school markers sit closer to pixel centers on average,
-    # reducing the perceived east-west displacement of the heatmap.
     unique_pts = scores_df[["lat", "lon"]].drop_duplicates()
     _all_lats = unique_pts["lat"].values
     _all_lons = unique_pts["lon"].values
@@ -1894,9 +1895,6 @@ def main():
     _maxlat = _all_lats.max() + _dlat / 2
     _maxlon = _all_lons.max() + _dlon / 2
     _minlat = _all_lats.min() - _dlat / 2
-    # Nudge minlon so the mean fractional x-offset of schools ≈ 0.5
-    _school_fracs = ((schools["lon"].values - _minlon) / _dlon) % 1
-    _minlon -= (0.5 - _school_fracs.mean()) * _dlon
     _ncols = int(np.ceil((_maxlon - _minlon) / _dlon))
     _nrows = int(np.ceil((_maxlat - _minlat) / _dlat))
     _maxlon = _minlon + _ncols * _dlon

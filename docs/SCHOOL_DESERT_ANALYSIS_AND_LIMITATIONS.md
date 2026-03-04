@@ -65,9 +65,9 @@ This yields 33 Dijkstra runs total (11 schools × 3 modes). Travel times are cac
 
 ### Step 5: Create Analysis Grid
 
-A regular point grid is generated in UTM (EPSG:32617) at 100-meter spacing. Only points whose UTM coordinates fall inside the district polygon (via `shapely.contains()`) are retained. The grid is then reprojected to WGS84 (EPSG:4326) for all subsequent steps.
+A regular point grid is generated directly in WGS84 (EPSG:4326) at 100-meter spacing, using latitude-corrected degree intervals (`dlat = 100m / 111320`, `dlon = 100m / (111320 × cos(center_lat))`). Only points inside the district polygon (via `shapely.prepared.prep().contains()`) are retained. This WGS84-native approach matches `road_pollution.py` and `environmental_map.py`, eliminating the convergence-angle rotation that occurs when creating a UTM grid and reprojecting to WGS84.
 
-After the UTM grid is created, the 11 school locations are injected as extra grid points (anchor points). This ensures each school's pixel receives a near-zero travel time in the baseline scenario, preventing schools from appearing as high-travel-time artifacts due to grid misalignment.
+After the grid is created, the 11 school locations are injected as extra grid points (anchor points). This ensures each school's pixel receives a near-zero travel time in the baseline scenario, preventing schools from appearing as high-travel-time artifacts due to grid misalignment.
 
 This produces approximately 16,175 grid points (16,164 regular + 11 school anchors) covering the district interior.
 
@@ -118,14 +118,13 @@ A positive delta means the closure increased travel time at that grid point. Zer
 
 ### Step 8: Rasterize to Heatmap Images
 
-Grid points (irregularly spaced in WGS84 due to UTM→WGS84 reprojection) are binned into a regular lat/lon pixel grid:
+Grid points (already on a regular WGS84 lat/lon grid) are binned into a pixel grid for image rendering:
 
 1. **Shared grid parameters** are pre-computed once from the full set of unique grid point coordinates and reused across all scenario/mode combinations. This ensures pixel-perfect alignment — every heatmap layer maps to the same pixel grid.
-2. **Cell size** is computed from the 100m resolution: `dlat = 100 / 111320` degrees, `dlon = 100 / (111320 × cos(center_lat))` degrees. This ensures pixels are approximately 100m × 100m at the center of the district.
-3. **Pixel alignment nudge (minlon):** The pixel grid's western edge (`minlon`) is shifted so that school marker locations land near pixel centers on average. This reduces the perceived east-west displacement between heatmap colors and school markers on the map.
-4. Each grid point is assigned to its containing pixel via integer index arithmetic. **Minimum-wins** assignment (`np.minimum.at`) is used so that when multiple grid points (including injected school anchor points) map to the same pixel, the lowest travel time wins.
-5. **Gap filling (rotation gaps only):** NaN pixels caused by UTM→WGS84 coordinate rotation (where no grid point maps to the pixel) are filled using 2 iterations of mean-of-neighbors smoothing with a 3×3 window (`scipy.ndimage.uniform_filter`). NaN pixels from Dijkstra routing failures (where a grid point exists but no school was reachable) are intentionally preserved as transparent. The two gap types are distinguished by tracking which pixels received any grid point assignment (`has_point` array).
-6. **District boundary masking:** After gap filling, every pixel center is tested for containment within the CHCCS district polygon. Pixels outside the polygon are set back to NaN. This prevents the gap fill from bleeding color outside the district boundary.
+2. **Cell size** is computed from the 100m resolution: `dlat = 100 / 111320` degrees, `dlon = 100 / (111320 × cos(center_lat))` degrees. This matches the grid creation spacing, so points map 1:1 to pixels.
+3. Each grid point is assigned to its containing pixel via integer index arithmetic. **Minimum-wins** assignment (`np.minimum.at`) is used so that when multiple grid points (including injected school anchor points) map to the same pixel, the lowest travel time wins.
+4. **Safety-net gap fill:** A gap-fill pass is retained as a robustness measure, but with WGS84-native grid points it is a no-op (no rotation gaps exist). NaN pixels from Dijkstra routing failures (where a grid point exists but no school was reachable) are intentionally preserved as transparent.
+5. **District boundary masking:** Every pixel center is tested for containment within the CHCCS district polygon. Pixels outside the polygon are set to NaN.
 7. **Colorization:** The value raster is mapped to RGBA using matplotlib colormaps. NaN cells become fully transparent (alpha=0); data cells get alpha=210/255. Absolute time layers use `RdYlGn_r` (green=close, red=far). Delta layers use `Oranges` (white=no change, dark orange=large increase).
 8. **Encoding:** The RGBA image is saved as a base64 PNG for embedding in the HTML map. The raw float32 values are also base64-encoded for the hover tooltip lookup.
 
@@ -201,23 +200,19 @@ Grid points are snapped to the **nearest road edge** (not just the nearest node)
 
 Some grid points receive NaN travel times because neither endpoint of the matched edge is reachable from any school. This can happen due to disconnected components in the bidirectional graph — rare, but possible for isolated road segments that share no connected nodes with the main network component. Additionally, grid points beyond the 200 m access-distance cutoff are marked as NaN. These NaN gaps are **intentionally preserved** in the heatmap as transparent pixels — they represent real routing failures or unreachable areas, not missing data. On the map, they appear as small holes or transparent patches in the heatmap interior.
 
-### 5. UTM-to-WGS84 Grid Rotation
-
-The analysis grid is generated in UTM (EPSG:32617) for uniform metric spacing, then reprojected to WGS84 for display. Because UTM grid lines are not perfectly aligned with latitude/longitude lines, the reprojected points do not fall on a perfectly regular lat/lon grid. When these points are binned into the raster's regular lat/lon pixel grid, some pixels receive no data point. These 1-pixel gaps are filled by the same mean-of-neighbors interpolation described above.
-
-### 6. District Boundary Precision
+### 5. District Boundary Precision
 
 The Census TIGER/Line district boundary is a cartographic generalization. It may not match the actual school attendance boundary to the parcel level. If the TIGER download fails, the fallback boundary (convex hull of school locations + 3 km buffer) is significantly less accurate and will include areas outside the actual district.
 
-### 7. "Nearest School" Is Not "Assigned School"
+### 6. "Nearest School" Is Not "Assigned School"
 
 The analysis computes travel time to the **geographically nearest** school. CHCCS assigns students to schools based on attendance zones, not pure proximity. A student's assigned school may not be the closest one. This analysis shows geographic access patterns, not actual assignment impacts.
 
-### 8. No Capacity Constraints
+### 7. No Capacity Constraints
 
 The model treats all open schools as equally available regardless of capacity. In a real closure scenario, students would be redistributed according to capacity and policy, and some schools might become overcrowded. This analysis does not model redistribution — it only measures raw geographic access.
 
-### 9. Mode-Specific Limitations
+### 8. Mode-Specific Limitations
 
 **Drive mode** uses a bidirectional network (reverse edges added where missing) so Dijkstra from school outward gives symmetric grid→school times. It assumes the driver follows the shortest-time route. It does not model:
 - Parking and walking from a parking lot to the school entrance
@@ -236,11 +231,11 @@ The model treats all open schools as equally available regardless of capacity. I
 - Road safety for child cyclists
 - Bike parking availability at schools
 
-### 10. Raster Resolution vs. Display Resolution
+### 9. Raster Resolution vs. Display Resolution
 
 The 100-meter grid resolution means each pixel represents a 100m × 100m area. Travel time is assigned to the entire pixel based on a single point at (or near) its center. Sub-pixel variation is lost. The `image-rendering: pixelated` CSS directive preserves crisp pixel boundaries when the map is zoomed in, but this makes the blocky resolution visually obvious.
 
-### 11. Color Scale Clamping
+### 10. Color Scale Clamping
 
 Travel times are mapped to fixed color ranges per mode:
 - Drive: 0–15 min (absolute), 0–10 min (delta)
@@ -249,11 +244,11 @@ Travel times are mapped to fixed color ranges per mode:
 
 Values exceeding the maximum are clamped to the darkest color. This means a 20-minute drive and a 40-minute drive both appear as the same dark red. The hover tooltip shows the actual value, but the visual impression can be misleading at extremes.
 
-### 12. Static Network Snapshot
+### 11. Static Network Snapshot
 
 The OSM road network is downloaded once and cached. It represents road infrastructure at the time of download. New roads, closed roads, or construction are not reflected unless the cache is cleared and the network re-downloaded.
 
-### 13. No Elevation or Terrain Model
+### 12. No Elevation or Terrain Model
 
 All travel time calculations are based on 2D network distance. Hill gradients, which meaningfully affect walk and bike speeds in Chapel Hill's terrain, are not modeled. Routes through hilly areas will underestimate actual travel times for walk and bike modes.
 

@@ -22,12 +22,12 @@ This analysis answers two questions:
 
 Identical travel-time model as `school_desert.py`, re-implemented with `dijkstra_predecessor_and_distance()` to enable route extraction while maintaining travel-time consistency.
 
-1. **Grid creation**: 100 m UTM grid (~16K points) inside the CHCCS district boundary
+1. **Grid creation**: 100 m WGS84-native grid (~16K points) inside the CHCCS district boundary, using latitude-corrected degree spacing
 2. **Edge snapping**: Each grid point snaps to the nearest road edge via Shapely STRtree (not just nearest node); travel time is interpolated along the matched edge
 3. **Dijkstra**: 33 runs (11 schools × 3 modes), each exploring the full graph with no cutoff
 4. **Pixel assignment**: For each pixel × scenario × mode, vectorized NumPy computation finds the nearest open school
 5. **Zone polygons**: Pixel assignments converted to 55 m UTM squares, dissolved by nearest school, clipped to district
-6. **Rasterization**: Values projected onto shared WGS84 pixel grid with rotation gap-filling and district masking
+6. **Rasterization**: Values projected onto shared WGS84 pixel grid with district masking
 
 ### Speed Model
 
@@ -125,6 +125,7 @@ All under `data/cache/closure_analysis/`:
 | File | Contents |
 |------|----------|
 | `dijkstra_{mode}.pkl` | Predecessor + distance dicts per school |
+| `grid_version.txt` | Grid algorithm version sentinel (auto-invalidates grid-dependent caches) |
 | `pixel_grid.csv` | Grid point coordinates |
 | `snap_{mode}.npz` | Edge-snapping arrays |
 | `pixel_children.csv` | Children 0-4 and 5-9 per pixel |
@@ -135,26 +136,46 @@ All under `data/cache/closure_analysis/`:
 
 ## Interactive Map Controls
 
-### Control Panel
+The map uses a **tabbed sidebar** (320px right panel) with two tabs:
 
-| Section | Controls |
-|---------|----------|
-| Scenario | Radio: Baseline + 11 closure scenarios |
-| Travel Mode | Radio: Drive, Bike, Walk |
-| Part 1 Layers | Checkboxes: heatmap, zone boundaries, delta |
-| Part 2 Layers | Checkboxes: traffic 5-9, traffic 0-4, difference |
-| Options | Checkboxes: walk zones, walk zone masking, zone routing |
+### Tab 1: Travel Time
+
+| Control | Type | Options |
+|---------|------|---------|
+| Closure Scenario | Dropdown | Baseline + 11 closure scenarios |
+| Travel Mode | Radio | Drive, Bike, Walk |
+| View | Radio | Absolute travel time / Increase vs. baseline |
+| Zone Boundaries | Checkbox | Show/hide color-coded zone borders |
+
+**Heatmap rendering**: Client-side `<canvas>` from per-school float32 grids. JS computes `min(open_schools)` for any closure scenario in real-time (~5 ms for ~16K pixels). Colormaps applied via 256-entry RGBA lookup tables exported from matplotlib.
+
+- **Absolute view**: YlOrRd gradient (light yellow = short, deep red = long)
+- **Delta view**: Oranges gradient (white-to-orange); only affected areas show color
+- **Zone boundaries**: Color-coded borders (11 distinct colors), border-only (no fill)
+
+### Tab 2: Traffic Burden
+
+| Control | Type | Options |
+|---------|------|---------|
+| Closure Scenario | Dropdown | Baseline + 11 closure scenarios |
+| Age Group | Radio | Children 5-9 / Children 0-4 |
+| Routing | Radio | Nearest by drive time / Current districts |
+| View | Radio | Absolute / Difference vs. baseline |
+| Walk Zone Masking | Checkboxes | Per-school walk zone exclusion (Select All / Deselect All) |
+| Show Walk Zones | Checkbox | Display walk zone polygons |
+
+**Walk zone masking**: Client-side subtraction. Python pre-computes unmasked traffic for all scenario/routing/age combos. Per-walk-zone contribution arrays (sparse JSON) record how many children from each walk zone traverse each edge. Client-side: `displayed = unmasked - sum(contributions[checked_zones])`.
 
 ### Road Segment Visualization
 
 - **Sequential** (traffic volume): YlOrRd colormap, line weight 1-6px
-- **Diverging** (traffic difference): Blue (less) → Red (more traffic)
+- **Diverging** (traffic difference): Blue (decrease) → White → Red (increase)
 - **Normalization**: 95th percentile (per project guidelines)
 
 ### Hover Tooltips
 
-- Road segments: road name, highway type, children count
-- Heatmap: travel time in minutes
+- Part 1 heatmap: nearest school name, travel time in minutes (+ delta if applicable)
+- Part 2 road segments: road name, highway type
 
 ---
 

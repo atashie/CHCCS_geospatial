@@ -111,9 +111,10 @@ Key points:
 
 ### Grid Construction
 
-- Grid **extent** is defined in WGS84 (for Folium overlay compatibility)
-- Grid **dimensions** are computed from UTM measurements: `nx = round(width_m / resolution)`
-- Cell **queries** (KD-tree, raster reads) transform cell centers to UTM on-the-fly
+- Grids are built **directly in WGS84** using latitude-corrected degree spacing: `dlat = resolution_m / 111320`, `dlon = resolution_m / (111320 × cos(center_lat))`
+- This avoids the convergence-angle rotation that occurs when creating grids in UTM and reprojecting to WGS84
+- All analysis modules (`road_pollution.py`, `environmental_map.py`, `school_desert.py`, `school_closure_analysis.py`) use the same WGS84-native grid approach
+- Cell **queries** (KD-tree, raster reads) transform cell centers to UTM on-the-fly when metric distances are needed
 
 ### District Boundary Clipping
 
@@ -208,6 +209,21 @@ Use matplotlib perceptually-uniform colormaps. **Never hand-code RGB color ramps
 | Diverging (cool → hot) | `RdYlBu_r` | Blue-yellow-red, symmetric diverging |
 | Income / positive | `YlGn` | Yellow-green |
 | Percentage | `OrRd` | Orange-red |
+| Delta / increase (sequential) | `Oranges` | White-to-orange, transparent where no change |
+| Traffic difference (diverging) | `RdBu_r` | Red-white-blue, symmetric diverging |
+
+### Client-Side Canvas Rendering
+
+For scenarios requiring many overlay variants (e.g., 12 closure scenarios × 3 modes × 2 views), use **client-side canvas rendering** instead of pre-rendered PNG overlays:
+
+1. **Per-entity float32 grids**: Rasterize each entity (e.g., school) separately as base64-encoded float32 arrays. Embed in HTML as JS variables.
+2. **Colormap LUTs**: Use `_generate_cmap_lut(cmap_name)` to extract 256-entry RGBA arrays from matplotlib. Client-side JS indexes into the LUT for coloring.
+3. **Client-side computation**: JS computes derived values (e.g., `min(open_schools)` or `closure - baseline`) from the raw grids in real-time.
+4. **Custom Leaflet layer**: `CanvasHeatmapLayer` renders a `<canvas>` element positioned over the map, updated on zoom/pan.
+
+This pattern is used by `school_closure_analysis.py` and reduces embedded data from ~27 MB (pre-rendered PNGs + hover grids) to ~10 MB (raw grids + LUTs).
+
+Reference: `src/school_closure_analysis.py`, `_generate_cmap_lut()` and `CanvasHeatmapLayer` in `_build_control_html()`.
 
 ### Summary Table
 
@@ -219,6 +235,7 @@ Use matplotlib perceptually-uniform colormaps. **Never hand-code RGB color ramps
 | Choropleth normalization | 5th–95th percentile with `matplotlib.colors.Normalize` | socioeconomic line 1526 |
 | Colormaps | matplotlib perceptually-uniform (YlOrRd, RdYlBu_r, etc.) | socioeconomic line 1504 |
 | NaN fill | `#cccccc` | socioeconomic line 1537 |
+| Canvas rendering | Per-entity float32 grids + colormap LUTs + client-side computation | closure analysis |
 
 ---
 
