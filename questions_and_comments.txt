@@ -1,0 +1,36 @@
+Title
+“Census ACS 2022 5 Year” what does the 5 year mean? 
+What is an Attendance Zone?
+What does the ACS mean? Can we spell these out or eliminate?
+
+
+Metric
+Race/Ethnicity Dot
+Move the purple multiracial dot on the same line
+Median HH Income
+Can you make the bar longer to read numbers better?
+Can we add commas to the bar graphs at bottom to the bigger salaries?
+% Minority
+Who is considered minority?
+Explain why this is used and is different from Race/Ethnicity dot
+% Renter Occupied
+Also needs more space on color graph
+% Zero Vehicle 
+Should we call it No Vehicle in HH?
+%Elementary Age (5-9)
+More space on color graph
+Using % age is confusing unless you understand what the denominator is
+This information needs to be quickly identified on map or in methodology or maybe in the heading
+Blocks
+Explain in Methodology or brief on Legend what Blocks, Blocks (est) mean
+Community Zones
+School Zones (Current school zones)
+Nearest Walk, Bike, Drive need clarification
+Should it be its own sub heading?
+
+
+FORMATTING SUGGESTIONS
+Can Some of the above clarification request be put into a “Hover” over the Legend? 
+
+CONTENT IDEAS
+Can we add real estate data into this map?
