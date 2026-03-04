@@ -1269,14 +1269,14 @@ def _random_points_fallback(geom, n: int, rng) -> list:
 
 # Metric dot-map configuration: (metric_col, display_name, colormap, prefix, suffix, fmt)
 METRIC_DOT_SPECS = [
-    ("median_hh_income", "Median HH Income", "YlGn", "$", "", ",.0f"),
-    ("pct_below_185_poverty", "% Below 185% Poverty", "YlOrRd", "", "%", ".0f"),
-    ("pct_minority", "% Minority", "PuBuGn", "", "%", ".0f"),
-    ("pct_renter", "% Renter-Occupied", "OrRd", "", "%", ".0f"),
-    ("pct_zero_vehicle", "% Zero-Vehicle HH", "Reds", "", "%", ".0f"),
-    ("pct_elementary_age", "% Elementary Age (5-9)", "BuPu", "", "%", ".1f"),
-    ("pct_young_children", "% Young Children (0-4)", "PuRd", "", "%", ".1f"),
-    ("ah_units", "Affordable Housing", "Blues", "", " units", ",.0f"),
+    ("median_hh_income", "Median Household Income", "YlGn", "$", "", ",.0f"),
+    ("pct_below_185_poverty", "% Below 185% Poverty (FRL Proxy)", "YlOrRd", "", "%", ".0f"),
+    ("pct_minority", "% Minority (Non-White NH)", "PuBuGn", "", "%", ".0f"),
+    ("pct_renter", "% Renter-Occupied Housing", "OrRd", "", "%", ".0f"),
+    ("pct_zero_vehicle", "% Households with No Vehicle", "Reds", "", "%", ".0f"),
+    ("pct_elementary_age", "% Population Aged 5-9", "BuPu", "", "%", ".1f"),
+    ("pct_young_children", "% Population Aged 0-4", "PuRd", "", "%", ".1f"),
+    ("ah_units", "Affordable Housing Units", "Blues", "", " units", ",.0f"),
 ]
 
 
@@ -1327,7 +1327,7 @@ def _build_legend_html(title: str, cmap_name: str, vmin: float, vmax: float,
     import matplotlib.colors as mcolors
 
     cmap = plt.get_cmap(cmap_name)
-    n_stops = 6
+    n_stops = 5  # Max 5 labels for cleaner legend
     gradient_stops = []
     for i in range(n_stops):
         frac = i / (n_stops - 1)
@@ -1344,16 +1344,16 @@ def _build_legend_html(title: str, cmap_name: str, vmin: float, vmax: float,
         labels.append(f"{prefix}{val:{fmt}}{suffix}")
 
     labels_html = "".join(
-        f'<span style="flex:1; text-align:center; font-size:10px;">{lbl}</span>'
+        f'<span style="flex:1; text-align:center; font-size:12px;">{lbl}</span>'
         for lbl in labels
     )
 
     return f"""
-    <div style="padding: 6px 10px; background: white; border-radius: 4px;
-                box-shadow: 0 1px 4px rgba(0,0,0,0.3); max-width: 300px;">
-        <div style="font-weight: bold; font-size: 12px; margin-bottom: 4px;">{title}</div>
-        <div style="height: 14px; background: {gradient_css}; border-radius: 2px;"></div>
-        <div style="display: flex; justify-content: space-between; margin-top: 2px;">
+    <div style="padding: 10px 14px; background: white; border-radius: 5px;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.3); max-width: 320px;">
+        <div style="font-weight: bold; font-size: 13px; margin-bottom: 6px;">{title}</div>
+        <div style="height: 16px; background: {gradient_css}; border-radius: 3px;"></div>
+        <div style="display: flex; justify-content: space-between; margin-top: 4px;">
             {labels_html}
         </div>
     </div>
@@ -1458,10 +1458,11 @@ def create_socioeconomic_map(
     if enriched_blocks is not None:
         import matplotlib.colors as mcolors
 
+        # Order must match METRIC_DOT_SPECS for correct layer indexing
         block_layers = [
             ("Median Income (Block est.)", "median_hh_income", "YlGn", "$", "", ",.0f", True),
-            ("% Minority (Block)", "pct_minority", "PuBuGn", "", "%", ".0f", False),
             ("% Below 185% Poverty (Block est.)", "pct_below_185_poverty", "YlOrRd", "", "%", ".0f", True),
+            ("% Minority (Block)", "pct_minority", "PuBuGn", "", "%", ".0f", False),
             ("% Renter-Occupied (Block est.)", "pct_renter", "OrRd", "", "%", ".0f", True),
             ("% Zero-Vehicle HH (Block est.)", "pct_zero_vehicle", "Reds", "", "%", ".0f", True),
             ("% Elementary Age (Block est.)", "pct_elementary_age", "BuPu", "", "%", ".1f", True),
@@ -1709,19 +1710,109 @@ def create_socioeconomic_map(
 
     # -- Custom control panel replaces Folium LayerControl --
 
-    # -- Title --
-    title_html = """
-    <div style="position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
-                z-index: 1000; background-color: white; padding: 10px 20px;
-                border-radius: 5px; box-shadow: 2px 2px 5px rgba(0,0,0,0.3);">
-        <h3 style="margin: 0;">CHCCS Socioeconomic Analysis by Attendance Zone</h3>
-        <p style="margin: 5px 0 0 0; font-size: 12px; color: #666;">
-            Census ACS 2022 5-Year &bull; Use controls at right to explore
-            &bull; Scroll down for summary plots
-        </p>
+    # -- Banner with FAQ button (matching school_closure_analysis.html style) --
+    banner_html = """
+    <style>
+        #socio-banner {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+            background: white; padding: 10px 20px;
+            border-bottom: 1px solid #dee2e6;
+            display: flex; justify-content: center; align-items: center;
+            text-align: center;
+        }
+        #socio-banner h1 { margin: 0; font-size: 18px; font-weight: 600; color: #333; }
+        #socio-banner .subtitle { margin: 2px 0 0 0; font-size: 12px; color: #666; display: inline; }
+        .faq-btn {
+            display: inline-flex; align-items: center; gap: 3px;
+            padding: 2px 8px; background: #2196F3; color: white;
+            border: none; border-radius: 3px; font-size: 11px;
+            font-weight: bold; cursor: pointer; margin-left: 10px;
+            vertical-align: middle;
+        }
+        .faq-btn:hover { background: #1976D2; }
+        .faq-btn .faq-icon { font-size: 13px; }
+        .faq-panel {
+            display: none; position: fixed; top: 60px; left: 20px; z-index: 1002;
+            background: white; padding: 12px 15px; border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3); max-width: 380px;
+            max-height: 70vh; overflow-y: auto; font-size: 12px; line-height: 1.5;
+        }
+        .faq-panel.visible { display: block; }
+        .faq-panel h5 { margin: 0 0 10px 0; padding-bottom: 6px; border-bottom: 1px solid #eee; font-size: 13px; }
+        .faq-panel .faq-item { margin-bottom: 12px; }
+        .faq-panel .faq-q { font-weight: bold; color: #333; margin-bottom: 3px; }
+        .faq-panel .faq-a { color: #555; }
+        .faq-close {
+            position: absolute; top: 6px; right: 10px; cursor: pointer;
+            font-size: 18px; color: #999; line-height: 1;
+        }
+        .faq-close:hover { color: #333; }
+    </style>
+    <div id="socio-banner">
+        <div>
+            <h1>CHCCS Socioeconomic Analysis by Attendance Zone</h1>
+            <p class="subtitle">Census ACS 2022 5-Year Estimates &mdash; Scroll down for zone comparison charts
+                <button class="faq-btn" onclick="toggleFaqPanel()" title="Click for FAQ">
+                    <span class="faq-icon">?</span> Help
+                </button>
+            </p>
+        </div>
     </div>
+    <div class="faq-panel" id="faq-panel">
+        <span class="faq-close" onclick="toggleFaqPanel()">&times;</span>
+        <h5>Frequently Asked Questions</h5>
+        <div class="faq-item">
+            <div class="faq-q">What does "Census ACS 2022 5-Year" mean?</div>
+            <div class="faq-a"><b>ACS</b> = American Community Survey, an ongoing Census Bureau survey.
+            <b>5-Year</b> means data averaged over 2018-2022 for statistical reliability in small areas like block groups.</div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-q">What is an Attendance Zone?</div>
+            <div class="faq-a">A geographic boundary determining which school students are assigned to by default.
+            <b>Important:</b> Zone demographics show who <i>lives</i> in each zone, not who <i>attends</i> each school (families may use school choice, transfers, or magnets).</div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-q">What are "Block Groups" vs "Blocks (est.)"?</div>
+            <div class="faq-a"><b>Block Groups</b> = Census block groups (~1,500 people), the native ACS geography.
+            <b>Blocks (est.)</b> = Estimated block-level values interpolated from block groups using residential parcel area weighting (dasymetric method).</div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-q">Who is counted as "Minority"?</div>
+            <div class="faq-a">All non-White-Non-Hispanic residents: Black, Hispanic/Latino, Asian, Multiracial, Native American, Pacific Islander, and other races.
+            Calculated as 100% minus % White Non-Hispanic.</div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-q">Why is % Minority different from Race/Ethnicity dots?</div>
+            <div class="faq-a">The <b>dots</b> show each racial/ethnic group as separate colors for detailed visualization.
+            <b>% Minority</b> aggregates all non-White-NH groups into one metric for quick zone-to-zone comparison.</div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-q">What does "% Population Aged 5-9" measure?</div>
+            <div class="faq-a">The percentage of <b>all residents</b> (not just children) who are aged 5-9.
+            Denominator = total population of all ages in that area.</div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-q">What are Nearest Walk/Bike/Drive zones?</div>
+            <div class="faq-a">Areas grouped by which school is closest via that travel mode, using actual road networks (Dijkstra shortest-path algorithm).
+            <b>Walk:</b> 2.5 mph &bull; <b>Bike:</b> 12 mph &bull; <b>Drive:</b> 18-60 mph depending on road type.</div>
+        </div>
+    </div>
+    <script>
+        window.toggleFaqPanel = function() {
+            var panel = document.getElementById('faq-panel');
+            if (panel) panel.classList.toggle('visible');
+        };
+        document.addEventListener('click', function(e) {
+            var panel = document.getElementById('faq-panel');
+            var btn = document.querySelector('.faq-btn');
+            if (panel && panel.classList.contains('visible') &&
+                !panel.contains(e.target) && !btn.contains(e.target)) {
+                panel.classList.remove('visible');
+            }
+        });
+    </script>
     """
-    m.get_root().html.add_child(folium.Element(title_html))
+    m.get_root().html.add_child(folium.Element(banner_html))
 
     # -- Unified dot-density layer with custom control panel --
     if dot_fg is not None:
@@ -1815,15 +1906,15 @@ def create_socioeconomic_map(
 
         # ── Race legend HTML ──
         legend_items = "".join(
-            f'<span style="display:inline-block; width:10px; height:10px; '
-            f'background:{color}; border-radius:50%; margin-right:4px;"></span>'
+            f'<span style="display:inline-block; width:12px; height:12px; '
+            f'background:{color}; border-radius:50%; margin-right:5px;"></span>'
             f'{label}&nbsp;&nbsp;'
             for race_key, (color, label) in RACE_CATEGORIES.items()
         )
         race_legend_html = (
-            f'<div style="padding: 6px 10px; background: white; border-radius: 4px;'
-            f' box-shadow: 0 1px 4px rgba(0,0,0,0.3); max-width: 300px; font-size: 11px;">'
-            f'<b>Race/Ethnicity</b> (1 dot = {dots_per_person} '
+            f'<div style="padding: 10px 14px; background: white; border-radius: 5px;'
+            f' box-shadow: 0 2px 6px rgba(0,0,0,0.3); max-width: 320px; font-size: 13px;">'
+            f'<b style="font-size: 13px;">Race/Ethnicity</b> (1 dot = {dots_per_person} '
             f'{"person" if dots_per_person == 1 else "people"})<br>'
             f'{legend_items}</div>'
         )
@@ -1831,10 +1922,36 @@ def create_socioeconomic_map(
         all_legends = {"Race/Ethnicity": race_legend_html}
         all_legends.update(metric_legends)
 
+        # Override AH legend with categorical AMI legend (not a color ramp)
+        ah_legend_html = """
+        <div style="padding: 10px 14px; background: white; border-radius: 5px;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.3); max-width: 320px; font-size: 13px;">
+            <div style="font-weight: bold; margin-bottom: 8px;">Affordable Housing by AMI Level</div>
+            <div style="display: flex; align-items: center; margin: 4px 0;">
+                <span style="display:inline-block; width:14px; height:14px; background:#d73027;
+                      border-radius:50%; margin-right:8px;"></span>0-30% AMI (Deeply Affordable)
+            </div>
+            <div style="display: flex; align-items: center; margin: 4px 0;">
+                <span style="display:inline-block; width:14px; height:14px; background:#fc8d59;
+                      border-radius:50%; margin-right:8px;"></span>30-60% AMI
+            </div>
+            <div style="display: flex; align-items: center; margin: 4px 0;">
+                <span style="display:inline-block; width:14px; height:14px; background:#fee090;
+                      border-radius:50%; margin-right:8px;"></span>60-80% AMI
+            </div>
+            <div style="display: flex; align-items: center; margin: 4px 0;">
+                <span style="display:inline-block; width:14px; height:14px; background:#91bfdb;
+                      border-radius:50%; margin-right:8px;"></span>80%+ AMI
+            </div>
+        </div>
+        """
+        all_legends["Affordable Housing Units"] = ah_legend_html
+
         # ── JS data serialization ──
         dot_fg_name = dot_fg.get_name()
         map_name = m.get_name()
         ah_fg_name = ah_fg.get_name() if ah_fg is not None else "null"
+        school_fg_name = school_fg.get_name()
 
         race_colors_list = [color for color, label in RACE_CATEGORIES.values()]
         metric_names = ["Race/Ethnicity"] + [spec[1] for spec in METRIC_DOT_SPECS]
@@ -1943,24 +2060,7 @@ def create_socioeconomic_map(
                 display: block;
             }}
             #dot-legend-box {{
-                position: fixed; top: 50%; left: 10px; z-index: 1002;
-                transform: translateY(-50%);
-            }}
-            #ah-legend {{
-                position: fixed; bottom: 30px; left: 10px; z-index: 1002;
-                background: white; padding: 8px 10px; border-radius: 5px;
-                box-shadow: 0 2px 6px rgba(0,0,0,0.2); font-size: 11px;
-                display: none;  /* Hidden initially - shown when AH metric selected */
-            }}
-            #ah-legend b {{
-                display: block; margin-bottom: 4px;
-            }}
-            .ah-leg-row {{
-                display: flex; align-items: center; margin: 2px 0;
-            }}
-            .ah-leg-dot {{
-                width: 10px; height: 10px; border-radius: 50%;
-                margin-right: 6px; flex-shrink: 0;
+                position: fixed; bottom: 10px; right: 10px; z-index: 1002;
             }}
             .barplot-title {{
                 font-weight: bold; font-size: 12px; text-align: center;
@@ -1973,7 +2073,7 @@ def create_socioeconomic_map(
                 overflow-x: hidden;
             }}
             .folium-map {{
-                height: 100vh !important;
+                height: 90vh !important;
             }}
         </style>
         <div id="ctrl-panel">
@@ -1981,13 +2081,19 @@ def create_socioeconomic_map(
                 <b>Metric</b>
                 {radio_html}
             </div>
-            <div class="ctrl-section">
+            <div class="ctrl-section" id="layers-section">
                 <b>Layers</b>
                 <label style="display:block;margin:1px 0;cursor:pointer;">
-                    <input type="checkbox" id="chk-bg"> Block Groups
+                    <input type="radio" name="layer" value="none"> None
                 </label>
                 <label style="display:block;margin:1px 0;cursor:pointer;">
-                    <input type="checkbox" id="chk-blk"> Blocks (est.)
+                    <input type="radio" name="layer" value="bg"> Block Groups
+                </label>
+                <label style="display:block;margin:1px 0;cursor:pointer;">
+                    <input type="radio" name="layer" value="blk" checked> Blocks (est.)
+                </label>
+                <label style="display:block;margin:1px 0;cursor:pointer;">
+                    <input type="radio" name="layer" value="dots"> Population Dots (est.)
                 </label>
             </div>
             <div class="ctrl-section">
@@ -1999,13 +2105,6 @@ def create_socioeconomic_map(
         </div>
         <div id="zone-strip"></div>
         <div id="dot-legend-box"></div>
-        <div id="ah-legend">
-            <b>Affordable Housing (AMI)</b>
-            <div class="ah-leg-row"><span class="ah-leg-dot" style="background:#d73027;"></span>0-30% (Deeply Affordable)</div>
-            <div class="ah-leg-row"><span class="ah-leg-dot" style="background:#fc8d59;"></span>30-60%</div>
-            <div class="ah-leg-row"><span class="ah-leg-dot" style="background:#fee090;"></span>60-80%</div>
-            <div class="ah-leg-row"><span class="ah-leg-dot" style="background:#91bfdb;"></span>80%+</div>
-        </div>
         <script>
         document.addEventListener('DOMContentLoaded', function() {{
             var map = {map_name};
@@ -2014,6 +2113,7 @@ def create_socioeconomic_map(
             var bgLayers = {bg_layers_js};
             var blkLayers = {blk_layers_js};
             var ahFg = {ah_fg_name};
+            var schoolFg = {school_fg_name};
             var dots = {data_js};
             var allDotZones = {all_dot_zones_js};
             var allZoneNames = {all_zone_names_js};
@@ -2055,7 +2155,7 @@ def create_socioeconomic_map(
             function rebuildZoneCards() {{
                 zoneStrip.innerHTML = '';
                 var isRace = (currentMetric === 0);
-                var isHousing = (currentMetric === lastMetricIdx && metricNames[lastMetricIdx] === 'Affordable Housing');
+                var isHousing = (currentMetric === lastMetricIdx && metricNames[lastMetricIdx] === 'Affordable Housing Units');
                 var isIncome = (!isRace && !isHousing && metricPrefixes[currentMetric] === '$');
                 var isPct = (!isRace && !isIncome && !isHousing);
 
@@ -2126,26 +2226,43 @@ def create_socioeconomic_map(
                 legendBox.innerHTML = legends[metricNames[currentMetric]] || '';
             }}
 
-            function updateBGLayer() {{
+            function updateLayerToggle() {{
+                // Remove all BG and Block layers first
                 for (var i = 0; i < bgLayers.length; i++) {{
                     if (map.hasLayer(bgLayers[i])) map.removeLayer(bgLayers[i]);
                 }}
-                var chk = document.getElementById('chk-bg');
-                if (chk.checked && currentMetric > 0) {{
-                    var idx = currentMetric - 1;
-                    if (idx < bgLayers.length) bgLayers[idx].addTo(map);
-                }}
-            }}
-
-            function updateBlkLayer() {{
                 for (var i = 0; i < blkLayers.length; i++) {{
                     if (map.hasLayer(blkLayers[i])) map.removeLayer(blkLayers[i]);
                 }}
-                var chk = document.getElementById('chk-blk');
-                if (chk.checked && currentMetric > 0) {{
-                    var idx = currentMetric - 1;
-                    if (idx < blkLayers.length) blkLayers[idx].addTo(map);
+                // Get selected layer radio value
+                var selectedRadio = document.querySelector('input[name="layer"]:checked');
+                var selected = selectedRadio ? selectedRadio.value : 'none';
+
+                // Handle Population Dots layer option
+                var isRace = (currentMetric === 0);
+                var isHousingMetric = (currentMetric === lastMetricIdx && metricNames[lastMetricIdx] === 'Affordable Housing Units');
+                if (selected === 'dots') {{
+                    // Show dots when "Population Dots" layer selected (except for AH metric)
+                    if (!isHousingMetric && !map.hasLayer(dotFg)) dotFg.addTo(map);
+                    if (isHousingMetric && map.hasLayer(dotFg)) map.removeLayer(dotFg);
+                }} else {{
+                    // For other layers, dots only show for Race/Ethnicity metric
+                    if (isRace) {{
+                        if (!map.hasLayer(dotFg)) dotFg.addTo(map);
+                    }} else {{
+                        if (map.hasLayer(dotFg)) map.removeLayer(dotFg);
+                    }}
                 }}
+
+                // Add selected choropleth layer (if not 'none', not 'dots', and not Race/Ethnicity mode)
+                if (selected !== 'none' && selected !== 'dots' && currentMetric > 0 && !isHousingMetric) {{
+                    var idx = currentMetric - 1;
+                    if (selected === 'bg' && idx < bgLayers.length) bgLayers[idx].addTo(map);
+                    if (selected === 'blk' && idx < blkLayers.length) blkLayers[idx].addTo(map);
+                }}
+
+                // Ensure school markers stay on top
+                if (schoolFg) schoolFg.bringToFront();
             }}
 
             function switchZoneType(idx) {{
@@ -2155,6 +2272,8 @@ def create_socioeconomic_map(
                 }}
                 currentZoneType = idx;
                 zoneFgs[idx].addTo(map);
+                // Ensure school markers stay on top
+                if (schoolFg) schoolFg.bringToFront();
                 zoneStrip.style.display = 'flex';
                 rebuildZoneCards();
                 updateHistograms();
@@ -2317,7 +2436,7 @@ def create_socioeconomic_map(
                 var pfx = metricPrefixes[currentMetric];
                 var sfx = metricSuffixes[currentMetric];
                 var isIncome = (pfx === '$');
-                var isHousing = (currentMetric === lastMetricIdx && metricNames[lastMetricIdx] === 'Affordable Housing');
+                var isHousing = (currentMetric === lastMetricIdx && metricNames[lastMetricIdx] === 'Affordable Housing Units');
                 var nSchools = masterSchools.length;
                 var zoneNames = allZoneNames[currentZoneType];
                 var nZones = zoneNames.length;
@@ -2421,34 +2540,29 @@ def create_socioeconomic_map(
                 currentMetric = idx;
                 // Determine what the new layout should be
                 var isRace = (idx === 0);
-                var isHousing = (idx === lastMetricIdx && metricNames[lastMetricIdx] === 'Affordable Housing');
+                var isHousing = (idx === lastMetricIdx && metricNames[lastMetricIdx] === 'Affordable Housing Units');
                 var isIncome = (!isRace && !isHousing && metricPrefixes[idx] === '$');
                 var needLayout = isRace ? 'race' : (isHousing ? 'housing' : (isIncome ? 'histogram' : 'barplot'));
                 if (needLayout !== prevLayout) {{
                     rebuildZoneCards();
                 }}
 
-                // Population dots only visible in Race/Ethnicity mode
-                if (isRace) {{
-                    if (!map.hasLayer(dotFg)) dotFg.addTo(map);
-                }} else {{
-                    if (map.hasLayer(dotFg)) map.removeLayer(dotFg);
+                // Hide Layers section for Race/Ethnicity and Affordable Housing (single-layer metrics)
+                var layersSection = document.getElementById('layers-section');
+                if (layersSection) {{
+                    layersSection.style.display = (isRace || isHousing) ? 'none' : 'block';
                 }}
 
                 // Affordable Housing markers only visible in AH mode
-                var ahLegend = document.getElementById('ah-legend');
                 if (isHousing && ahFg) {{
                     if (!map.hasLayer(ahFg)) ahFg.addTo(map);
-                    if (ahLegend) ahLegend.style.display = 'block';
                 }} else if (ahFg) {{
                     if (map.hasLayer(ahFg)) map.removeLayer(ahFg);
-                    if (ahLegend) ahLegend.style.display = 'none';
                 }}
 
                 recolorDots();
                 updateLegend();
-                updateBGLayer();
-                updateBlkLayer();
+                updateLayerToggle();  // Handles dot/choropleth visibility based on layer selection
                 updateHistograms();
             }}
 
@@ -2467,12 +2581,16 @@ def create_socioeconomic_map(
                 }});
             }}
 
-            document.getElementById('chk-bg').addEventListener('change', function() {{ updateBGLayer(); }});
-            document.getElementById('chk-blk').addEventListener('change', function() {{ updateBlkLayer(); }});
+            var layerRadios = document.querySelectorAll('input[name="layer"]');
+            for (var r = 0; r < layerRadios.length; r++) {{
+                layerRadios[r].addEventListener('change', function() {{ updateLayerToggle(); }});
+            }}
             // Zones always visible — toggled by zone-type radios only
 
             // ── Initial state ──
             updateMetric(0);  // Initialize with Race/Ethnicity selected
+            // Ensure school markers start on top
+            if (schoolFg) schoolFg.bringToFront();
         }});
         </script>
         """

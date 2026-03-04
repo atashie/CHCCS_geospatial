@@ -476,8 +476,11 @@ def _create_district_mask(bounds_wgs84, grid_shape, district_gdf, buffer_m=200):
 
 def _add_raster_layer(map_obj, grid, bounds_wgs84, layer_name, colormap,
                       show=True, opacity=0.7, district_mask=None,
-                      vmin=None, vmax=None):
-    """Add a raster overlay as a toggleable FeatureGroup."""
+                      vmin=None, vmax=None, add_to_map=True):
+    """Add a raster overlay as a toggleable FeatureGroup.
+
+    If add_to_map=False, returns the FeatureGroup without adding to map.
+    """
     rgba, gmax = _grid_to_rgba(grid, colormap=colormap,
                                 district_mask=district_mask,
                                 vmin=vmin, vmax=vmax)
@@ -490,8 +493,9 @@ def _add_raster_layer(map_obj, grid, bounds_wgs84, layer_name, colormap,
         bounds=[[south, west], [north, east]],
         opacity=opacity,
     ).add_to(group)
-    group.add_to(map_obj)
-    return gmax
+    if add_to_map:
+        group.add_to(map_obj)
+    return group, gmax
 
 
 def _add_tree_canopy_layer(map_obj, lulc_path, show=False, district_gdf=None):
@@ -583,11 +587,15 @@ def _add_roads_layer(map_obj, roads_gdf, district_gdf=None):
     group.add_to(map_obj)
 
 
-def _add_flood_layer(map_obj, flood_100, flood_500, school_props, overlaps):
+def _add_flood_layer(map_obj, flood_100, flood_500, school_props, overlaps, show=True, add_to_control=True):
     """Add flood plains as a toggleable layer with school property overlaps."""
     import json
 
-    group = folium.FeatureGroup(name="FEMA Flood Plains", show=False)
+    # If add_to_control=False, add elements directly to map (no toggle in LayerControl)
+    if add_to_control:
+        group = folium.FeatureGroup(name="FEMA Flood Plains", show=show)
+    else:
+        group = map_obj  # Add directly to map
 
     # Simplify geometries for smaller GeoJSON
     simplify_tol = 0.0001
@@ -659,11 +667,15 @@ def _add_flood_layer(map_obj, flood_100, flood_500, school_props, overlaps):
     group.add_to(map_obj)
 
 
-def _add_school_properties_layer(map_obj, school_props, all_metrics):
+def _add_school_properties_layer(map_obj, school_props, all_metrics, add_to_control=True):
     """Add school property polygons with rich popups aggregating all metrics."""
     import json
 
-    group = folium.FeatureGroup(name="School Properties", show=True)
+    # If add_to_control=False, add elements directly to map (no toggle in LayerControl)
+    if add_to_control:
+        group = folium.FeatureGroup(name="School Properties", show=True)
+    else:
+        group = map_obj  # Add directly to map
 
     for _, row in school_props.iterrows():
         name = row["school_name"]
@@ -732,12 +744,17 @@ def _add_school_properties_layer(map_obj, school_props, all_metrics):
             popup=folium.Popup(popup_html, max_width=300),
         ).add_to(group)
 
-    group.add_to(map_obj)
+    # Only call add_to if we created a separate FeatureGroup
+    if add_to_control:
+        group.add_to(map_obj)
 
 
 def _add_school_markers_for_layer(map_obj, schools_df, score_col, norm_col,
-                                  color_func, layer_name, show=True):
-    """Add school CircleMarkers color-coded by a specific metric."""
+                                  color_func, layer_name, show=True, add_to_map=True):
+    """Add school CircleMarkers color-coded by a specific metric.
+
+    If add_to_map=False, returns the FeatureGroup without adding to map.
+    """
     group = folium.FeatureGroup(name=f"{layer_name} — Schools", show=show)
 
     for _, row in schools_df.iterrows():
@@ -760,14 +777,16 @@ def _add_school_markers_for_layer(map_obj, schools_df, score_col, norm_col,
             tooltip=f"{row['school']}",
         ).add_to(group)
 
-    group.add_to(map_obj)
+    if add_to_map:
+        group.add_to(map_obj)
+    return group
 
 
 # ---------------------------------------------------------------------------
 # Legend HTML
 # ---------------------------------------------------------------------------
-def _build_legend_js():
-    """Build JavaScript for dynamic legend switching based on active layers."""
+def _build_legend_html_only():
+    """Build legend HTML divs only (JavaScript toggle is handled in control panel)."""
     return """
 <style>
   .env-legend {
@@ -824,66 +843,12 @@ def _build_legend_js():
     Land-cover proxy, NOT measured temperature
   </div>
 </div>
-
-<script>
-(function() {
-  var legendMap = {
-    'Raw Air Pollution': 'legend-trap',
-    'Net Air Pollution': 'legend-trap',
-    'FEMA Flood Plains': 'legend-flood',
-    'Tree Canopy (ESA WorldCover)': 'legend-tree',
-    'UHI Proxy (Land Cover)': 'legend-uhi'
-  };
-
-  var activeLayers = new Set();
-
-  // Find the map
-  var mapEl = document.querySelector('.folium-map');
-  if (!mapEl) return;
-  var map = window[mapEl.id] || null;
-  if (!map) {
-    for (var key in window) {
-      if (window[key] instanceof L.Map) { map = window[key]; break; }
-    }
-  }
-  if (!map) return;
-
-  function updateLegends() {
-    // Hide all legends
-    for (var name in legendMap) {
-      var el = document.getElementById(legendMap[name]);
-      if (el) el.style.display = 'none';
-    }
-    // Show legends for active layers (last matching wins for position)
-    var shown = new Set();
-    activeLayers.forEach(function(layerName) {
-      var legendId = legendMap[layerName];
-      if (legendId && !shown.has(legendId)) {
-        var el = document.getElementById(legendId);
-        if (el) el.style.display = 'block';
-        shown.add(legendId);
-      }
-    });
-  }
-
-  map.on('overlayadd', function(e) {
-    activeLayers.add(e.name);
-    updateLegends();
-  });
-
-  map.on('overlayremove', function(e) {
-    activeLayers.delete(e.name);
-    updateLegends();
-  });
-
-  // Initialize: show legend for default-visible layers
-  setTimeout(function() {
-    activeLayers.add('Raw Air Pollution');
-    updateLegends();
-  }, 500);
-})();
-</script>
 """
+
+
+def _build_legend_js():
+    """Build JavaScript for dynamic legend switching based on active layers (deprecated)."""
+    return _build_legend_html_only()
 
 
 # ---------------------------------------------------------------------------
@@ -967,11 +932,10 @@ def create_environmental_map(
                 "pct": row["overlap_pct"],
             })
 
-    # Layer 0: District boundary (dashed outline, always on)
+    # Layer 0: District boundary (always on, no toggle)
     if district_gdf is not None:
         folium.GeoJson(
             district_gdf.to_crs(CRS_WGS84).__geo_interface__,
-            name="District Boundary",
             style_function=lambda x: {
                 "fillColor": "transparent",
                 "color": "#333333",
@@ -980,91 +944,312 @@ def create_environmental_map(
             },
         ).add_to(m)
 
-    # Layer 1: School properties (always on)
-    _add_school_properties_layer(m, school_props, all_metrics)
+    # Layer 1: School properties (always on, no toggle)
+    _add_school_properties_layer(m, school_props, all_metrics, add_to_control=False)
 
     # Layer 2: Road network (always on, tertiary+)
     _add_roads_layer(m, roads_gdf, district_gdf=district_gdf)
 
-    # Layer 3: Flood plains (toggle, off)
-    _add_flood_layer(m, flood_100, flood_500, school_props, overlaps)
+    # Layer 3: Flood plains (toggle, on by default)
+    _add_flood_layer(m, flood_100, flood_500, school_props, overlaps, show=True)
 
-    # Layer 4: Raw air pollution raster (toggle, on)
-    _add_raster_layer(m, raw_grid, trap_bounds, "Raw Air Pollution",
-                      colormap="YlOrRd", show=True, opacity=0.7,
-                      district_mask=district_mask)
-
-    # Raw pollution school markers (metric-colored, toggleable)
-    _add_school_markers_for_layer(
-        m, trap_scores, "raw_500m", "raw_norm_500m",
-        _score_to_color, "Raw Air Pollution", show=True,
-    )
-
-    # Layer 5: Tree canopy (toggle, off)
+    # Layer 4: Tree canopy (separate checkbox toggle, off by default)
     _add_tree_canopy_layer(m, lulc_path, show=False, district_gdf=district_gdf)
 
-    # Layer 6: Net air pollution raster (toggle, off)
-    _add_raster_layer(m, net_grid, trap_bounds, "Net Air Pollution",
-                      colormap="YlOrRd", show=False, opacity=0.7,
-                      district_mask=district_mask)
+    # === Environmental Raster Layers (radio button group - mutually exclusive) ===
+    # Create all raster + marker layers but don't add to LayerControl
+    # Net Air Pollution is the default selection
 
-    # Net pollution school markers (metric-colored, toggleable)
-    _add_school_markers_for_layer(
+    # Raw air pollution raster + markers
+    raw_raster_fg, _ = _add_raster_layer(
+        m, raw_grid, trap_bounds, "Raw Air Pollution",
+        colormap="YlOrRd", show=False, opacity=0.7,
+        district_mask=district_mask, add_to_map=False
+    )
+    raw_raster_fg.add_to(m)
+    raw_markers_fg = _add_school_markers_for_layer(
+        m, trap_scores, "raw_500m", "raw_norm_500m",
+        _score_to_color, "Raw Air Pollution", show=False, add_to_map=False
+    )
+    raw_markers_fg.add_to(m)
+
+    # Net air pollution raster + markers (DEFAULT)
+    net_raster_fg, _ = _add_raster_layer(
+        m, net_grid, trap_bounds, "Net Air Pollution",
+        colormap="YlOrRd", show=True, opacity=0.7,
+        district_mask=district_mask, add_to_map=False
+    )
+    net_raster_fg.add_to(m)
+    net_markers_fg = _add_school_markers_for_layer(
         m, trap_scores, "net_500m", "net_norm_500m",
-        _score_to_color, "Net Air Pollution", show=False,
+        _score_to_color, "Net Air Pollution", show=True, add_to_map=False
     )
+    net_markers_fg.add_to(m)
 
-    # Layer 7: UHI proxy raster (toggle, off)
-    _add_raster_layer(m, uhi_grid, uhi_bounds, "UHI Proxy (Land Cover)",
-                      colormap="RdYlBu_r", show=False, opacity=0.7,
-                      district_mask=district_mask, vmin=0, vmax=100)
-
-    # UHI school markers (metric-colored, toggleable)
-    _add_school_markers_for_layer(
+    # UHI proxy raster + markers
+    uhi_raster_fg, _ = _add_raster_layer(
+        m, uhi_grid, uhi_bounds, "UHI Proxy (Land Cover)",
+        colormap="RdYlBu_r", show=False, opacity=0.7,
+        district_mask=district_mask, vmin=0, vmax=100, add_to_map=False
+    )
+    uhi_raster_fg.add_to(m)
+    uhi_markers_fg = _add_school_markers_for_layer(
         m, uhi_scores, "uhi_500m", "uhi_500m",
-        _uhi_to_color, "UHI Proxy (Land Cover)", show=False,
+        _uhi_to_color, "UHI Proxy (Land Cover)", show=False, add_to_map=False
     )
+    uhi_markers_fg.add_to(m)
 
-    # Layer 8: Fixed-blue school markers (always visible)
-    if schools_df is not None:
-        school_fg = folium.FeatureGroup(name="Schools", show=True)
-        for _, row in schools_df.iterrows():
-            folium.CircleMarker(
-                location=[row["lat"], row["lon"]],
-                radius=6,
-                color="#333333",
-                weight=2,
-                fillColor="#2196F3",
-                fillOpacity=1.0,
-                popup=folium.Popup(
-                    f"<b>{row['school']}</b>",
-                    max_width=200,
-                ),
-                tooltip=row["school"],
-            ).add_to(school_fg)
-        school_fg.add_to(m)
+    # Get JS variable names for custom control
+    raw_raster_name = raw_raster_fg.get_name()
+    raw_markers_name = raw_markers_fg.get_name()
+    net_raster_name = net_raster_fg.get_name()
+    net_markers_name = net_markers_fg.get_name()
+    uhi_raster_name = uhi_raster_fg.get_name()
+    uhi_markers_name = uhi_markers_fg.get_name()
 
-    # Layer control (expanded)
+    # Layer control for Flood and Tree Canopy only
     folium.LayerControl(collapsed=False).add_to(m)
 
-    # Title overlay
-    title_html = """
-    <div style="position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
-                z-index: 1000; background-color: white; padding: 10px 20px;
-                border-radius: 5px; box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
-                max-width: 600px; text-align: center;">
-        <h3 style="margin: 0;">CHCCS Environmental Analysis — Consolidated Map</h3>
-        <p style="margin: 5px 0 0 0; font-size: 11px; color: #666;">
-            Toggle layers on/off using the control panel. All indices are
-            comparative/relative screening tools, not absolute risk assessments.
-            UHI proxy is based on land cover classification, not measured temperature.
-        </p>
+    # Banner with FAQ button (matching socioeconomic map style)
+    banner_html = """
+    <style>
+        #env-banner {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+            background: white; padding: 10px 20px;
+            border-bottom: 1px solid #dee2e6;
+            display: flex; justify-content: center; align-items: center;
+            text-align: center;
+        }
+        #env-banner h1 { margin: 0; font-size: 18px; font-weight: 600; color: #333; }
+        #env-banner .subtitle { margin: 2px 0 0 0; font-size: 12px; color: #666; display: inline; }
+        .faq-btn {
+            display: inline-flex; align-items: center; gap: 3px;
+            padding: 2px 8px; background: #2196F3; color: white;
+            border: none; border-radius: 3px; font-size: 11px;
+            font-weight: bold; cursor: pointer; margin-left: 10px;
+            vertical-align: middle;
+        }
+        .faq-btn:hover { background: #1976D2; }
+        .faq-btn .faq-icon { font-size: 13px; }
+        .faq-panel {
+            display: none; position: fixed; top: 60px; left: 20px; z-index: 1002;
+            background: white; padding: 12px 15px; border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3); max-width: 400px;
+            max-height: 70vh; overflow-y: auto; font-size: 12px; line-height: 1.5;
+        }
+        .faq-panel.visible { display: block; }
+        .faq-panel h5 { margin: 0 0 10px 0; padding-bottom: 6px; border-bottom: 1px solid #eee; font-size: 13px; }
+        .faq-panel .faq-item { margin-bottom: 12px; }
+        .faq-panel .faq-q { font-weight: bold; color: #333; margin-bottom: 3px; }
+        .faq-panel .faq-a { color: #555; }
+        .faq-close {
+            position: absolute; top: 6px; right: 10px; cursor: pointer;
+            font-size: 18px; color: #999; line-height: 1;
+        }
+        .faq-close:hover { color: #333; }
+    </style>
+    <div id="env-banner">
+        <div>
+            <h1>CHCCS Environmental Analysis</h1>
+            <p class="subtitle">Screening-level indices for air quality, flood risk, and urban heat
+                <button class="faq-btn" onclick="toggleFaqPanel()" title="Click for FAQ">
+                    <span class="faq-icon">?</span> Help
+                </button>
+            </p>
+        </div>
     </div>
+    <div class="faq-panel" id="faq-panel">
+        <span class="faq-close" onclick="toggleFaqPanel()">&times;</span>
+        <h5>Frequently Asked Questions</h5>
+        <div class="faq-item">
+            <div class="faq-q">What is TRAP (Traffic-Related Air Pollution)?</div>
+            <div class="faq-a">TRAP is a screening index based on proximity to roads, weighted by estimated traffic volume (AADT).
+            Higher values indicate greater potential exposure to vehicle emissions. This is a <b>relative</b> index, not an absolute health risk measurement.</div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-q">What is Raw vs Net Air Pollution?</div>
+            <div class="faq-a"><b>Raw:</b> TRAP exposure based only on road proximity and traffic volume.<br>
+            <b>Net:</b> Raw TRAP minus a tree canopy mitigation factor (trees absorb pollutants). Net values can be lower where tree cover is high.</div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-q">What is UHI Proxy?</div>
+            <div class="faq-a">Urban Heat Island (UHI) Proxy is estimated from land cover classification (ESA WorldCover), NOT from measured temperatures.
+            Impervious surfaces (roads, buildings) score higher; tree canopy scores lower. It indicates <b>potential</b> heat exposure, not actual temperature.</div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-q">What do FEMA flood zones mean?</div>
+            <div class="faq-a"><b>100-year zone:</b> 1% annual chance of flooding (Zone AE).<br>
+            <b>500-year zone:</b> 0.2% annual chance (Zone X shaded).<br>
+            Red overlay shows where school property parcels intersect flood zones.</div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-q">Are these absolute risk assessments?</div>
+            <div class="faq-a"><b>No.</b> All indices are <b>comparative screening tools</b> for identifying areas of potential concern.
+            They should not be interpreted as definitive health or safety risk levels. Professional assessments require site-specific data collection.</div>
+        </div>
+    </div>
+    <script>
+        window.toggleFaqPanel = function() {
+            var panel = document.getElementById('faq-panel');
+            if (panel) panel.classList.toggle('visible');
+        };
+        document.addEventListener('click', function(e) {
+            var panel = document.getElementById('faq-panel');
+            var btn = document.querySelector('.faq-btn');
+            if (panel && panel.classList.contains('visible') &&
+                !panel.contains(e.target) && !btn.contains(e.target)) {
+                panel.classList.remove('visible');
+            }
+        });
+    </script>
     """
-    m.get_root().html.add_child(folium.Element(title_html))
+    m.get_root().html.add_child(folium.Element(banner_html))
 
-    # Dynamic legends
-    m.get_root().html.add_child(folium.Element(_build_legend_js()))
+    # Custom control panel for environmental layers
+    ctrl_panel_html = f"""
+    <style>
+        #env-ctrl-panel {{
+            position: fixed; top: 60px; right: 10px; z-index: 1001;
+            width: 200px; background: white; border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25); font-size: 12px;
+            padding: 10px;
+        }}
+        #env-ctrl-panel .ctrl-section {{
+            margin-bottom: 8px; padding-bottom: 6px;
+            border-bottom: 1px solid #eee;
+        }}
+        #env-ctrl-panel .ctrl-section:last-child {{
+            margin-bottom: 0; padding-bottom: 0; border-bottom: none;
+        }}
+        #env-ctrl-panel b {{
+            font-size: 11px; text-transform: uppercase; color: #555;
+            letter-spacing: 0.5px;
+        }}
+        #env-ctrl-panel label {{
+            display: block; margin: 3px 0; cursor: pointer; font-size: 11px;
+        }}
+        #env-ctrl-panel input[type="radio"],
+        #env-ctrl-panel input[type="checkbox"] {{
+            margin-right: 4px; vertical-align: middle;
+        }}
+        /* Hide the default Folium LayerControl */
+        .leaflet-control-layers {{
+            display: none !important;
+        }}
+    </style>
+    <div id="env-ctrl-panel">
+        <div class="ctrl-section">
+            <b>Environmental Layer</b>
+            <label><input type="radio" name="env-layer" value="none"> None</label>
+            <label><input type="radio" name="env-layer" value="raw"> Raw Air Pollution</label>
+            <label><input type="radio" name="env-layer" value="net" checked> Net Air Pollution</label>
+            <label><input type="radio" name="env-layer" value="uhi"> UHI Proxy (Land Cover)</label>
+        </div>
+        <div class="ctrl-section">
+            <b>Additional Layers</b>
+            <label><input type="checkbox" id="tree-toggle"> Tree Canopy</label>
+        </div>
+    </div>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {{
+        // Get map reference
+        var mapEl = document.querySelector('.folium-map');
+        if (!mapEl) return;
+        var map = window[mapEl.id] || null;
+        if (!map) {{
+            for (var key in window) {{
+                if (window[key] instanceof L.Map) {{ map = window[key]; break; }}
+            }}
+        }}
+        if (!map) return;
+
+        // Raster + marker layer references
+        var rawRaster = {raw_raster_name};
+        var rawMarkers = {raw_markers_name};
+        var netRaster = {net_raster_name};
+        var netMarkers = {net_markers_name};
+        var uhiRaster = {uhi_raster_name};
+        var uhiMarkers = {uhi_markers_name};
+
+        var rasterLayers = {{
+            'raw': [rawRaster, rawMarkers],
+            'net': [netRaster, netMarkers],
+            'uhi': [uhiRaster, uhiMarkers]
+        }};
+
+        var legendMap = {{
+            'raw': 'legend-trap',
+            'net': 'legend-trap',
+            'uhi': 'legend-uhi'
+        }};
+
+        function updateEnvLayer(selected) {{
+            // Hide all raster/marker layers
+            for (var key in rasterLayers) {{
+                var layers = rasterLayers[key];
+                if (map.hasLayer(layers[0])) map.removeLayer(layers[0]);
+                if (map.hasLayer(layers[1])) map.removeLayer(layers[1]);
+            }}
+            // Show selected (if not "none")
+            if (selected && selected !== 'none' && rasterLayers[selected]) {{
+                rasterLayers[selected][0].addTo(map);
+                rasterLayers[selected][1].addTo(map);
+            }}
+            // Update environmental layer legend (hide TRAP/UHI legends, then show selected)
+            var envLegends = ['legend-trap', 'legend-uhi'];
+            envLegends.forEach(function(id) {{
+                var el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            }});
+            if (selected && selected !== 'none' && legendMap[selected]) {{
+                var legendEl = document.getElementById(legendMap[selected]);
+                if (legendEl) legendEl.style.display = 'block';
+            }}
+            // Flood legend always stays visible (flood plains always on)
+        }}
+
+        // Radio button listeners
+        document.querySelectorAll('input[name="env-layer"]').forEach(function(radio) {{
+            radio.addEventListener('change', function() {{
+                updateEnvLayer(this.value);
+            }});
+        }});
+
+        // Tree canopy toggle
+        var treeLayer = null;
+        map.eachLayer(function(layer) {{
+            if (layer.options && layer.options.name === 'Tree Canopy (ESA WorldCover)') {{
+                treeLayer = layer;
+            }}
+        }});
+        document.getElementById('tree-toggle').addEventListener('change', function() {{
+            if (treeLayer) {{
+                if (this.checked) {{
+                    if (!map.hasLayer(treeLayer)) treeLayer.addTo(map);
+                    var legendEl = document.getElementById('legend-tree');
+                    if (legendEl) legendEl.style.display = 'block';
+                }} else {{
+                    if (map.hasLayer(treeLayer)) map.removeLayer(treeLayer);
+                    var legendEl = document.getElementById('legend-tree');
+                    if (legendEl) legendEl.style.display = 'none';
+                }}
+            }}
+        }});
+
+        // Initialize: show net air pollution legend and flood legend (flood always on)
+        setTimeout(function() {{
+            updateEnvLayer('net');
+            // Always show flood legend (flood plains always visible)
+            var floodLegend = document.getElementById('legend-flood');
+            if (floodLegend) floodLegend.style.display = 'block';
+        }}, 100);
+    }});
+    </script>
+    """
+    m.get_root().html.add_child(folium.Element(ctrl_panel_html))
+
+    # Dynamic legends (keep for legend divs, but remove old toggle logic)
+    m.get_root().html.add_child(folium.Element(_build_legend_html_only()))
 
     # Save
     m.save(str(OUTPUT_MAP))
