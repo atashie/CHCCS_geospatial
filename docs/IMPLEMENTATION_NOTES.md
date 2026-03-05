@@ -199,6 +199,37 @@ Comprehensive analysis combining travel-time impacts with children-weighted traf
 
 ---
 
+## School Closure Scrollytelling
+
+### Overview
+
+Interactive scrollytelling page (`closure_methodology.html`) that walks non-technical readers through the school closure analysis methodology, mirroring the environmental methodology page pattern.
+
+**Script:** `src/closure_story.py`
+**Output:** `assets/maps/closure_methodology.html`
+
+### Architecture
+
+Mirrors `environmental_story.py` exactly: loads all data from existing caches (requires `school_closure_analysis.py` to have been run first), computes lightweight visualizations, and embeds everything into a single self-contained HTML file with Leaflet + Scrollama.
+
+### Key Implementation Details
+
+- **19 narrative steps** covering road networks, speed model, Dijkstra, edge snapping, grid, heatmaps (drive + walk), dasymetric child distribution, route reconstruction, traffic aggregation, walk zone masking, traffic redistribution, and limitations
+- **Northside Elementary** used as illustrative example (centrally located, clear redistribution)
+- **Heatmaps computed from cached Dijkstra** — loads `dijkstra_drive.pkl` and `snap_drive.npz`, computes pixel-level travel times, rasterizes to 2D grid, converts to base64 PNG overlays
+- **Traffic computed from scratch** — reconstructs routes from predecessor maps rather than relying on `school_closure_traffic.csv` edge indices, ensuring robustness to edge ordering changes
+- **Traffic delta** computed as closure traffic minus baseline traffic per edge, displayed as diverging blue-red coloring
+- **Bbox clipping** — all heavy data (roads, blocks, parcels) clipped to ±0.02° around Northside for local views
+
+### Key Outputs
+
+| File | Purpose |
+|------|---------|
+| `src/closure_story.py` | Generator script |
+| `assets/maps/closure_methodology.html` | Self-contained scrollytelling page (~300-500 KB) |
+
+---
+
 ## Affordable Housing Data
 
 ### Overview

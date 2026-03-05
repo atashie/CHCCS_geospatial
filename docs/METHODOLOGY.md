@@ -344,6 +344,10 @@ Each block's children are distributed to the 100m grid pixels based on the fract
 
 7. **Walk zone definitions may be outdated.** The walk zone boundaries used in the analysis may not reflect the most current CHCCS designations.
 
+### 2.7 Step-by-Step Walkthrough
+
+For a detailed, visual explanation of every step — from road network loading through Dijkstra, edge snapping, dasymetric child distribution, traffic aggregation, and limitations — see the **[School Closure Methodology Walkthrough](../assets/maps/closure_methodology.html)**. This interactive scrollytelling page walks through the full pipeline using Northside Elementary as an illustrative example.
+
 ---
 
 ## Map 3: Environmental Analysis Map
@@ -618,6 +622,7 @@ U.S. Census Bureau. TIGER/Line Shapefiles. https://www.census.gov/geographies/ma
 For deeper implementation details, code-level documentation, and complete lists of known limitations:
 
 - **[School Closure Impact Analysis](SCHOOL_CLOSURE_ANALYSIS.md)** — Full methodology for travel-time computation and traffic redistribution (12 documented limitations)
+- **[School Closure Methodology Walkthrough](../assets/maps/closure_methodology.html)** — Interactive scrollytelling page explaining the closure analysis step by step
 - **[Environmental Analysis](ENVIRONMENTAL_ANALYSIS_README.md)** — TRAP, flood, UHI proxy, and tree canopy technical details (23 documented limitations)
 - **[Socioeconomic Analysis & Limitations](SOCIOECONOMIC_ANALYSIS_AND_LIMITATIONS.md)** — Census variable selection, dasymetric method details (26 documented limitations)
 - **[School Desert Analysis & Limitations](SCHOOL_DESERT_ANALYSIS_AND_LIMITATIONS.md)** — Travel-time heatmap methodology (13 documented limitations)

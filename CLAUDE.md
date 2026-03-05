@@ -44,6 +44,7 @@ CHCCS_geospatial/
 │   ├── environmental_map.py              # Consolidated environmental map (TRAP + flood + UHI)
 │   ├── environmental_story.py            # Scrollytelling methodology walkthrough generator
 │   ├── school_closure_analysis.py        # School closure impact (travel + traffic)
+│   ├── closure_story.py                  # Scrollytelling closure methodology walkthrough
 │   ├── data_processing.py                # Shared data loading utilities
 │   └── maps.py                           # Map visualizations (TODO: needs restructuring)
 ├── data/
@@ -111,6 +112,10 @@ python src/school_closure_analysis.py
 python src/school_closure_analysis.py --cache-only    # cached data only
 python src/school_closure_analysis.py --skip-traffic  # Part 1 only
 python src/school_closure_analysis.py --mode drive    # single mode
+
+# Generate school closure methodology scrollytelling page
+python src/closure_story.py
+python src/closure_story.py --cache-only  # cached data only
 ```
 
 ---
