@@ -141,6 +141,19 @@ def _uhi_to_color(normalized_score: float) -> str:
     return mcolors.rgb2hex(cmap(val))
 
 
+def _make_uhi_color_func(scores_series):
+    """Return a color function that normalizes UHI scores to the actual data range."""
+    vmin = scores_series.min()
+    vmax = scores_series.max()
+    span = vmax - vmin if vmax > vmin else 1.0
+
+    def _color(score):
+        normalized = (score - vmin) / span * 100.0
+        return _uhi_to_color(normalized)
+
+    return _color
+
+
 def ensure_directories():
     """Create output directories if they don't exist."""
     for d in [DATA_PROCESSED, DATA_CACHE, ASSETS_MAPS]:
@@ -533,6 +546,7 @@ def _add_tree_canopy_layer(map_obj, lulc_path, show=False, district_gdf=None):
         _progress(f"Warning: Could not add canopy layer: {e}")
 
     group.add_to(map_obj)
+    return group
 
 
 def _add_roads_layer(map_obj, roads_gdf, district_gdf=None):
@@ -818,7 +832,7 @@ def _build_legend_html_only():
   </div>
 </div>
 
-<div class="env-legend" id="legend-flood">
+<div class="env-legend" id="legend-flood" style="left:auto;right:10px;">
   <div class="legend-title">FEMA Flood Zones</div>
   <div class="legend-item"><span class="legend-swatch" style="background:#6baed6;opacity:0.6;"></span> 100-year</div>
   <div class="legend-item"><span class="legend-swatch" style="background:#bdd7e7;opacity:0.4;"></span> 500-year</div>
@@ -954,7 +968,7 @@ def create_environmental_map(
     _add_flood_layer(m, flood_100, flood_500, school_props, overlaps, show=True)
 
     # Layer 4: Tree canopy (separate checkbox toggle, off by default)
-    _add_tree_canopy_layer(m, lulc_path, show=False, district_gdf=district_gdf)
+    tree_canopy_fg = _add_tree_canopy_layer(m, lulc_path, show=False, district_gdf=district_gdf)
 
     # === Environmental Raster Layers (radio button group - mutually exclusive) ===
     # Create all raster + marker layers but don't add to LayerControl
@@ -993,9 +1007,10 @@ def create_environmental_map(
         district_mask=district_mask, vmin=0, vmax=100, add_to_map=False
     )
     uhi_raster_fg.add_to(m)
+    uhi_color_func = _make_uhi_color_func(uhi_scores["uhi_500m"])
     uhi_markers_fg = _add_school_markers_for_layer(
         m, uhi_scores, "uhi_500m", "uhi_500m",
-        _uhi_to_color, "UHI Proxy (Land Cover)", show=False, add_to_map=False
+        uhi_color_func, "UHI Proxy (Land Cover)", show=False, add_to_map=False
     )
     uhi_markers_fg.add_to(m)
 
@@ -1006,6 +1021,7 @@ def create_environmental_map(
     net_markers_name = net_markers_fg.get_name()
     uhi_raster_name = uhi_raster_fg.get_name()
     uhi_markers_name = uhi_markers_fg.get_name()
+    tree_canopy_name = tree_canopy_fg.get_name() if tree_canopy_fg else "null"
 
     # Layer control for Flood and Tree Canopy only
     folium.LayerControl(collapsed=False).add_to(m)
@@ -1216,12 +1232,7 @@ def create_environmental_map(
         }});
 
         // Tree canopy toggle
-        var treeLayer = null;
-        map.eachLayer(function(layer) {{
-            if (layer.options && layer.options.name === 'Tree Canopy (ESA WorldCover)') {{
-                treeLayer = layer;
-            }}
-        }});
+        var treeLayer = {tree_canopy_name};
         document.getElementById('tree-toggle').addEventListener('change', function() {{
             if (treeLayer) {{
                 if (this.checked) {{
