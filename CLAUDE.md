@@ -42,6 +42,7 @@ CHCCS_geospatial/
 │   ├── property_data.py                  # Orange County parcel processing
 │   ├── affordable_housing.py             # Affordable housing data download & assessment
 │   ├── environmental_map.py              # Consolidated environmental map (TRAP + flood + UHI)
+│   ├── environmental_story.py            # Scrollytelling methodology walkthrough generator
 │   ├── school_closure_analysis.py        # School closure impact (travel + traffic)
 │   ├── data_processing.py                # Shared data loading utilities
 │   └── maps.py                           # Map visualizations (TODO: needs restructuring)
@@ -101,6 +102,10 @@ python src/affordable_housing.py --cache-only  # cached data only
 python src/environmental_map.py
 python src/environmental_map.py --cache-only   # cached data only
 
+# Generate environmental methodology scrollytelling page
+python src/environmental_story.py
+python src/environmental_story.py --cache-only  # cached data only
+
 # School closure impact analysis (travel time + traffic redistribution)
 python src/school_closure_analysis.py
 python src/school_closure_analysis.py --cache-only    # cached data only
@@ -146,8 +151,11 @@ python src/school_closure_analysis.py --mode drive    # single mode
 - [`docs/SOCIOECONOMIC_ANALYSIS_AND_LIMITATIONS.md`](docs/SOCIOECONOMIC_ANALYSIS_AND_LIMITATIONS.md) — Socioeconomic analysis
 - [`docs/socioeconomic/SOCIOECONOMIC_ANALYSIS.md`](docs/socioeconomic/SOCIOECONOMIC_ANALYSIS.md) — Auto-generated socioeconomic methodology
 - [`data/processed/ROAD_POLLUTION.md`](data/processed/ROAD_POLLUTION.md) — TRAP analysis results and methodology
+- [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) — Public-facing methodology guide (data sources, methods, limitations for all three maps)
 
 If you change a formula, constant, data source, output file, or analysis pipeline, update every document that references the changed item. Stale documentation is worse than no documentation.
+
+**Mandatory cross-check:** Whenever any workflow touching the files listed above is edited, systematically assess both [`README.md`](README.md) and [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) to ensure all descriptions, constants, data sources, and limitations remain accurate and up to date. These two documents are the primary public-facing entry points and must never fall out of sync with the technical docs or source code.
 
 ---
 

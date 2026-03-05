@@ -12,6 +12,7 @@ Objective spatial analysis of all 11 Chapel Hill-Carrboro City Schools (CHCCS) e
 | `road_pollution.py` | Traffic-related air pollution (TRAP) exposure with ESA WorldCover tree canopy mitigation scoring | `road_pollution_scores.csv` |
 | `flood_map.py` | FEMA NFHL flood zone overlay on school property parcels | `flood_school_properties.png` |
 | `environmental_map.py` | Consolidated environmental map (TRAP + flood + UHI proxy + tree canopy) | `chccs_environmental_analysis.html` |
+| `environmental_story.py` | Interactive scrollytelling walkthrough of how the environmental map is built | `environmental_methodology.html` |
 | `affordable_housing.py` | Affordable housing data download and quality assessment | `affordable_housing.gpkg` |
 | `childcare_geocode.py` | Childcare facility geocoding and proximity analysis by distance bands | CSVs in `data/processed/` |
 | `property_data.py` | Orange County residential parcel classification and centroid extraction | `combined_data_centroids.gpkg` |
@@ -30,6 +31,7 @@ python src/school_socioeconomic_analysis.py  # Census demographics by zone
 python src/childcare_geocode.py           # Childcare proximity analysis
 python src/property_data.py              # Process Orange County parcel data
 python src/environmental_map.py          # Consolidated environmental analysis map
+python src/environmental_story.py        # Environmental methodology scrollytelling page
 python src/affordable_housing.py         # Affordable housing data download
 python src/school_closure_analysis.py   # School closure impact (travel + traffic)
 ```
@@ -84,6 +86,8 @@ CHCCS_geospatial/
 - **[School Desert Analysis & Limitations](docs/SCHOOL_DESERT_ANALYSIS_AND_LIMITATIONS.md)** — Travel-time methodology, assumptions, and 13 known limitations
 - **[Socioeconomic Analysis & Limitations](docs/SOCIOECONOMIC_ANALYSIS_AND_LIMITATIONS.md)** — Census demographics methodology and 26 known limitations
 - **[Environmental Analysis](docs/ENVIRONMENTAL_ANALYSIS_README.md)** — TRAP, flood, UHI proxy, tree canopy methodology and 23 known limitations
+- **[How the Environmental Map Works](assets/maps/environmental_methodology.html)** — Interactive scrollytelling walkthrough of data sources, processing, and limitations
+- **[How These Maps Were Built](docs/METHODOLOGY.md)** — Public-facing guide to data sources, methods, and limitations for all three maps
 - **[Geospatial Analysis Guidelines](docs/GEOSPATIAL_ANALYSIS_GUIDELINES.md)** — CRS discipline, spatial operations, and map visualization standards
 - **[Implementation Notes](docs/IMPLEMENTATION_NOTES.md)** — Technical details and data pipeline notes
 
