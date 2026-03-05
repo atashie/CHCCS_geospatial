@@ -150,6 +150,10 @@ All weights are clipped to [0.0, 1.0] to prevent over-allocation.
 
 7. **185% poverty is a proxy for FRL eligibility, not actual FRL enrollment.** The Census poverty ratio (185% of the federal poverty level) approximates the income threshold for Free and Reduced-Price Lunch, but actual FRL eligibility also considers participation in SNAP, TANF, and other programs.
 
+### 1.7 Step-by-Step Walkthrough
+
+For a detailed, visual explanation of every step — from Census data loading through dasymetric areal interpolation, dot-density generation, and zone aggregation — see the **[Socioeconomic Methodology Walkthrough](../assets/maps/socioeconomic_methodology.html)**. This interactive scrollytelling page walks through the full pipeline using Northside Elementary as an illustrative example.
+
 ---
 
 ## Map 2: School Closure Impact Map
@@ -625,6 +629,7 @@ For deeper implementation details, code-level documentation, and complete lists 
 - **[School Closure Methodology Walkthrough](../assets/maps/closure_methodology.html)** — Interactive scrollytelling page explaining the closure analysis step by step
 - **[Environmental Analysis](ENVIRONMENTAL_ANALYSIS_README.md)** — TRAP, flood, UHI proxy, and tree canopy technical details (23 documented limitations)
 - **[Socioeconomic Analysis & Limitations](SOCIOECONOMIC_ANALYSIS_AND_LIMITATIONS.md)** — Census variable selection, dasymetric method details (26 documented limitations)
+- **[Socioeconomic Methodology Walkthrough](../assets/maps/socioeconomic_methodology.html)** — Interactive scrollytelling page explaining Census data, dasymetric interpolation, and dot-density mapping
 - **[School Desert Analysis & Limitations](SCHOOL_DESERT_ANALYSIS_AND_LIMITATIONS.md)** — Travel-time heatmap methodology (13 documented limitations)
 - **[Geospatial Analysis Guidelines](GEOSPATIAL_ANALYSIS_GUIDELINES.md)** — Coordinate reference system standards and spatial operation conventions
 - **[Implementation Notes](IMPLEMENTATION_NOTES.md)** — Technical implementation details for all modules

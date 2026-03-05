@@ -230,6 +230,36 @@ Mirrors `environmental_story.py` exactly: loads all data from existing caches (r
 
 ---
 
+## Socioeconomic Methodology Scrollytelling
+
+### Overview
+
+Interactive scrollytelling page (`socioeconomic_methodology.html`) that walks non-technical readers through the Census-based socioeconomic analysis methodology — explaining areal interpolation, dasymetric weighting, dot-density mapping, and zone-level aggregation.
+
+**Script:** `src/socioeconomic_story.py`
+**Output:** `assets/maps/socioeconomic_methodology.html`
+
+### Architecture
+
+Mirrors `closure_story.py` exactly: loads all data from existing caches (requires `school_socioeconomic_analysis.py` to have been run first), computes lightweight visualizations, and embeds everything into a single self-contained HTML file with Leaflet + Scrollama.
+
+### Key Implementation Details
+
+- **18-step story arc** covering zones, block groups, the mismatch problem, area vs. dasymetric weighting, derived metrics, block-level data, dot-density generation, zone aggregation, walk zones, affordable housing, and limitations
+- **Focus area:** Northside Elementary bbox (~0.02° padding) — generates ~5-10K dots instead of 95K for the full district, keeping file size < 5 MB
+- **Fragment visualization:** Computes zone-BG intersection fragments for Northside with both area and dasymetric weights, showing the contrast visually
+- **Dot-density generation:** Same algorithm as `generate_racial_dots()` in `school_socioeconomic_analysis.py`, spatially filtered to focus area, 1:1 dot-to-person ratio
+- **All data is cache-only** — no network requests, no Census API calls
+
+### Key Outputs
+
+| File | Purpose |
+|------|---------|
+| `src/socioeconomic_story.py` | Generator script |
+| `assets/maps/socioeconomic_methodology.html` | Self-contained scrollytelling page (~3-5 MB) |
+
+---
+
 ## Affordable Housing Data
 
 ### Overview

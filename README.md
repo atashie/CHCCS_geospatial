@@ -14,6 +14,7 @@ Objective spatial analysis of all 11 Chapel Hill-Carrboro City Schools (CHCCS) e
 | `environmental_map.py` | Consolidated environmental map (TRAP + flood + UHI proxy + tree canopy) | `chccs_environmental_analysis.html` |
 | `environmental_story.py` | Interactive scrollytelling walkthrough of how the environmental map is built | `environmental_methodology.html` |
 | `closure_story.py` | Interactive scrollytelling walkthrough of how the school closure impact map is built | `closure_methodology.html` |
+| `socioeconomic_story.py` | Interactive scrollytelling walkthrough of how the socioeconomic map is built | `socioeconomic_methodology.html` |
 | `affordable_housing.py` | Affordable housing data download and quality assessment | `affordable_housing.gpkg` |
 | `childcare_geocode.py` | Childcare facility geocoding and proximity analysis by distance bands | CSVs in `data/processed/` |
 | `property_data.py` | Orange County residential parcel classification and centroid extraction | `combined_data_centroids.gpkg` |
@@ -36,6 +37,7 @@ python src/environmental_story.py        # Environmental methodology scrollytell
 python src/affordable_housing.py         # Affordable housing data download
 python src/school_closure_analysis.py   # School closure impact (travel + traffic)
 python src/closure_story.py            # School closure methodology scrollytelling page
+python src/socioeconomic_story.py     # Socioeconomic methodology scrollytelling page
 ```
 
 ## Execution Order
@@ -90,6 +92,7 @@ CHCCS_geospatial/
 - **[Environmental Analysis](docs/ENVIRONMENTAL_ANALYSIS_README.md)** — TRAP, flood, UHI proxy, tree canopy methodology and 23 known limitations
 - **[How the Environmental Map Works](assets/maps/environmental_methodology.html)** — Interactive scrollytelling walkthrough of data sources, processing, and limitations
 - **[How the School Closure Impact Map Works](assets/maps/closure_methodology.html)** — Interactive scrollytelling walkthrough of travel-time and traffic methodology
+- **[How the Socioeconomic Map Works](assets/maps/socioeconomic_methodology.html)** — Interactive scrollytelling walkthrough of Census data, dasymetric interpolation, and dot-density mapping
 - **[How These Maps Were Built](docs/METHODOLOGY.md)** — Public-facing guide to data sources, methods, and limitations for all three maps
 - **[Geospatial Analysis Guidelines](docs/GEOSPATIAL_ANALYSIS_GUIDELINES.md)** — CRS discipline, spatial operations, and map visualization standards
 - **[Implementation Notes](docs/IMPLEMENTATION_NOTES.md)** — Technical details and data pipeline notes

@@ -45,6 +45,7 @@ CHCCS_geospatial/
 │   ├── environmental_story.py            # Scrollytelling methodology walkthrough generator
 │   ├── school_closure_analysis.py        # School closure impact (travel + traffic)
 │   ├── closure_story.py                  # Scrollytelling closure methodology walkthrough
+│   ├── socioeconomic_story.py            # Scrollytelling socioeconomic methodology walkthrough
 │   ├── data_processing.py                # Shared data loading utilities
 │   └── maps.py                           # Map visualizations (TODO: needs restructuring)
 ├── data/
@@ -116,6 +117,10 @@ python src/school_closure_analysis.py --mode drive    # single mode
 # Generate school closure methodology scrollytelling page
 python src/closure_story.py
 python src/closure_story.py --cache-only  # cached data only
+
+# Generate socioeconomic methodology scrollytelling page
+python src/socioeconomic_story.py
+python src/socioeconomic_story.py --cache-only  # cached data only
 ```
 
 ---
