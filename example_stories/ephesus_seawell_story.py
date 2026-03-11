@@ -67,6 +67,7 @@ PARCEL_POLYS = DATA_RAW / "properties" / "combined_data_polys.gpkg"
 ACS_CACHE = DATA_CACHE / "census_acs_blockgroups.gpkg"
 DECENNIAL_CACHE = DATA_CACHE / "census_decennial_blocks.gpkg"
 AH_CACHE = DATA_CACHE / "affordable_housing.gpkg"
+MLS_CACHE = DATA_CACHE / "mls_home_sales.gpkg"
 ZONE_DEMOGRAPHICS_CSV = DATA_PROCESSED / "census_school_demographics.csv"
 GRID_CSV = DATA_PROCESSED / "school_desert_grid.csv"
 
@@ -316,6 +317,13 @@ def load_affordable_housing() -> gpd.GeoDataFrame:
     return gpd.read_file(AH_CACHE)
 
 
+def load_mls_data() -> gpd.GeoDataFrame:
+    if not MLS_CACHE.exists():
+        _progress("MLS home sales cache not found, skipping")
+        return gpd.GeoDataFrame()
+    return gpd.read_file(MLS_CACHE)
+
+
 def load_zone_demographics() -> pd.DataFrame:
     if not ZONE_DEMOGRAPHICS_CSV.exists():
         _progress("Zone demographics CSV not found, skipping")
@@ -425,7 +433,7 @@ def _random_points_fallback(geom, n: int, rng) -> list:
 # HTML builder
 # ---------------------------------------------------------------------------
 def build_html(data: dict) -> str:
-    """Build the 18-step editorial scrollytelling HTML."""
+    """Build the 20-step editorial scrollytelling HTML."""
 
     race_colors_js = json.dumps(
         [v[0] for v in RACE_CATEGORIES.values()], separators=(",", ":")
@@ -886,13 +894,51 @@ details[open] summary {{ margin-bottom: 8px; }}
     rate, it generates substantially more enrollment demand.</p>
   </div>
 
-  <!-- ========== CONCLUSION (Step 17) ========== -->
+  <!-- ========== REAL ESTATE (Steps 17-18) ========== -->
 
-  <!-- Step 17: Summary -->
+  <!-- Step 17: Home Sales -->
   <div class="step" data-step="17">
     <div class="step-number">18</div>
+    <h2>Where Are Homes Selling?</h2>
+    <p>School enrollment depends on where families move. <strong>MLS home
+    sales data</strong> (2023&ndash;2025) reveals which zones attract the
+    most new residents.</p>
+    <p>The bar charts show <strong>total closed residential sales</strong>
+    by school zone &mdash; drive-time zones on the left, attendance zones
+    on the right.</p>
+    <div class="metric-box" id="sales-comparison-metrics">
+    </div>
+    <div class="source">
+      <strong>Data:</strong> Triangle MLS closed sales 2023&ndash;2025.
+      Covers listed sales only (not rentals or FSBO).
+    </div>
+  </div>
+
+  <!-- Step 18: Median Prices -->
+  <div class="step" data-step="18">
+    <div class="step-number">19</div>
+    <h2>Can Young Families Afford to Move In?</h2>
+    <p>Declining CHCCS enrollment is partly driven by housing costs. When
+    median home prices exceed what young families can afford, zones lose
+    the demographic pipeline that sustains enrollment.</p>
+    <p>The bar charts show <strong>median closed sale price</strong> per
+    zone. Closing a school in an affordable area displaces families with
+    fewer options to relocate within the district.</p>
+    <div class="metric-box" id="price-comparison-metrics">
+    </div>
+    <div class="limitation">
+      <strong>Limitation:</strong> MLS covers listed sales only &mdash;
+      not rentals or for-sale-by-owner transactions.
+    </div>
+  </div>
+
+  <!-- ========== CONCLUSION (Step 19) ========== -->
+
+  <!-- Step 19: Summary -->
+  <div class="step" data-step="19">
+    <div class="step-number">20</div>
     <h2>Summary</h2>
-    <p>This analysis examined three dimensions relevant to the Board&rsquo;s
+    <p>This analysis examined four dimensions relevant to the Board&rsquo;s
     closure criteria. Here is what the data shows:</p>
 
     <div id="final-summary-text">
@@ -998,6 +1044,8 @@ function renderBars(containerId, data, metric, options) {{
     var valText;
     if (mode === "pct") {{
       valText = val.toFixed(1) + "%";
+    }} else if (mode === "dollar") {{
+      valText = "$" + Math.round(val).toLocaleString();
     }} else {{
       valText = Math.round(val).toLocaleString();
     }}
@@ -1099,6 +1147,26 @@ function showAgeCharts() {{
     "More young children means higher future enrollment demand in that area.",
     "young_children",
     {{ mode: "count", transform: function(s) {{ return (s.male_under_5 || 0) + (s.female_under_5 || 0); }} }}
+  );
+}}
+
+function showSalesCharts() {{
+  dualPanelChart(
+    "Home Sales by School Zone (2023\u20132025)",
+    "Total closed residential sales from Triangle MLS",
+    "More sales activity signals residential turnover and opportunities for new families.",
+    "mls_total_sales",
+    {{ mode: "count" }}
+  );
+}}
+
+function showPriceCharts() {{
+  dualPanelChart(
+    "Median Home Price by School Zone",
+    "Median closed sale price (2023\u20132025)",
+    "Higher prices mean fewer young families can afford to move in.",
+    "mls_median_price",
+    {{ mode: "dollar" }}
   );
 }}
 
@@ -1228,7 +1296,33 @@ function populateMetrics() {{
       + '<p>Ephesus has significantly more young children approaching kindergarten age.</p>';
   }}
 
-  // Final summary (step 17)
+  // Sales comparison metrics (step 17)
+  el = document.getElementById("sales-comparison-metrics");
+  if (el) {{
+    var ephSales = eph.mls_total_sales || ephZ.mls_total_sales || 0;
+    var seaSales = sea.mls_total_sales || seaZ.mls_total_sales || 0;
+    el.innerHTML = '<div class="metric" style="border:2px solid {EPHESUS_COLOR};">'
+      + '<div class="metric-value" style="color:{EPHESUS_COLOR};">' + fmt(ephSales) + '</div>'
+      + '<div class="metric-label">Ephesus: Homes Sold</div></div>'
+      + '<div class="metric" style="border:2px solid {SEAWELL_COLOR};">'
+      + '<div class="metric-value" style="color:{SEAWELL_COLOR};">' + fmt(seaSales) + '</div>'
+      + '<div class="metric-label">Seawell: Homes Sold</div></div>';
+  }}
+
+  // Price comparison metrics (step 18)
+  el = document.getElementById("price-comparison-metrics");
+  if (el) {{
+    var ephPrice = eph.mls_median_price || ephZ.mls_median_price || 0;
+    var seaPrice = sea.mls_median_price || seaZ.mls_median_price || 0;
+    el.innerHTML = '<div class="metric" style="border:2px solid {EPHESUS_COLOR};">'
+      + '<div class="metric-value" style="color:{EPHESUS_COLOR};">$' + fmt(ephPrice) + '</div>'
+      + '<div class="metric-label">Ephesus: Median Price</div></div>'
+      + '<div class="metric" style="border:2px solid {SEAWELL_COLOR};">'
+      + '<div class="metric-value" style="color:{SEAWELL_COLOR};">$' + fmt(seaPrice) + '</div>'
+      + '<div class="metric-label">Seawell: Median Price</div></div>';
+  }}
+
+  // Final summary (step 19)
   el = document.getElementById("final-summary-text");
   if (el) {{
     var fEphPov = eph.below_185_pov || ephZ.below_185_pov || 0;
@@ -1239,6 +1333,10 @@ function populateMetrics() {{
     var fSeaHisp = sea.hispanic || seaZ.hispanic || 0;
     var fEphYoung = (eph.male_under_5 || ephZ.male_under_5 || 0) + (eph.female_under_5 || ephZ.female_under_5 || 0);
     var fSeaYoung = (sea.male_under_5 || seaZ.male_under_5 || 0) + (sea.female_under_5 || seaZ.female_under_5 || 0);
+    var fEphSales = eph.mls_total_sales || ephZ.mls_total_sales || 0;
+    var fSeaSales = sea.mls_total_sales || seaZ.mls_total_sales || 0;
+    var fEphPrice = eph.mls_median_price || ephZ.mls_median_price || 0;
+    var fSeaPrice = sea.mls_median_price || seaZ.mls_median_price || 0;
 
     el.innerHTML = '<h3>1. Economic Vulnerability</h3>'
       + '<p>' + fmt(fEphPov) + ' people in poverty near Ephesus vs. ' + fmt(fSeaPov)
@@ -1249,10 +1347,14 @@ function populateMetrics() {{
       + ' &mdash; Ephesus serves more than twice as many.</p>'
       + '<h3>3. Anticipated Enrollment</h3>'
       + '<p>~' + fmt(fEphYoung) + ' young children (0&ndash;4) near Ephesus vs. ~'
-      + fmt(fSeaYoung) + ' near Seawell, signaling higher future enrollment demand.</p>';
+      + fmt(fSeaYoung) + ' near Seawell, signaling higher future enrollment demand.</p>'
+      + '<h3>4. Real Estate Trends</h3>'
+      + '<p>' + fmt(fEphSales) + ' homes sold near Ephesus vs. ' + fmt(fSeaSales)
+      + ' near Seawell. Median price: $' + fmt(fEphPrice) + ' vs. $' + fmt(fSeaPrice)
+      + '. More sales at lower prices indicates an area attracting new families.</p>';
   }}
 
-  // Final criteria (step 17)
+  // Final criteria (step 19)
   el = document.getElementById("final-criteria-text");
   if (el) {{
     var fEphPop = eph.total_pop || ephZ.total_pop || 0;
@@ -1261,7 +1363,10 @@ function populateMetrics() {{
       + 'Ephesus affects more people (' + fmt(fEphPop) + ' vs. ' + fmt(fSeaPop) + '), '
       + 'more affordable housing residents (202 vs. 73 units), and more minority residents.</p>'
       + '<p>Under <strong>&ldquo;Anticipated Enrollment&rdquo;</strong>: the '
-      + 'Ephesus zone has more young children who will need elementary seats.</p>';
+      + 'Ephesus zone has more young children who will need elementary seats.</p>'
+      + '<p>Under <strong>&ldquo;Real Estate Trends&rdquo;</strong>: MLS data shows '
+      + 'which zones have more housing turnover and at what price points, signaling '
+      + 'where new families are most likely to move.</p>';
   }}
 }}
 
@@ -1651,7 +1756,15 @@ function handleStep(idx) {{
       districtView();
       break;
 
-    case 17: // Final summary
+    case 17: // Home sales bar charts
+      showSalesCharts();
+      break;
+
+    case 18: // Median prices + both zones + AH
+      showPriceCharts();
+      break;
+
+    case 19: // Final summary
       ensureDotsLoaded();
       layers.dots.addTo(map);
       layers.bothDriveZones.addTo(map);
@@ -1766,6 +1879,11 @@ def main():
     print("[7/12] Generating dot-density data (district-wide) ...")
     dot_data = generate_dots(all_blocks, all_parcels)
 
+    # [7b/12] Load MLS data
+    print("[7b/12] Loading MLS home sales ...")
+    mls_data = load_mls_data()
+    _progress(f"Loaded {len(mls_data)} MLS home sales")
+
     # [8/12] Affordable housing
     print("[8/12] Loading affordable housing ...")
     ah = load_affordable_housing()
@@ -1787,6 +1905,7 @@ def main():
         "tenure_total", "tenure_renter", "vehicles_zero",
         "families_with_kids", "single_parent_with_kids",
         "ah_total_units",
+        "mls_total_sales", "mls_median_price",
         # Percentages (secondary)
         "pct_below_185_poverty", "pct_minority", "pct_black",
         "pct_hispanic", "pct_renter", "pct_zero_vehicle",
@@ -1820,6 +1939,19 @@ def main():
                 drive_zones, bg_clipped, parcels=None,
             )
             drive_demo = aggregate_zone_demographics(drive_fragments, drive_zones)
+            # Add MLS spatial join to drive zones
+            if len(mls_data) > 0 and len(drive_demo) > 0:
+                mls_wgs = mls_data.to_crs(CRS_WGS84)
+                dz_wgs = drive_zones.to_crs(CRS_WGS84)
+                mls_joined = gpd.sjoin(mls_wgs, dz_wgs[["school", "geometry"]],
+                                       how="left", predicate="within")
+                mls_agg = (mls_joined.dropna(subset=["school"]).groupby("school")
+                           .agg(mls_total_sales=("close_price", "size"),
+                                mls_median_price=("close_price", "median"))
+                           .reset_index())
+                drive_demo = drive_demo.merge(mls_agg, on="school", how="left")
+                drive_demo["mls_total_sales"] = drive_demo["mls_total_sales"].fillna(0).astype(int)
+                _progress(f"Added MLS data to {len(mls_agg)} drive zones")
             if len(drive_demo) > 0:
                 avail_drive = [c for c in stat_cols if c in drive_demo.columns]
                 drive_recs = drive_demo[avail_drive].to_dict("records")

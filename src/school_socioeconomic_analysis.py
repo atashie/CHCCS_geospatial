@@ -1281,7 +1281,6 @@ METRIC_DOT_SPECS = [
     ("ah_units", "Affordable Housing Units", "Blues", "", " units", ",.0f"),
     ("mls_sales_count", "Homes Sold (2023–2025)", "YlGnBu", "", " sales", ",.0f"),
     ("mls_median_price", "Median Home Price (2023–2025)", "Greens", "$", "", ",.0f"),
-    ("mls_median_ppsf", "Median Price/SqFt (2023–2025)", "Oranges", "$", "", ",.0f"),
 ]
 
 
@@ -1631,6 +1630,7 @@ def create_socioeconomic_map(
     ]
 
     zone_types = []  # [{key, label, fg_name, names}, ...]
+    active_zone_gdfs = []  # parallel list of GDFs for MLS spatial joins
     for zt_key, zt_label, zt_gdf in zone_type_defs:
         if zt_gdf is not None and len(zt_gdf) > 0:
             show_initial = (zt_key == "school")
@@ -1640,6 +1640,7 @@ def create_socioeconomic_map(
                 "fg_name": fg.get_name(), "names": sorted(names),
                 "gdf": zt_gdf,
             })
+            active_zone_gdfs.append(zt_gdf)
         else:
             _progress(f"  Skipping zone type '{zt_label}' — no data")
 
@@ -1735,7 +1736,6 @@ def create_socioeconomic_map(
 
         for _, row in mls_data.iterrows():
             price = row.get("close_price", 0)
-            ppsf = row.get("price_per_sqft", 0)
             addr = row.get("address", "Unknown")
             date = row.get("close_date", "")
             color = _mls_color(price)
@@ -1750,13 +1750,11 @@ def create_socioeconomic_map(
             popup_html = f"""
             <b>{addr}</b><br>
             Price: ${price:,.0f}<br>
-            $/SqFt: ${ppsf:,.0f}<br>
             Date: {date_str}
             """
 
             tooltip_html = (
                 f"Price: ${price:,.0f}<br>"
-                f"$/SqFt: ${ppsf:,.0f}<br>"
                 f"Date: {date_str}"
             )
 
@@ -2040,8 +2038,7 @@ def create_socioeconomic_map(
             </div>
         </div>
         """
-        for mls_metric_name in ["Homes Sold (2023\u20132025)", "Median Home Price (2023\u20132025)",
-                                "Median Price/SqFt (2023\u20132025)"]:
+        for mls_metric_name in ["Homes Sold (2023\u20132025)", "Median Home Price (2023\u20132025)"]:
             all_legends[mls_metric_name] = mls_legend_html
 
         # ── JS data serialization ──
@@ -2102,28 +2099,39 @@ def create_socioeconomic_map(
             ah_by_zone_list = [0] * len(master_school_names)
         ah_by_zone_js = _json.dumps(ah_by_zone_list, separators=(",", ":"))
 
-        # Zone-level MLS aggregates (in master_school_names order)
-        mls_sales_by_zone_list = []
-        mls_price_by_zone_list = []
-        mls_ppsf_by_zone_list = []
-        if zone_demographics is not None:
-            for col, lst in [("mls_total_sales", mls_sales_by_zone_list),
-                             ("mls_median_price", mls_price_by_zone_list),
-                             ("mls_median_ppsf", mls_ppsf_by_zone_list)]:
-                if col in zone_demographics.columns:
-                    zd_dict = zone_demographics.set_index("school")[col].to_dict()
-                    for s in master_school_names:
-                        v = zd_dict.get(s, 0)
-                        lst.append(0 if pd.isna(v) else round(float(v)))
-                else:
-                    lst.extend([0] * len(master_school_names))
-        else:
-            mls_sales_by_zone_list = [0] * len(master_school_names)
-            mls_price_by_zone_list = [0] * len(master_school_names)
-            mls_ppsf_by_zone_list = [0] * len(master_school_names)
-        mls_sales_by_zone_js = _json.dumps(mls_sales_by_zone_list, separators=(",", ":"))
-        mls_price_by_zone_js = _json.dumps(mls_price_by_zone_list, separators=(",", ":"))
-        mls_ppsf_by_zone_js = _json.dumps(mls_ppsf_by_zone_list, separators=(",", ":"))
+        # Zone-level MLS aggregates — per zone type (nested lists)
+        def _mls_by_zone_type(mls_gdf, zone_gdf, school_names):
+            """Spatial-join MLS points to zone polygons, return (sales, prices)."""
+            n = len(school_names)
+            if mls_gdf is None or zone_gdf is None or len(mls_gdf) == 0 or len(zone_gdf) == 0:
+                return [0] * n, [0] * n
+            mls_wgs = mls_gdf.to_crs(CRS_WGS84)
+            zones_wgs = zone_gdf.to_crs(CRS_WGS84)
+            joined = gpd.sjoin(mls_wgs, zones_wgs[["school", "geometry"]],
+                               how="left", predicate="within")
+            agg = (joined.dropna(subset=["school"]).groupby("school")
+                   .agg(sales=("close_price", "size"),
+                        median_price=("close_price", "median"))
+                   .reset_index())
+            agg_dict = agg.set_index("school")
+            sales = [int(agg_dict.loc[s, "sales"]) if s in agg_dict.index else 0
+                     for s in school_names]
+            prices = [round(float(agg_dict.loc[s, "median_price"])) if s in agg_dict.index else 0
+                      for s in school_names]
+            return sales, prices
+
+        all_mls_sales = []  # list of lists, one per zone type
+        all_mls_prices = []
+        for zt_gdf in active_zone_gdfs:
+            sales, prices = _mls_by_zone_type(mls_data, zt_gdf, master_school_names)
+            all_mls_sales.append(sales)
+            all_mls_prices.append(prices)
+        if not all_mls_sales:
+            n = len(master_school_names)
+            all_mls_sales = [[0] * n]
+            all_mls_prices = [[0] * n]
+        mls_sales_by_zone_js = _json.dumps(all_mls_sales, separators=(",", ":"))
+        mls_price_by_zone_js = _json.dumps(all_mls_prices, separators=(",", ":"))
 
         # BG / Block layer JS refs
         bg_layers_js = "[" + ",".join(bg_fg_names) + "]"
@@ -2243,7 +2251,6 @@ def create_socioeconomic_map(
             var ahByZone = {ah_by_zone_js};
             var mlsSalesByZone = {mls_sales_by_zone_js};
             var mlsPriceByZone = {mls_price_by_zone_js};
-            var mlsPpsfByZone = {mls_ppsf_by_zone_js};
             var blockColors = {block_colors_js};
             var blockValues = {block_values_js};
             var raceColors = {race_colors_js};
@@ -2284,7 +2291,7 @@ def create_socioeconomic_map(
             }}
             function isMlsMetric(idx) {{
                 var n = metricNames[idx];
-                return n && (n.indexOf('Homes Sold') === 0 || n.indexOf('Median Home Price') === 0 || n.indexOf('Median Price/SqFt') === 0);
+                return n && (n.indexOf('Homes Sold') === 0 || n.indexOf('Median Home Price') === 0);
             }}
             function isCountOrZoneMetric(idx) {{
                 return isHousingMetric(idx) || isMlsMetric(idx);
@@ -2613,13 +2620,10 @@ def create_socioeconomic_map(
                     var zoneTotals;
                     var fmt;
                     if (mName.indexOf('Homes Sold') === 0) {{
-                        zoneTotals = mlsSalesByZone;
+                        zoneTotals = mlsSalesByZone[currentZoneType];
                         fmt = 'count';
                     }} else if (mName.indexOf('Median Home Price') === 0) {{
-                        zoneTotals = mlsPriceByZone;
-                        fmt = 'dollar';
-                    }} else {{
-                        zoneTotals = mlsPpsfByZone;
+                        zoneTotals = mlsPriceByZone[currentZoneType];
                         fmt = 'dollar';
                     }}
                     // Update title to reflect current MLS metric

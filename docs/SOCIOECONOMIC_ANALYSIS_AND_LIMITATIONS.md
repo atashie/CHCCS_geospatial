@@ -591,7 +591,7 @@ Walk zone boundaries are now loaded from the CHCCS shapefile (`ESWALK=="Y"`) and
 
 ### Data Source
 
-Triangle MLS (Multiple Listing Service) closed residential sales, 2023-2025. The raw dataset contains 2,193 records with address, close price, and price per square foot, provided as a CSV in `data/raw/MLS/`.
+Triangle MLS (Multiple Listing Service) closed residential sales, 2023-2025. The raw dataset contains 2,193 records with address and close price, provided as a CSV in `data/raw/MLS/`.
 
 ### Geocoding Pipeline
 
@@ -604,15 +604,17 @@ Successfully geocoded records are stored as a GeoPackage (`data/cache/mls_home_s
 
 ### Aggregation
 
-Geocoded sales are spatially joined to attendance zones and Census blocks. Per-zone and per-block summaries include:
+Geocoded sales are spatially joined to all zone types (attendance zones, walk zones, nearest walk/bike/drive) and Census blocks. Per-zone and per-block summaries include:
 
 - **Count:** Number of closed sales
 - **Median close price:** Median sale price in dollars
-- **Median price per square foot:** Median $/sqft across sales in the area
+- **Median price per square foot:** Median $/sqft (retained in CSV output, not shown in map UI)
+
+MLS bar charts in the interactive map update dynamically when switching between zone types.
 
 ### Privacy
 
-To protect homeowner privacy, **addresses are not displayed** on the map. Hover tooltips show only sale price, price per square foot, and close date. Additionally, map point locations are inherently approximate — the Census geocoder places points at interpolated positions along road centerlines, not at exact property locations or parcel centroids. This provides a baseline level of location privacy even though the underlying data contains street addresses.
+To protect homeowner privacy, **addresses are not displayed** on the map. Hover tooltips show only sale price and close date. Map point locations are inherently approximate — the Census geocoder places points at interpolated positions along road centerlines, not at exact property locations or parcel centroids. This provides a baseline level of location privacy even though the underlying data contains street addresses.
 
 ### Limitations
 
