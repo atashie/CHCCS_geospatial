@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CHCCS Geospatial Analysis</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #1a1a2e;
+      background: #f8f9fa;
+      line-height: 1.6;
+    }
+    header {
+      background: #1a1a2e;
+      color: #fff;
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+    }
+    header h1 { font-size: 1.8rem; font-weight: 700; margin-bottom: 0.4rem; }
+    header p { font-size: 1rem; opacity: 0.85; max-width: 640px; margin: 0 auto; }
+    main { max-width: 960px; margin: 2rem auto; padding: 0 1.5rem 3rem; }
+
+    /* Analysis group */
+    .analysis-group { margin-bottom: 2.5rem; }
+    .analysis-group h2 {
+      font-size: 1.25rem;
+      color: #1a1a2e;
+      border-bottom: 2px solid #dee2e6;
+      padding-bottom: 0.4rem;
+      margin-bottom: 1rem;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-bottom: 0.75rem;
+    }
+    @media (max-width: 700px) {
+      .row { grid-template-columns: 1fr; }
+    }
+
+    /* Cards */
+    .card {
+      background: #fff;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      padding: 1.15rem;
+      text-decoration: none;
+      color: inherit;
+      transition: box-shadow 0.15s, transform 0.15s;
+      display: block;
+    }
+    a.card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); transform: translateY(-2px); }
+    .card h3 { font-size: 0.95rem; margin-bottom: 0.25rem; color: #1a1a2e; }
+    .card p { font-size: 0.82rem; color: #666; }
+    .badge {
+      display: inline-block;
+      font-size: 0.65rem;
+      padding: 0.15em 0.5em;
+      border-radius: 4px;
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-bottom: 0.4rem;
+    }
+    .badge-map { background: #d4edda; color: #155724; }
+    .badge-guide { background: #cce5ff; color: #004085; }
+    .badge-story { background: #fff3cd; color: #856404; }
+    .badge-soon { background: #e9ecef; color: #6c757d; }
+
+    /* Coming soon card */
+    .card-soon {
+      background: #f8f9fa;
+      border: 1px dashed #ced4da;
+      opacity: 0.7;
+      cursor: default;
+    }
+    .card-soon h3 { color: #888; }
+
+    /* Row labels */
+    .row-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #999;
+      margin-bottom: 0.35rem;
+      margin-top: 0.25rem;
+    }
+
+    footer {
+      text-align: center;
+      padding: 1.5rem;
+      font-size: 0.8rem;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>CHCCS Geospatial Analysis</h1>
+    <p>Interactive maps, methodology guides, and data stories for Chapel Hill-Carrboro City Schools district analysis.</p>
+  </header>
+  <main>
+
+    <!-- Socioeconomic -->
+    <div class="analysis-group">
+      <h2>Socioeconomic Analysis</h2>
+      <p class="row-label">Interactive Map</p>
+      <div class="row">
+        <a class="card" href="assets/maps/school_socioeconomic_map.html">
+          <span class="badge badge-map">Map</span>
+          <h3>Socioeconomic Map</h3>
+          <p>Explore attendance zone demographics: income, poverty, minority population, renters, and more.</p>
+        </a>
+      </div>
+      <p class="row-label">User Guide</p>
+      <div class="row">
+        <a class="card" href="assets/maps/socioeconomic_methodology.html">
+          <span class="badge badge-guide">Guide</span>
+          <h3>How We Built This Analysis</h3>
+          <p>Step-by-step walkthrough of dasymetric mapping, Census data, and equity indicators.</p>
+        </a>
+      </div>
+      <p class="row-label">Editorial Story</p>
+      <div class="row">
+        <a class="card" href="example_stories/ephesus_seawell_comparison.html">
+          <span class="badge badge-story">Story</span>
+          <h3>Ephesus vs. Seawell</h3>
+          <p>A data-driven comparison of two attendance zones &mdash; what the numbers reveal about equity.</p>
+        </a>
+      </div>
+    </div>
+
+    <!-- Environmental -->
+    <div class="analysis-group">
+      <h2>Environmental Analysis</h2>
+      <p class="row-label">Interactive Map</p>
+      <div class="row">
+        <a class="card" href="assets/maps/chccs_environmental_analysis.html">
+          <span class="badge badge-map">Map</span>
+          <h3>Environmental Map</h3>
+          <p>Explore TRAP exposure, flood zones, urban heat island proxy, and tree canopy layers.</p>
+        </a>
+      </div>
+      <p class="row-label">User Guide</p>
+      <div class="row">
+        <a class="card" href="assets/maps/environmental_methodology.html">
+          <span class="badge badge-guide">Guide</span>
+          <h3>How We Built This Analysis</h3>
+          <p>Step-by-step walkthrough of pollution modeling, flood risk, UHI proxy, and canopy data.</p>
+        </a>
+      </div>
+      <p class="row-label">Editorial Story</p>
+      <div class="row">
+        <div class="card card-soon">
+          <span class="badge badge-soon">Coming Soon</span>
+          <h3>Environmental Story</h3>
+          <p>A narrative exploration of environmental conditions across attendance zones.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- School Closure -->
+    <div class="analysis-group">
+      <h2>School Closure Impact</h2>
+      <p class="row-label">Interactive Map</p>
+      <div class="row">
+        <a class="card" href="assets/maps/school_closure_analysis.html">
+          <span class="badge badge-map">Map</span>
+          <h3>School Closure Map</h3>
+          <p>Explore travel-time impacts and traffic redistribution under closure scenarios.</p>
+        </a>
+      </div>
+      <p class="row-label">User Guide</p>
+      <div class="row">
+        <a class="card" href="assets/maps/closure_methodology.html">
+          <span class="badge badge-guide">Guide</span>
+          <h3>How We Built This Analysis</h3>
+          <p>Step-by-step walkthrough of travel-time modeling and household impact estimation.</p>
+        </a>
+      </div>
+      <p class="row-label">Editorial Story</p>
+      <div class="row">
+        <div class="card card-soon">
+          <span class="badge badge-soon">Coming Soon</span>
+          <h3>School Closure Story</h3>
+          <p>A narrative look at what school closures would mean for families across the district.</p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+  <footer>
+    CHCCS District Geospatial Analysis &middot; Data sources: NCES, ACS, FEMA, NCDOT, OSM
+  </footer>
+</body>
+</html>
