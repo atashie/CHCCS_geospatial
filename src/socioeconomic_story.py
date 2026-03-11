@@ -1199,9 +1199,54 @@ details[open] summary {{ margin-bottom: 8px; }}
     </div>
   </div>
 
-  <!-- Step 16: Complete Map — Bar Chart Comparison -->
+  <!-- Step 16: MLS Home Sales -->
   <div class="step" data-step="16">
     <div class="step-number">17</div>
+    <h2>MLS Home Sales</h2>
+    <p>The map can overlay <strong>MLS home sale records</strong> from the
+    Triangle MLS (2023&ndash;2025). Each dot represents a closed sale,
+    color-coded by <strong>price quartile</strong>:</p>
+    <div class="dot-legend">
+      <div class="dot-legend-item">
+        <span class="dot-legend-swatch" style="background:#2166ac;"></span> Bottom 25%
+      </div>
+      <div class="dot-legend-item">
+        <span class="dot-legend-swatch" style="background:#67a9cf;"></span> 25th&ndash;50th pctl
+      </div>
+      <div class="dot-legend-item">
+        <span class="dot-legend-swatch" style="background:#fc8d59;"></span> 50th&ndash;75th pctl
+      </div>
+      <div class="dot-legend-item">
+        <span class="dot-legend-swatch" style="background:#b2182b;"></span> Top 25%
+      </div>
+    </div>
+    <p>Addresses are geocoded using the <strong>Census Bureau batch geocoder
+    </strong> (primary) with Nominatim fallback, then clipped to the CHCCS
+    district boundary. Three metrics are computed per zone:</p>
+    <ul style="margin: 4px 0 12px 20px; line-height: 1.7; font-size: 0.93em;">
+      <li><strong>Homes Sold</strong> &mdash; total count of closed sales</li>
+      <li><strong>Median Home Price</strong> &mdash; median close price</li>
+      <li><strong>Median Price/SqFt</strong> &mdash; median close price per square foot</li>
+    </ul>
+    <h3>Limitations</h3>
+    <ul style="margin: 4px 0 12px 20px; line-height: 1.7; font-size: 0.93em;">
+      <li>MLS data covers only listed sales &mdash; FSBO and off-market
+      transactions are excluded.</li>
+      <li>Geocoding accuracy varies; some addresses may map to approximate
+      locations.</li>
+      <li>Blocks with few sales may show volatile medians (small sample size).</li>
+      <li>Sales span three years (2023&ndash;2025) and do not reflect
+      single-point-in-time pricing.</li>
+    </ul>
+    <div class="source">
+      <strong>Data:</strong> Triangle MLS, closed sales 2023&ndash;2025
+      within CHCCS district
+    </div>
+  </div>
+
+  <!-- Step 17: Complete Map — Bar Chart Comparison -->
+  <div class="step" data-step="17">
+    <div class="step-number">18</div>
     <h2>Zone Definitions Matter</h2>
     <p>The bar charts show <strong>% below 185% poverty</strong> for each
     school under two different zone definitions &mdash; computed from the
@@ -1219,9 +1264,9 @@ details[open] summary {{ margin-bottom: 8px; }}
     that update in real time.</p>
   </div>
 
-  <!-- Step 17: Limitations -->
-  <div class="step" data-step="17">
-    <div class="step-number">18</div>
+  <!-- Step 18: Limitations -->
+  <div class="step" data-step="18">
+    <div class="step-number">19</div>
     <h2>Limitations &amp; Caveats</h2>
     <p>The socioeconomic analysis has 26 documented limitations. Key ones:</p>
     <h3>Data Quality</h3>
@@ -1310,6 +1355,7 @@ var FRAGMENTS_AREA = {data["fragments_area_json"]};
 var FRAGMENTS_DASY = {data["fragments_dasy_json"]};
 var DOT_DATA = {data["dot_data"]};
 var AH = {data["ah_json"]};
+var MLS_SALES = {data["mls_json"]};
 var ZONE_STATS = {zone_stats};
 var DRIVE_STATS = {drive_stats};
 var WALK_ZONES = {data["walk_zones_json"]};
@@ -1688,6 +1734,41 @@ layers.affordableHousing = L.geoJSON(AH, {{
   }}
 }});
 
+// MLS home sales
+if (MLS_SALES && MLS_SALES.features && MLS_SALES.features.length > 0) {{
+  // Compute quartiles
+  var prices = MLS_SALES.features.map(function(f) {{ return f.properties.close_price || 0; }}).sort(function(a,b){{ return a-b; }});
+  var q25 = prices[Math.floor(prices.length * 0.25)];
+  var q50 = prices[Math.floor(prices.length * 0.50)];
+  var q75 = prices[Math.floor(prices.length * 0.75)];
+
+  layers.mlsSales = L.geoJSON(MLS_SALES, {{
+    pointToLayer: function(f, ll) {{
+      var price = f.properties.close_price || 0;
+      var color = "#b2182b";
+      if (price <= q25) color = "#2166ac";
+      else if (price <= q50) color = "#67a9cf";
+      else if (price <= q75) color = "#fc8d59";
+      return L.circleMarker(ll, {{
+        radius: 4,
+        fillColor: color,
+        color: "#333",
+        weight: 1,
+        fillOpacity: 0.7,
+      }});
+    }},
+    onEachFeature: function(f, layer) {{
+      var p = f.properties;
+      layer.bindTooltip(
+        (p.address || "Sale") + "<br>" +
+        "$" + (p.close_price || 0).toLocaleString()
+      );
+    }}
+  }});
+}} else {{
+  layers.mlsSales = null;
+}}
+
 // === Step handler ===
 var currentStep = -1;
 
@@ -1822,11 +1903,18 @@ function handleStep(idx) {{
       districtView();
       break;
 
-    case 16: // Complete map — bar chart comparison
+    case 16: // MLS home sales
+      if (layers.mlsSales) layers.mlsSales.addTo(map);
+      layers.zones.addTo(map);
+      layers.schools.addTo(map);
+      districtView();
+      break;
+
+    case 17: // Complete map — bar chart comparison
       document.getElementById("chart-panel").style.display = "block";
       break;
 
-    case 17: // Limitations
+    case 18: // Limitations
       ensureDotsLoaded();
       layers.dots.addTo(map);
       layers.zones.addTo(map);
@@ -1991,6 +2079,20 @@ def main():
     ) if len(ah) > 0 else '{"type":"FeatureCollection","features":[]}'
     _progress(f"Loaded {len(ah)} affordable housing records")
 
+    # Step 10b: MLS home sales
+    print("[10b/13] Loading MLS home sales ...")
+    mls_json = '{"type":"FeatureCollection","features":[]}'
+    mls_cache = DATA_CACHE / "mls_home_sales.gpkg"
+    if mls_cache.exists():
+        mls_gdf = gpd.read_file(mls_cache)
+        mls_json = gdf_to_geojson_str(
+            mls_gdf,
+            properties=["address", "close_price", "price_per_sqft"],
+        )
+        _progress(f"Loaded {len(mls_gdf)} MLS home sales")
+    else:
+        _progress("MLS cache not found, skipping")
+
     # Step 11: Zone demographics
     print("[11/13] Loading zone demographics ...")
     zone_demo = load_zone_demographics()
@@ -2053,6 +2155,7 @@ def main():
         "fragments_dasy_json": fragments_dasy_json,
         "dot_data": dot_data,
         "ah_json": ah_json,
+        "mls_json": mls_json,
         "walk_zones_json": walk_zones_json,
         "zone_stats": zone_stats_json,
         "drive_stats": drive_stats_json,

@@ -41,6 +41,7 @@ CHCCS_geospatial/
 │   ├── childcare_geocode.py              # Childcare proximity analysis
 │   ├── property_data.py                  # Orange County parcel processing
 │   ├── affordable_housing.py             # Affordable housing data download & assessment
+│   ├── mls_geocode.py                   # MLS home sales geocoding (Census + Nominatim)
 │   ├── environmental_map.py              # Consolidated environmental map (TRAP + flood + UHI)
 │   ├── environmental_story.py            # Scrollytelling methodology walkthrough generator
 │   ├── school_closure_analysis.py        # School closure impact (travel + traffic)
@@ -51,7 +52,8 @@ CHCCS_geospatial/
 ├── data/
 │   ├── raw/                    # Committed source data
 │   │   ├── properties/         # Orange County parcels (~7 MB)
-│   │   └── childcare/          # NC DCDEE facility data
+│   │   ├── childcare/          # NC DCDEE facility data
+│   │   └── MLS/               # Triangle MLS home sales (2023-2025)
 │   ├── cache/                  # Auto-downloaded (.gitignored)
 │   └── processed/              # Analysis outputs
 ├── assets/
@@ -100,6 +102,9 @@ python src/property_data.py
 python src/affordable_housing.py
 python src/affordable_housing.py --cache-only  # cached data only
 
+# Geocode MLS home sales data
+python src/mls_geocode.py
+
 # Generate consolidated environmental analysis map (TRAP + flood + UHI)
 python src/environmental_map.py
 python src/environmental_map.py --cache-only   # cached data only
@@ -139,6 +144,7 @@ python src/socioeconomic_story.py --cache-only  # cached data only
 | Zone demographics | `data/processed/census_school_demographics.csv` | Computed (dasymetric) |
 | NCDOT AADT stations | `data/cache/ncdot_aadt_orange_county.gpkg` | NCDOT ArcGIS (Orange County) |
 | Affordable housing | `data/cache/affordable_housing.gpkg` | Town of Chapel Hill ArcGIS (2025) |
+| MLS home sales | `data/cache/mls_home_sales.gpkg` | Triangle MLS (2023-2025), geocoded via Census + Nominatim |
 | UHI proxy scores | `data/processed/uhi_proxy_scores.csv` | Computed (ESA WorldCover proxy) |
 | TRAP grid cache | `data/cache/trap_grids.npz` | Computed (road_pollution grid) |
 | UHI grid cache | `data/cache/uhi_grid.npz` | Computed (ESA WorldCover proxy) |

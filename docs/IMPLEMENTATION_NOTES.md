@@ -276,6 +276,36 @@ Downloads and assesses affordable housing locations from the Town of Chapel Hill
 
 ---
 
+## MLS Home Sales Geocoding
+
+### Overview
+
+Geocodes Triangle MLS closed residential sales (2023-2025) and produces a point GeoPackage for spatial analysis with attendance zones and Census blocks.
+
+### Workflow
+
+1. **Load raw MLS data** — CSV from `data/raw/MLS/` containing address, close price, price per sqft, and other fields
+2. **Census batch geocoding** — Addresses formatted and submitted to the U.S. Census Bureau batch geocoding API (`geocoding.geo.census.gov/geocoder/geographies/addressbatch`). Returns coordinates, match quality, and Census FIPS codes (state, county, tract, block). Submitted in batches (API limit: 10,000 per batch).
+3. **Nominatim fallback** — Records that fail Census geocoding are retried against OpenStreetMap Nominatim with 1-second rate limiting per request to comply with usage policy.
+4. **Merge and deduplicate** — Census and Nominatim results are merged; Census results take priority when both succeed.
+5. **Output** — GeoPackage with point geometry (WGS84) saved to `data/cache/mls_home_sales.gpkg`.
+
+### Key Outputs
+
+| File | Purpose |
+|------|---------|
+| `src/mls_geocode.py` | Geocoding script: Census batch + Nominatim fallback |
+| `data/cache/mls_home_sales.gpkg` | Geocoded MLS sales as point GeoPackage |
+
+### Technical Notes
+
+- Census batch API returns match type (`Exact`, `Non_Exact`, `Tie`, `No_Match`). Only `Exact` and `Non_Exact` matches are accepted.
+- Nominatim geocoding uses structured queries with city/state constraints to reduce false matches.
+- The script reports geocoding success rates (Census hit rate, Nominatim recovery rate, overall coverage) at runtime.
+- Census geocoding returns Census geography FIPS codes, enabling direct block-level joins without a separate spatial join step for Census-matched records.
+
+---
+
 ## Attribution
 
 This analysis was developed with assistance from Claude (Anthropic) for code generation, spatial analysis implementation, and documentation. All data comes from official public sources.

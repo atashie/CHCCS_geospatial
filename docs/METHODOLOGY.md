@@ -156,6 +156,27 @@ For a detailed, visual explanation of every step — from Census data loading th
 
 ---
 
+### 1.8 MLS Home Sales Data
+
+The socioeconomic map also incorporates MLS (Multiple Listing Service) home sales data to show recent real estate market conditions across attendance zones.
+
+**Data:** 2,193 closed residential sales from the Triangle MLS, covering 2023-2025. Each record includes the sale address, close price, and price per square foot.
+
+**Geocoding:** Addresses are geocoded using the U.S. Census Bureau batch geocoding API (primary) with OpenStreetMap Nominatim as a fallback for unmatched records. Successfully geocoded sales are spatially joined to attendance zones and Census blocks.
+
+**What you see:** Per-zone and per-block summaries showing sale count, median close price, and median price per square foot.
+
+**Privacy:** Map markers show sale price, price per square foot, and close date on hover — addresses are not displayed. Point locations are approximate (interpolated along road centerlines by the geocoder, not exact rooftops or parcel centroids), which provides an additional degree of location privacy.
+
+**Key limitations:**
+- **MLS-only:** Does not include for-sale-by-owner (FSBO) or off-market transactions
+- **Not point-in-time:** Sales span three years (2023-2025), mixing different market conditions
+- **Small samples:** Some Census blocks have very few sales, making block-level medians unreliable
+- **Geocoding is approximate:** Points represent interpolated road-segment positions, not exact property locations. This is intentional — it avoids pinpointing individual homes while remaining accurate enough for zone/block aggregation
+- **No property controls:** Price differences between areas may reflect housing stock (size, age, condition) rather than location alone
+
+---
+
 ## Map 2: School Closure Impact Map
 
 **File:** `school_closure_analysis.html`

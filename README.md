@@ -16,6 +16,7 @@ Objective spatial analysis of all 11 Chapel Hill-Carrboro City Schools (CHCCS) e
 | `closure_story.py` | Interactive scrollytelling walkthrough of how the school closure impact map is built | `closure_methodology.html` |
 | `socioeconomic_story.py` | Interactive scrollytelling walkthrough of how the socioeconomic map is built | `socioeconomic_methodology.html` |
 | `affordable_housing.py` | Affordable housing data download and quality assessment | `affordable_housing.gpkg` |
+| `mls_geocode.py` | MLS home sales geocoding (Census batch + Nominatim fallback) | `mls_home_sales.gpkg` |
 | `childcare_geocode.py` | Childcare facility geocoding and proximity analysis by distance bands | CSVs in `data/processed/` |
 | `property_data.py` | Orange County residential parcel classification and centroid extraction | `combined_data_centroids.gpkg` |
 
@@ -35,6 +36,7 @@ python src/property_data.py              # Process Orange County parcel data
 python src/environmental_map.py          # Consolidated environmental analysis map
 python src/environmental_story.py        # Environmental methodology scrollytelling page
 python src/affordable_housing.py         # Affordable housing data download
+python src/mls_geocode.py               # Geocode MLS home sales data
 python src/school_closure_analysis.py   # School closure impact (travel + traffic)
 python src/closure_story.py            # School closure methodology scrollytelling page
 python src/socioeconomic_story.py     # Socioeconomic methodology scrollytelling page
@@ -60,6 +62,7 @@ Most modules are independent, but some depend on cached data:
 | Tree canopy | ESA WorldCover 2021 via Planetary Computer | Auto-downloaded per tile |
 | Parcel data | Orange County GIS | Committed in `data/raw/properties/` |
 | Childcare facilities | NC DCDEE | Committed in `data/raw/childcare/` |
+| MLS home sales | Triangle MLS (2023-2025) | Committed in `data/raw/MLS/`, geocoded to `data/cache/mls_home_sales.gpkg` |
 | Attendance zones | CHCCS GIS | Auto-downloaded, cached as GeoPackage |
 
 ## Prerequisites

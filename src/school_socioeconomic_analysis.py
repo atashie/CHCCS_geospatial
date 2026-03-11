@@ -58,6 +58,8 @@ DISTRICT_CACHE = DATA_CACHE / "chccs_district_boundary.gpkg"
 CHCCS_SHP = DATA_RAW / "properties" / "CHCCS" / "CHCCS.shp"
 PARCEL_POLYS = DATA_RAW / "properties" / "combined_data_polys.gpkg"
 
+MLS_CACHE = DATA_CACHE / "mls_home_sales.gpkg"
+
 ACS_CACHE = DATA_CACHE / "census_acs_blockgroups.gpkg"
 DECENNIAL_CACHE = DATA_CACHE / "census_decennial_blocks.gpkg"
 TIGER_BG_CACHE = DATA_CACHE / "tiger_bg_37.zip"
@@ -1277,6 +1279,9 @@ METRIC_DOT_SPECS = [
     ("pct_elementary_age", "% Population Aged 5-9", "BuPu", "", "%", ".1f"),
     ("pct_young_children", "% Population Aged 0-4", "PuRd", "", "%", ".1f"),
     ("ah_units", "Affordable Housing Units", "Blues", "", " units", ",.0f"),
+    ("mls_sales_count", "Homes Sold (2023–2025)", "YlGnBu", "", " sales", ",.0f"),
+    ("mls_median_price", "Median Home Price (2023–2025)", "Greens", "$", "", ",.0f"),
+    ("mls_median_ppsf", "Median Price/SqFt (2023–2025)", "Oranges", "$", "", ",.0f"),
 ]
 
 
@@ -1374,6 +1379,7 @@ def create_socioeconomic_map(
     dots_per_person: int = 5,
     enriched_blocks: gpd.GeoDataFrame | None = None,
     affordable_housing: gpd.GeoDataFrame | None = None,
+    mls_data: gpd.GeoDataFrame | None = None,
 ) -> folium.Map:
     """Create interactive map with choropleth, dot-density, and zone overlays."""
     _progress("Creating interactive socioeconomic map ...")
@@ -1708,6 +1714,67 @@ def create_socioeconomic_map(
     else:
         ah_fg = None
 
+    # -- MLS home sales layer --
+    if mls_data is not None and len(mls_data) > 0:
+        mls_fg = folium.FeatureGroup(name="MLS Home Sales", show=False)
+
+        # Price quartile colors
+        q25 = mls_data["close_price"].quantile(0.25)
+        q50 = mls_data["close_price"].quantile(0.50)
+        q75 = mls_data["close_price"].quantile(0.75)
+
+        def _mls_color(price):
+            if price <= q25:
+                return "#2166ac"   # Blue (lowest quartile)
+            elif price <= q50:
+                return "#67a9cf"   # Light blue
+            elif price <= q75:
+                return "#fc8d59"   # Orange
+            else:
+                return "#b2182b"   # Red (highest quartile)
+
+        for _, row in mls_data.iterrows():
+            price = row.get("close_price", 0)
+            ppsf = row.get("price_per_sqft", 0)
+            addr = row.get("address", "Unknown")
+            date = row.get("close_date", "")
+            color = _mls_color(price)
+
+            date_str = ""
+            if pd.notna(date):
+                try:
+                    date_str = pd.Timestamp(date).strftime("%m/%d/%Y")
+                except Exception:
+                    date_str = str(date)
+
+            popup_html = f"""
+            <b>{addr}</b><br>
+            Price: ${price:,.0f}<br>
+            $/SqFt: ${ppsf:,.0f}<br>
+            Date: {date_str}
+            """
+
+            tooltip_html = (
+                f"Price: ${price:,.0f}<br>"
+                f"$/SqFt: ${ppsf:,.0f}<br>"
+                f"Date: {date_str}"
+            )
+
+            folium.CircleMarker(
+                location=[row.geometry.y, row.geometry.x],
+                radius=4,
+                color=color,
+                weight=1,
+                fillColor=color,
+                fillOpacity=0.7,
+                tooltip=folium.Tooltip(tooltip_html),
+            ).add_to(mls_fg)
+
+        mls_fg.add_to(m)
+        _progress(f"Added {len(mls_data)} MLS home sale markers")
+    else:
+        mls_fg = None
+
     # -- Custom control panel replaces Folium LayerControl --
 
     # -- Banner with FAQ button (matching school_closure_analysis.html style) --
@@ -1947,10 +2014,41 @@ def create_socioeconomic_map(
         """
         all_legends["Affordable Housing Units"] = ah_legend_html
 
+        # Override MLS legends with price quartile legend
+        mls_legend_html = """
+        <div style="padding: 10px 14px; background: white; border-radius: 5px;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.3); max-width: 320px; font-size: 13px;">
+            <div style="font-weight: bold; margin-bottom: 8px;">MLS Home Sales by Price Quartile</div>
+            <div style="display: flex; align-items: center; margin: 4px 0;">
+                <span style="display:inline-block; width:14px; height:14px; background:#2166ac;
+                      border-radius:50%; margin-right:8px;"></span>Bottom 25%
+            </div>
+            <div style="display: flex; align-items: center; margin: 4px 0;">
+                <span style="display:inline-block; width:14px; height:14px; background:#67a9cf;
+                      border-radius:50%; margin-right:8px;"></span>25th–50th percentile
+            </div>
+            <div style="display: flex; align-items: center; margin: 4px 0;">
+                <span style="display:inline-block; width:14px; height:14px; background:#fc8d59;
+                      border-radius:50%; margin-right:8px;"></span>50th–75th percentile
+            </div>
+            <div style="display: flex; align-items: center; margin: 4px 0;">
+                <span style="display:inline-block; width:14px; height:14px; background:#b2182b;
+                      border-radius:50%; margin-right:8px;"></span>Top 25%
+            </div>
+            <div style="margin-top: 6px; font-size: 11px; color: #666;">
+                Source: Triangle MLS (2023–2025)
+            </div>
+        </div>
+        """
+        for mls_metric_name in ["Homes Sold (2023\u20132025)", "Median Home Price (2023\u20132025)",
+                                "Median Price/SqFt (2023\u20132025)"]:
+            all_legends[mls_metric_name] = mls_legend_html
+
         # ── JS data serialization ──
         dot_fg_name = dot_fg.get_name()
         map_name = m.get_name()
         ah_fg_name = ah_fg.get_name() if ah_fg is not None else "null"
+        mls_fg_name = mls_fg.get_name() if mls_fg is not None else "null"
         school_fg_name = school_fg.get_name()
 
         race_colors_list = [color for color, label in RACE_CATEGORIES.values()]
@@ -2003,6 +2101,29 @@ def create_socioeconomic_map(
         else:
             ah_by_zone_list = [0] * len(master_school_names)
         ah_by_zone_js = _json.dumps(ah_by_zone_list, separators=(",", ":"))
+
+        # Zone-level MLS aggregates (in master_school_names order)
+        mls_sales_by_zone_list = []
+        mls_price_by_zone_list = []
+        mls_ppsf_by_zone_list = []
+        if zone_demographics is not None:
+            for col, lst in [("mls_total_sales", mls_sales_by_zone_list),
+                             ("mls_median_price", mls_price_by_zone_list),
+                             ("mls_median_ppsf", mls_ppsf_by_zone_list)]:
+                if col in zone_demographics.columns:
+                    zd_dict = zone_demographics.set_index("school")[col].to_dict()
+                    for s in master_school_names:
+                        v = zd_dict.get(s, 0)
+                        lst.append(0 if pd.isna(v) else round(float(v)))
+                else:
+                    lst.extend([0] * len(master_school_names))
+        else:
+            mls_sales_by_zone_list = [0] * len(master_school_names)
+            mls_price_by_zone_list = [0] * len(master_school_names)
+            mls_ppsf_by_zone_list = [0] * len(master_school_names)
+        mls_sales_by_zone_js = _json.dumps(mls_sales_by_zone_list, separators=(",", ":"))
+        mls_price_by_zone_js = _json.dumps(mls_price_by_zone_list, separators=(",", ":"))
+        mls_ppsf_by_zone_js = _json.dumps(mls_ppsf_by_zone_list, separators=(",", ":"))
 
         # BG / Block layer JS refs
         bg_layers_js = "[" + ",".join(bg_fg_names) + "]"
@@ -2113,12 +2234,16 @@ def create_socioeconomic_map(
             var bgLayers = {bg_layers_js};
             var blkLayers = {blk_layers_js};
             var ahFg = {ah_fg_name};
+            var mlsFg = {mls_fg_name};
             var schoolFg = {school_fg_name};
             var dots = {data_js};
             var allDotZones = {all_dot_zones_js};
             var allZoneNames = {all_zone_names_js};
             var masterSchools = {master_schools_js};
             var ahByZone = {ah_by_zone_js};
+            var mlsSalesByZone = {mls_sales_by_zone_js};
+            var mlsPriceByZone = {mls_price_by_zone_js};
+            var mlsPpsfByZone = {mls_ppsf_by_zone_js};
             var blockColors = {block_colors_js};
             var blockValues = {block_values_js};
             var raceColors = {race_colors_js};
@@ -2150,29 +2275,42 @@ def create_socioeconomic_map(
             if (mapDiv) mapDiv.parentElement.appendChild(zoneStrip);
 
             // ── Zone card rebuild ──
-            var currentLayout = '';  // 'histogram', 'barplot', 'housing', or 'race'
+            var currentLayout = '';  // 'histogram', 'barplot', 'housing', 'mls', or 'race'
             var lastMetricIdx = metricNames.length - 1;
+
+            // Helper: detect special metric types by name
+            function isHousingMetric(idx) {{
+                return metricNames[idx] === 'Affordable Housing Units';
+            }}
+            function isMlsMetric(idx) {{
+                var n = metricNames[idx];
+                return n && (n.indexOf('Homes Sold') === 0 || n.indexOf('Median Home Price') === 0 || n.indexOf('Median Price/SqFt') === 0);
+            }}
+            function isCountOrZoneMetric(idx) {{
+                return isHousingMetric(idx) || isMlsMetric(idx);
+            }}
+
             function rebuildZoneCards() {{
                 zoneStrip.innerHTML = '';
                 var isRace = (currentMetric === 0);
-                var isHousing = (currentMetric === lastMetricIdx && metricNames[lastMetricIdx] === 'Affordable Housing Units');
-                var isIncome = (!isRace && !isHousing && metricPrefixes[currentMetric] === '$');
-                var isPct = (!isRace && !isIncome && !isHousing);
+                var isHousing = isHousingMetric(currentMetric);
+                var isMls = isMlsMetric(currentMetric);
+                var isIncome = (!isRace && !isHousing && !isMls && metricPrefixes[currentMetric] === '$');
+                var isPct = (!isRace && !isIncome && !isHousing && !isMls);
 
                 if (isRace) {{
                     currentLayout = 'race';
-                    // Race placeholder — just one card
                     var card = document.createElement('div');
                     card.className = 'zone-card';
                     card.innerHTML = '<div class="zone-card-avg" style="padding:10px;">Select a metric to see zone distributions</div>';
                     zoneStrip.appendChild(card);
-                }} else if (isHousing) {{
-                    currentLayout = 'housing';
-                    // Single barplot for affordable housing totals
+                }} else if (isHousing || isMls) {{
+                    currentLayout = isHousing ? 'housing' : 'mls';
+                    var title = isHousing ? 'Total Affordable Housing Units by Zone' : metricNames[currentMetric] + ' by Zone';
                     zoneStrip.innerHTML =
                         '<div id="barplot-panel" style="display:flex;gap:12px;width:100%;">' +
                         '  <div style="flex:1;max-width:500px;margin:0 auto;">' +
-                        '    <div class="barplot-title">Total Affordable Housing Units by Zone</div>' +
+                        '    <div class="barplot-title">' + title + '</div>' +
                         '    <canvas id="bar-ah" width="460" height="320"></canvas>' +
                         '  </div>' +
                         '</div>';
@@ -2240,11 +2378,11 @@ def create_socioeconomic_map(
 
                 // Handle Population Dots layer option
                 var isRace = (currentMetric === 0);
-                var isHousingMetric = (currentMetric === lastMetricIdx && metricNames[lastMetricIdx] === 'Affordable Housing Units');
+                var isMarkerMetric = isCountOrZoneMetric(currentMetric);
                 if (selected === 'dots') {{
-                    // Show dots when "Population Dots" layer selected (except for AH metric)
-                    if (!isHousingMetric && !map.hasLayer(dotFg)) dotFg.addTo(map);
-                    if (isHousingMetric && map.hasLayer(dotFg)) map.removeLayer(dotFg);
+                    // Show dots when "Population Dots" layer selected (except for AH/MLS metrics)
+                    if (!isMarkerMetric && !map.hasLayer(dotFg)) dotFg.addTo(map);
+                    if (isMarkerMetric && map.hasLayer(dotFg)) map.removeLayer(dotFg);
                 }} else {{
                     // For other layers, dots only show for Race/Ethnicity metric
                     if (isRace) {{
@@ -2255,7 +2393,7 @@ def create_socioeconomic_map(
                 }}
 
                 // Add selected choropleth layer (if not 'none', not 'dots', and not Race/Ethnicity mode)
-                if (selected !== 'none' && selected !== 'dots' && currentMetric > 0 && !isHousingMetric) {{
+                if (selected !== 'none' && selected !== 'dots' && currentMetric > 0 && !isMarkerMetric) {{
                     var idx = currentMetric - 1;
                     if (selected === 'bg' && idx < bgLayers.length) bgLayers[idx].addTo(map);
                     if (selected === 'blk' && idx < blkLayers.length) blkLayers[idx].addTo(map);
@@ -2435,8 +2573,9 @@ def create_socioeconomic_map(
                 var mi = currentMetric - 1;
                 var pfx = metricPrefixes[currentMetric];
                 var sfx = metricSuffixes[currentMetric];
-                var isIncome = (pfx === '$');
-                var isHousing = (currentMetric === lastMetricIdx && metricNames[lastMetricIdx] === 'Affordable Housing Units');
+                var isHousing = isHousingMetric(currentMetric);
+                var isMls = isMlsMetric(currentMetric);
+                var isIncome = (!isHousing && !isMls && pfx === '$');
                 var nSchools = masterSchools.length;
                 var zoneNames = allZoneNames[currentZoneType];
                 var nZones = zoneNames.length;
@@ -2444,7 +2583,7 @@ def create_socioeconomic_map(
                 // Special case: Affordable Housing - compute zone totals dynamically
                 if (isHousing) {{
                     // Sum ah_units per zone (using unique blocks per zone)
-                    var ahMi = lastMetricIdx - 1;  // blockValues index for ah_units
+                    var ahMi = mi;  // blockValues index for ah_units
                     var zoneTotals = [];
                     var seenBlocks = [];  // Track which blocks counted per zone
                     for (var zi = 0; zi < nZones; zi++) {{
@@ -2465,6 +2604,28 @@ def create_socioeconomic_map(
                         }}
                     }}
                     drawBarplot('bar-ah', zoneNames, zoneTotals, 'count');
+                    return;
+                }}
+
+                // Special case: MLS metrics - use pre-computed zone-level data
+                if (isMls) {{
+                    var mName = metricNames[currentMetric];
+                    var zoneTotals;
+                    var fmt;
+                    if (mName.indexOf('Homes Sold') === 0) {{
+                        zoneTotals = mlsSalesByZone;
+                        fmt = 'count';
+                    }} else if (mName.indexOf('Median Home Price') === 0) {{
+                        zoneTotals = mlsPriceByZone;
+                        fmt = 'dollar';
+                    }} else {{
+                        zoneTotals = mlsPpsfByZone;
+                        fmt = 'dollar';
+                    }}
+                    // Update title to reflect current MLS metric
+                    var titleEl = zoneStrip.querySelector('.barplot-title');
+                    if (titleEl) titleEl.textContent = mName + ' by Zone';
+                    drawBarplot('bar-ah', zoneNames, zoneTotals, fmt);
                     return;
                 }}
 
@@ -2540,17 +2701,18 @@ def create_socioeconomic_map(
                 currentMetric = idx;
                 // Determine what the new layout should be
                 var isRace = (idx === 0);
-                var isHousing = (idx === lastMetricIdx && metricNames[lastMetricIdx] === 'Affordable Housing Units');
-                var isIncome = (!isRace && !isHousing && metricPrefixes[idx] === '$');
-                var needLayout = isRace ? 'race' : (isHousing ? 'housing' : (isIncome ? 'histogram' : 'barplot'));
+                var isHousing = isHousingMetric(idx);
+                var isMls = isMlsMetric(idx);
+                var isIncome = (!isRace && !isHousing && !isMls && metricPrefixes[idx] === '$');
+                var needLayout = isRace ? 'race' : (isHousing ? 'housing' : (isMls ? 'mls' : (isIncome ? 'histogram' : 'barplot')));
                 if (needLayout !== prevLayout) {{
                     rebuildZoneCards();
                 }}
 
-                // Hide Layers section for Race/Ethnicity and Affordable Housing (single-layer metrics)
+                // Hide Layers section for Race/Ethnicity, AH, and MLS metrics
                 var layersSection = document.getElementById('layers-section');
                 if (layersSection) {{
-                    layersSection.style.display = (isRace || isHousing) ? 'none' : 'block';
+                    layersSection.style.display = (isRace || isHousing || isMls) ? 'none' : 'block';
                 }}
 
                 // Affordable Housing markers only visible in AH mode
@@ -2558,6 +2720,13 @@ def create_socioeconomic_map(
                     if (!map.hasLayer(ahFg)) ahFg.addTo(map);
                 }} else if (ahFg) {{
                     if (map.hasLayer(ahFg)) map.removeLayer(ahFg);
+                }}
+
+                // MLS markers visible in MLS modes
+                if (isMls && mlsFg) {{
+                    if (!map.hasLayer(mlsFg)) mlsFg.addTo(map);
+                }} else if (mlsFg) {{
+                    if (map.hasLayer(mlsFg)) map.removeLayer(mlsFg);
                 }}
 
                 recolorDots();
@@ -2974,6 +3143,14 @@ def main():
     else:
         _progress("Note: affordable_housing.gpkg not found (run affordable_housing.py to download)")
 
+    # ── 5b. Load MLS home sales data ──────────────────────────────────
+    mls_data = None
+    if MLS_CACHE.exists():
+        mls_data = gpd.read_file(MLS_CACHE)
+        _progress(f"Loaded {len(mls_data)} MLS home sales")
+    else:
+        _progress("Note: mls_home_sales.gpkg not found (run mls_geocode.py to create)")
+
     # ── 5. Spatial analysis ───────────────────────────────────────────
     print("\n[6/8] Performing spatial analysis ...")
 
@@ -3036,6 +3213,31 @@ def main():
             zone_demographics["ah_total_units"] = zone_demographics["ah_total_units"].fillna(0).astype(int)
             _progress(f"Added affordable housing counts to {len(ah_by_zone)} zones")
 
+        # Add MLS home sales aggregates per zone
+        if mls_data is not None and len(mls_data) > 0:
+            mls_wgs = mls_data.to_crs(CRS_WGS84)
+            zones_wgs = zones.to_crs(CRS_WGS84)
+
+            mls_with_zones = gpd.sjoin(
+                mls_wgs,
+                zones_wgs[["school", "geometry"]],
+                how="left",
+                predicate="within"
+            )
+
+            # Aggregate per zone: count, median price, median ppsf
+            mls_zone_agg = mls_with_zones.dropna(subset=["school"]).groupby("school").agg(
+                mls_total_sales=("close_price", "size"),
+                mls_median_price=("close_price", "median"),
+                mls_median_ppsf=("price_per_sqft", "median"),
+            ).reset_index()
+
+            zone_demographics = zone_demographics.merge(
+                mls_zone_agg, on="school", how="left"
+            )
+            zone_demographics["mls_total_sales"] = zone_demographics["mls_total_sales"].fillna(0).astype(int)
+            _progress(f"Added MLS sales data to {len(mls_zone_agg)} zones")
+
         # Save per-school demographics
         zone_demographics.to_csv(OUTPUT_SCHOOL_CSV, index=False)
         _progress(f"Saved per-school demographics to {OUTPUT_SCHOOL_CSV}")
@@ -3077,6 +3279,29 @@ def main():
             enriched_blocks["ah_units"] = enriched_blocks["ah_units"].fillna(0).astype(int)
             _progress(f"  Added AH counts to {(enriched_blocks['ah_units'] > 0).sum()} blocks")
 
+        # Add block-level MLS aggregates
+        if mls_data is not None and len(mls_data) > 0:
+            mls_wgs = mls_data.to_crs(CRS_WGS84)
+            blocks_wgs = enriched_blocks.to_crs(CRS_WGS84)
+
+            mls_with_blocks = gpd.sjoin(
+                mls_wgs[["close_price", "price_per_sqft", "geometry"]],
+                blocks_wgs[["GEOID20", "geometry"]],
+                how="left",
+                predicate="within"
+            )
+
+            mls_block_agg = mls_with_blocks.dropna(subset=["GEOID20"]).groupby("GEOID20").agg(
+                mls_sales_count=("close_price", "size"),
+                mls_median_price=("close_price", "median"),
+                mls_median_ppsf=("price_per_sqft", "median"),
+            ).reset_index()
+
+            enriched_blocks = enriched_blocks.merge(mls_block_agg, on="GEOID20", how="left")
+            enriched_blocks["mls_sales_count"] = enriched_blocks["mls_sales_count"].fillna(0).astype(int)
+            # Leave mls_median_price and mls_median_ppsf as NaN for blocks with no sales
+            _progress(f"  Added MLS data to {(enriched_blocks['mls_sales_count'] > 0).sum()} blocks")
+
     # ── 6b. Dot-density generation ────────────────────────────────────
     racial_dots = None
     if not args.skip_dots and not args.skip_maps:
@@ -3106,6 +3331,7 @@ def main():
             dots_per_person=args.dots_per_person,
             enriched_blocks=enriched_blocks,
             affordable_housing=affordable_housing,
+            mls_data=mls_data,
         )
         fmap.save(str(OUTPUT_MAP))
         _progress(f"Saved {OUTPUT_MAP}")

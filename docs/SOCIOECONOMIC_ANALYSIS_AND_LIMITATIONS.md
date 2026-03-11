@@ -587,6 +587,49 @@ Walk zone boundaries are now loaded from the CHCCS shapefile (`ESWALK=="Y"`) and
 
 ---
 
+## 9b. MLS Home Sales Data
+
+### Data Source
+
+Triangle MLS (Multiple Listing Service) closed residential sales, 2023-2025. The raw dataset contains 2,193 records with address, close price, and price per square foot, provided as a CSV in `data/raw/MLS/`.
+
+### Geocoding Pipeline
+
+Addresses are geocoded in two stages:
+
+1. **Census Bureau Batch Geocoder (primary):** Addresses are submitted to the U.S. Census Bureau batch geocoding API (`geocoding.geo.census.gov/geocoder/geographies/addressbatch`), which returns coordinates and Census geography (state, county, tract, block FIPS). This handles the majority of records.
+2. **Nominatim fallback:** Records that fail Census geocoding are retried against the OpenStreetMap Nominatim API (`nominatim.openstreetmap.org`) with a 1-second rate limit per request.
+
+Successfully geocoded records are stored as a GeoPackage (`data/cache/mls_home_sales.gpkg`) with point geometry in WGS84 (EPSG:4326).
+
+### Aggregation
+
+Geocoded sales are spatially joined to attendance zones and Census blocks. Per-zone and per-block summaries include:
+
+- **Count:** Number of closed sales
+- **Median close price:** Median sale price in dollars
+- **Median price per square foot:** Median $/sqft across sales in the area
+
+### Privacy
+
+To protect homeowner privacy, **addresses are not displayed** on the map. Hover tooltips show only sale price, price per square foot, and close date. Additionally, map point locations are inherently approximate — the Census geocoder places points at interpolated positions along road centerlines, not at exact property locations or parcel centroids. This provides a baseline level of location privacy even though the underlying data contains street addresses.
+
+### Limitations
+
+1. **MLS-only coverage.** The dataset includes only sales listed through the Triangle MLS. For-sale-by-owner (FSBO), off-market transactions, and new construction sold directly by builders are excluded. This systematically omits some market segments.
+
+2. **Geocoding is approximate, not exact.** Census batch geocoding matches to interpolated address ranges on TIGER/Line road segments, not exact rooftops or parcel centroids. Nominatim fallback accuracy depends on OpenStreetMap address data completeness. Some records may be placed on the wrong block. This is acceptable for zone/block-level aggregation and has the side benefit of not pinpointing individual properties.
+
+3. **Small samples per block.** When aggregated to Census block level, many blocks have only 1-3 sales. Median values from very small samples are volatile and should not be over-interpreted.
+
+4. **Three-year range, not point-in-time.** Sales span 2023-2025, mixing different market conditions. This is a practical compromise for sample size but means the data does not represent a single market snapshot.
+
+5. **No property characteristic controls.** Median prices are not adjusted for square footage, lot size, age, condition, or renovation status. Differences between areas may reflect housing stock differences rather than location premiums.
+
+6. **Geocoding failure rate.** Some records may fail both geocoding stages and be excluded from the spatial analysis entirely. The success rate is reported at runtime but not embedded in the output files.
+
+---
+
 ## 10. Output Files
 
 | File | Description |
