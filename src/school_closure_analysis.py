@@ -2058,6 +2058,7 @@ def _build_control_html(
     var OVERLAYS_DATA = {overlays_data_json};
     var ROAD_GEOJSON = {road_geojson_json};
     var TRAFFIC_ARRAYS_B64 = {traffic_arrays_json};
+    var DIFF_CLAMP = 300;
     var WZ_CONTRIBUTIONS = {walk_zone_contributions_json};
     var N_EDGES = {n_edges_json};
     var ZONE_POLYGONS = {zone_polygons_json};
@@ -2604,9 +2605,7 @@ def _build_control_html(
                 diffArr[i] = displayed[i] - baseDisplayed[i];
                 if (Math.abs(diffArr[i]) > maxDiff) maxDiff = Math.abs(diffArr[i]);
             }}
-            var sorted = Array.from(diffArr).map(Math.abs).filter(function(v){{return v>0}}).sort(function(a,b){{return a-b}});
-            var p95 = sorted.length > 0 ? sorted[Math.floor(sorted.length * 0.95)] : 1;
-            if (p95 < 0.1) p95 = maxDiff || 1;
+            var p95 = DIFF_CLAMP;
 
             roadLayer.eachLayer(function(layer) {{
                 var idx = layer.feature.properties.idx;

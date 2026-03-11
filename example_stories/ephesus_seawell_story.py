@@ -1024,7 +1024,7 @@ function dualPanelChart(title, subtitle, footer, metric, options) {{
   titleEl.textContent = title;
   subtitleEl.textContent = subtitle;
   document.getElementById("chart-left-title").innerHTML = 'Nearest-Drive Zones <span style="font-weight:normal;font-size:0.85em;">(Dijkstra)</span>';
-  document.getElementById("chart-right-title").innerHTML = 'Attendance Zones <span style="font-weight:normal;font-size:0.85em;">(official)</span>';
+  document.getElementById("chart-right-title").innerHTML = 'Attendance Zones <span style="font-weight:normal;font-size:0.85em;">(current)</span>';
   document.getElementById("chart-right-col").style.display = "block";
   document.getElementById("chart-footer").textContent = footer;
 
