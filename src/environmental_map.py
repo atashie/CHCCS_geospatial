@@ -740,7 +740,7 @@ def _add_school_properties_layer(map_obj, school_props, all_metrics, add_to_cont
         # UHI
         if "uhi_500m" in metrics:
             popup_lines.append(
-                f"<b>UHI proxy (500m):</b> {metrics['uhi_500m']:.1f} "
+                f"<b>Urban Heat Island index (500m):</b> {metrics['uhi_500m']:.1f} "
                 f"(rank #{metrics.get('rank_uhi_500m', 'N/A')})"
             )
 
@@ -848,7 +848,7 @@ def _build_legend_html_only():
 </div>
 
 <div class="env-legend" id="legend-uhi">
-  <div class="legend-title">UHI Proxy Index</div>
+  <div class="legend-title">Urban Heat Island Index</div>
   <div class="legend-item">
     <span class="legend-bar" style="background: linear-gradient(to right, #4575b4, #ffffbf, #d73027);"></span>
     Cool &rarr; Hot
@@ -1002,7 +1002,7 @@ def create_environmental_map(
 
     # UHI proxy raster + markers
     uhi_raster_fg, _ = _add_raster_layer(
-        m, uhi_grid, uhi_bounds, "UHI Proxy (Land Cover)",
+        m, uhi_grid, uhi_bounds, "Urban Heat Island Index",
         colormap="RdYlBu_r", show=False, opacity=0.7,
         district_mask=district_mask, vmin=0, vmax=100, add_to_map=False
     )
@@ -1010,7 +1010,7 @@ def create_environmental_map(
     uhi_color_func = _make_uhi_color_func(uhi_scores["uhi_500m"])
     uhi_markers_fg = _add_school_markers_for_layer(
         m, uhi_scores, "uhi_500m", "uhi_500m",
-        uhi_color_func, "UHI Proxy (Land Cover)", show=False, add_to_map=False
+        uhi_color_func, "Urban Heat Island Index", show=False, add_to_map=False
     )
     uhi_markers_fg.add_to(m)
 
@@ -1069,7 +1069,7 @@ def create_environmental_map(
             <h1>CHCCS Environmental Analysis</h1>
             <p class="subtitle">Screening-level indices for air quality, flood risk, and urban heat
                 <button class="faq-btn" onclick="toggleFaqPanel()" title="Click for FAQ">
-                    <span class="faq-icon">?</span> Help
+                    FAQ
                 </button>
             </p>
         </div>
@@ -1088,8 +1088,8 @@ def create_environmental_map(
             <b>Net:</b> Raw TRAP minus a tree canopy mitigation factor (trees absorb pollutants). Net values can be lower where tree cover is high.</div>
         </div>
         <div class="faq-item">
-            <div class="faq-q">What is UHI Proxy?</div>
-            <div class="faq-a">Urban Heat Island (UHI) Proxy is estimated from land cover classification (ESA WorldCover), NOT from measured temperatures.
+            <div class="faq-q">What is the Urban Heat Island (UHI) Index?</div>
+            <div class="faq-a">The Urban Heat Island (UHI) Index estimates relative heat exposure based on land cover classification (ESA WorldCover), NOT measured temperatures.
             Impervious surfaces (roads, buildings) score higher; tree canopy scores lower. It indicates <b>potential</b> heat exposure, not actual temperature.</div>
         </div>
         <div class="faq-item">
@@ -1102,6 +1102,9 @@ def create_environmental_map(
             <div class="faq-q">Are these absolute risk assessments?</div>
             <div class="faq-a"><b>No.</b> All indices are <b>comparative screening tools</b> for identifying areas of potential concern.
             They should not be interpreted as definitive health or safety risk levels. Professional assessments require site-specific data collection.</div>
+        </div>
+        <div style="margin-top:10px; padding-top:8px; border-top:1px solid #ddd; font-size:12px;">
+            For a detailed methodology walkthrough, see <a href="environmental_methodology.html" style="color:#007bff;">Environmental Methodology</a>.
         </div>
     </div>
     <script>
@@ -1159,7 +1162,7 @@ def create_environmental_map(
             <label><input type="radio" name="env-layer" value="none"> None</label>
             <label><input type="radio" name="env-layer" value="raw"> Raw Air Pollution</label>
             <label><input type="radio" name="env-layer" value="net" checked> Net Air Pollution</label>
-            <label><input type="radio" name="env-layer" value="uhi"> UHI Proxy (Land Cover)</label>
+            <label><input type="radio" name="env-layer" value="uhi"> Urban Heat Island Index</label>
         </div>
         <div class="ctrl-section">
             <b>Additional Layers</b>
@@ -1382,7 +1385,7 @@ def main():
     flood_overlaps = compute_overlaps(school_props, flood_100, flood_500)
 
     # ---- Step 8: UHI proxy ----
-    print("\n[9/10] Computing UHI proxy ...")
+    print("\n[9/10] Computing Urban Heat Island index ...")
     # Use same grid extent as TRAP grids
     uhi_grid, uhi_bounds = calculate_uhi_grid(
         lulc_path, trap_bounds, resolution=args.grid_resolution
@@ -1434,7 +1437,7 @@ def main():
     print(f"  Cache: {UHI_GRID_CACHE}")
 
     # Quick UHI summary
-    print("\nUHI Proxy Summary (500m radius):")
+    print("\nUrban Heat Island Index Summary (500m radius):")
     for _, row in uhi_scores.sort_values("rank_uhi_500m").iterrows():
         print(f"  #{int(row['rank_uhi_500m']):2d}  {row['school']:30s}  "
               f"UHI={row['uhi_500m']:5.1f}")
