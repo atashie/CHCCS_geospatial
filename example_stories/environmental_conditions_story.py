@@ -594,7 +594,12 @@ a {{ color: #1565C0; }}
     <div class="step-number">4</div>
     <h2>Chapel Hill&rsquo;s Flood History</h2>
     <p>Hurricane Chantal (2025) produced a <strong>1,000-year rainfall event</strong>
-    with extensive flooding throughout Chapel Hill. Hurricane Fran (1996) and
+    with extensive flooding throughout Chapel Hill, causing an estimated
+    <strong>$54&nbsp;million in total damage</strong> to homes, businesses, and
+    public property &mdash; including $20.7&nbsp;million in commercial damage and
+    $22.6&nbsp;million in public damage. Most significant damage occurred in
+    areas of known flood risk.</p>
+    <p>Hurricane Fran (1996) and
     Hurricane Floyd (1999) each brought major flooding to the region, with
     some estimates suggesting rainfall intensities approaching or exceeding
     500-year levels in parts of central North Carolina.</p>
@@ -610,19 +615,20 @@ a {{ color: #1565C0; }}
     <div class="step-number">5</div>
     <h2>Schools at Risk: FPG &amp; Rashkis</h2>
     <p>Only <strong>2 of 11</strong> schools have FEMA flood zone overlap on
-    their property:</p>
+    their property. Percentages below represent the portion of each
+    school&rsquo;s property that falls within the referenced flood plain:</p>
     <div class="metric-box">
       <div class="metric" style="border:2px solid #FF8F00;">
         <div class="metric-value" style="color:#FF8F00;">26.4%</div>
-        <div class="metric-label">FPG: 100-year flood zone<br>(2.59 acres)</div>
+        <div class="metric-label">of FPG property in<br>100-year flood zone<br>(2.59 acres)</div>
       </div>
       <div class="metric">
         <div class="metric-value">7.1%</div>
-        <div class="metric-label">Rashkis: 100-year<br>(1.22 acres)</div>
+        <div class="metric-label">of Rashkis property in<br>100-year flood zone<br>(1.22 acres)</div>
       </div>
       <div class="metric">
         <div class="metric-value">4.8%</div>
-        <div class="metric-label">Rashkis: 500-year<br>(0.81 acres)</div>
+        <div class="metric-label">of Rashkis property in<br>500-year flood zone<br>(0.81 acres)</div>
       </div>
     </div>
     <p>Neither is being considered for closure, but both represent assets at
@@ -682,9 +688,20 @@ a {{ color: #1565C0; }}
   <div class="step" data-step="8">
     <div class="step-number">9</div>
     <h2>Policies Protecting Children from TRAP</h2>
-    <p>California prohibits siting new schools within 500 feet of freeways.
-    New Jersey requires 1,000-foot buffers. Several European countries have
-    implemented low-emission zones around schools.</p>
+    <p>A growing number of jurisdictions prohibit siting schools near major
+    roads:</p>
+    <ul style="text-align:left; margin:0.5em auto; max-width:90%; font-size:0.95em;">
+      <li><strong>California (SB&nbsp;352, 2025):</strong> Prohibits school site
+      approval within 500&nbsp;feet of a freeway or busy traffic corridor unless the
+      district proves air-quality mitigation will protect students.</li>
+      <li><strong>New York (The SIGH Act, 2024):</strong> Prevents new schools
+      within 500&nbsp;feet of a major highway.</li>
+      <li><strong>Federal (EPA guidance):</strong> Recommends 500&ndash;1,000 foot
+      buffers from major highways and distribution centers.</li>
+    </ul>
+    <p>The trend is toward <strong>more restrictive</strong> siting rules.
+    Reopening or expanding schools on sites with high traffic exposure may
+    face increasing regulatory and liability scrutiny in the years ahead.</p>
     <p>Chapel Hill has no such policy, but the data is clear: <strong>proximity
     to traffic matters for children&rsquo;s health and academic outcomes</strong>.</p>
   </div>
@@ -756,6 +773,14 @@ a {{ color: #1565C0; }}
     &mdash; a proxy based on surrounding land cover, not direct temperature
     measurement. Higher scores indicate more built-up, less vegetated
     surroundings.</p>
+    <p><strong>Why this matters for elementary schools:</strong> Children are
+    more vulnerable to heat stress than adults &mdash; their smaller body mass,
+    higher metabolic rate, and less developed thermoregulation make them
+    susceptible to heat-related illness. Extreme heat reduces outdoor recess
+    and physical activity time, and research links elevated temperatures to
+    decreased concentration and academic performance. Schools in high-UHI
+    areas also face higher cooling costs and greater risk of heat-related
+    illness during arrival, dismissal, and outdoor activities.</p>
     <div class="limitation">
       <strong>Limitation:</strong> This is a land-cover proxy, not a direct
       temperature measurement. It indicates relative heat vulnerability, not
