@@ -650,7 +650,9 @@ details[open] summary {{ margin-bottom: 8px; }}
     framework applied equally to all 11 CHCCS elementary schools.</p>
     <div class="source">
       <strong>Data:</strong> NCES EDGE 2023-24 &bull; Census ACS 5-Year (2018&ndash;2022)
-      &bull; 2020 Decennial Census &bull; OSM road network &bull; Orange County parcels
+      &bull; 2020 Decennial Census &bull; OSM road network &bull; Orange County parcels<br>
+      <strong>See also:</strong>
+      <a href="../assets/maps/closure_methodology.html">School Closure Methodology</a>
     </div>
   </div>
 
@@ -986,9 +988,10 @@ details[open] summary {{ margin-bottom: 8px; }}
       which school should close.
     </div>
     <div class="source">
-      <strong>Full methodology:</strong> See the socioeconomic, closure, and
-      environmental methodology scrollytelling pages for complete documentation
-      of data sources, algorithms, and 26+ documented limitations.
+      <strong>Full methodology:</strong>
+      <a href="../assets/maps/closure_methodology.html">School Closure Methodology</a>
+      &mdash; complete documentation of data sources, algorithms, and 26+
+      documented limitations.
     </div>
   </div>
 
