@@ -83,13 +83,15 @@ def load_mls_raw() -> pd.DataFrame:
     df = df.rename(columns={"Address": "address"})
     df = df[["address", "close_price", "price_per_sqft", "close_date",
              "Living Area", "Year Built", "Property Sub Type",
-             "Subdivision-Free Text"]].copy()
+             "Subdivision-Free Text", "Bedrooms Total"]].copy()
     df = df.rename(columns={
         "Living Area": "living_area",
         "Year Built": "year_built",
         "Property Sub Type": "property_type",
         "Subdivision-Free Text": "subdivision",
+        "Bedrooms Total": "bedrooms",
     })
+    df["bedrooms"] = pd.to_numeric(df["bedrooms"], errors="coerce")
 
     # Drop rows with no address or no price
     df = df.dropna(subset=["address", "close_price"])

@@ -303,6 +303,8 @@ Geocodes Triangle MLS closed residential sales (2023-2025) and produces a point 
 - Nominatim geocoding uses structured queries with city/state constraints to reduce false matches.
 - The script reports geocoding success rates (Census hit rate, Nominatim recovery rate, overall coverage) at runtime.
 - Census geocoding returns Census geography FIPS codes, enabling direct block-level joins without a separate spatial join step for Census-matched records.
+- The pipeline extracts a `bedrooms` column from the "Bedrooms Total" field in the raw MLS CSV. This is carried through geocoding into the GeoPackage output and displayed in map marker tooltips.
+- The socioeconomic map presents MLS data under a consolidated **"Housing Market (2023-2025)"** toggle. The chart panel renders a 2x2 grid: Homes Sold (bar), Median Price (bar), Median Price/SqFt (bar), and Bedroom Distribution (histogram). All four charts update per zone when the zone type or school selection changes.
 
 ---
 

@@ -1279,8 +1279,7 @@ METRIC_DOT_SPECS = [
     ("pct_elementary_age", "% Population Aged 5-9", "BuPu", "", "%", ".1f"),
     ("pct_young_children", "% Population Aged 0-4", "PuRd", "", "%", ".1f"),
     ("ah_units", "Affordable Housing Units", "Blues", "", " units", ",.0f"),
-    ("mls_sales_count", "Homes Sold (2023–2025)", "YlGnBu", "", " sales", ",.0f"),
-    ("mls_median_price", "Median Home Price (2023–2025)", "Greens", "$", "", ",.0f"),
+    ("mls_housing", "Housing Market (2023–2025)", "YlGnBu", "", "", ""),
 ]
 
 
@@ -1739,6 +1738,7 @@ def create_socioeconomic_map(
             addr = row.get("address", "Unknown")
             date = row.get("close_date", "")
             color = _mls_color(price)
+            bedrooms = row.get("bedrooms", None)
 
             date_str = ""
             if pd.notna(date):
@@ -1747,14 +1747,20 @@ def create_socioeconomic_map(
                 except Exception:
                     date_str = str(date)
 
+            br_popup = ""
+            br_tooltip = ""
+            if bedrooms is not None and pd.notna(bedrooms):
+                br_popup = f"Bedrooms: {int(bedrooms)}<br>"
+                br_tooltip = f" &bull; {int(bedrooms)} BR"
+
             popup_html = f"""
             <b>{addr}</b><br>
             Price: ${price:,.0f}<br>
-            Date: {date_str}
+            {br_popup}Date: {date_str}
             """
 
             tooltip_html = (
-                f"Price: ${price:,.0f}<br>"
+                f"Price: ${price:,.0f}{br_tooltip}<br>"
                 f"Date: {date_str}"
             )
 
@@ -1815,10 +1821,10 @@ def create_socioeconomic_map(
     </style>
     <div id="socio-banner">
         <div>
-            <h1>CHCCS Socioeconomic Analysis by Attendance Zone</h1>
+            <h1>CHCCS Socioeconomic Analysis</h1>
             <p class="subtitle">Census ACS 2022 5-Year Estimates &mdash; Scroll down for zone comparison charts
                 <button class="faq-btn" onclick="toggleFaqPanel()" title="Click for FAQ">
-                    <span class="faq-icon">?</span> Help
+FAQ
                 </button>
             </p>
         </div>
@@ -1835,6 +1841,11 @@ def create_socioeconomic_map(
             <div class="faq-q">What is an Attendance Zone?</div>
             <div class="faq-a">A geographic boundary determining which school students are assigned to by default.
             <b>Important:</b> Zone demographics show who <i>lives</i> in each zone, not who <i>attends</i> each school (families may use school choice, transfers, or magnets).</div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-q">What are Nearest Walk/Bike/Drive zones?</div>
+            <div class="faq-a">Areas grouped by which school is closest via that travel mode, using actual road networks (Dijkstra shortest-path algorithm).
+            <b>Walk:</b> 2.5 mph &bull; <b>Bike:</b> 12 mph &bull; <b>Drive:</b> 18-60 mph depending on road type.</div>
         </div>
         <div class="faq-item">
             <div class="faq-q">What are "Block Groups" vs "Blocks (est.)"?</div>
@@ -1857,9 +1868,13 @@ def create_socioeconomic_map(
             Denominator = total population of all ages in that area.</div>
         </div>
         <div class="faq-item">
-            <div class="faq-q">What are Nearest Walk/Bike/Drive zones?</div>
-            <div class="faq-a">Areas grouped by which school is closest via that travel mode, using actual road networks (Dijkstra shortest-path algorithm).
-            <b>Walk:</b> 2.5 mph &bull; <b>Bike:</b> 12 mph &bull; <b>Drive:</b> 18-60 mph depending on road type.</div>
+            <div class="faq-q">What does "% Below 185% Poverty (FRL Proxy)" mean?</div>
+            <div class="faq-a">The percentage of residents with household income below <b>185% of the federal poverty line</b>.
+            This threshold is the eligibility cutoff for <b>Free/Reduced-price Lunch (FRL)</b> in public schools, making it a useful proxy for school-level economic disadvantage.</div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-q">Where can I learn more about the methodology?</div>
+            <div class="faq-a">See the <a href="socioeconomic_methodology.html" target="_blank" style="color:#2166ac;">Socioeconomic Methodology</a> page for detailed documentation of data sources, processing steps, and limitations.</div>
         </div>
     </div>
     <script>
@@ -2053,9 +2068,21 @@ def create_socioeconomic_map(
         metric_prefixes = [""] + [spec[3] for spec in METRIC_DOT_SPECS]
         metric_suffixes = [""] + [spec[4] for spec in METRIC_DOT_SPECS]
 
-        # Metric radio button labels
+        # Metric radio button labels with subsection headers
         radio_html = ""
         for i, name in enumerate(metric_names):
+            # Insert subsection headers
+            if i == 0:
+                radio_html += (
+                    '<div style="font-size:9px;text-transform:uppercase;color:#888;'
+                    'letter-spacing:0.8px;margin:4px 0 2px 0;">ACS Census</div>'
+                )
+            elif name == "Affordable Housing Units":
+                radio_html += (
+                    '<div style="font-size:9px;text-transform:uppercase;color:#888;'
+                    'letter-spacing:0.8px;margin:6px 0 2px 0;padding-top:4px;'
+                    'border-top:1px solid #ddd;">Housing</div>'
+                )
             checked = ' checked' if i == 1 else ''
             radio_html += (
                 f'<label style="display:block;margin:1px 0;cursor:pointer;">'
@@ -2101,37 +2128,61 @@ def create_socioeconomic_map(
 
         # Zone-level MLS aggregates — per zone type (nested lists)
         def _mls_by_zone_type(mls_gdf, zone_gdf, school_names):
-            """Spatial-join MLS points to zone polygons, return (sales, prices)."""
+            """Spatial-join MLS points to zone polygons, return (sales, prices, ppsf, bedrooms_by_zone)."""
             n = len(school_names)
+            empty_beds = [[] for _ in range(n)]
             if mls_gdf is None or zone_gdf is None or len(mls_gdf) == 0 or len(zone_gdf) == 0:
-                return [0] * n, [0] * n
+                return [0] * n, [0] * n, [0] * n, empty_beds
             mls_wgs = mls_gdf.to_crs(CRS_WGS84)
             zones_wgs = zone_gdf.to_crs(CRS_WGS84)
             joined = gpd.sjoin(mls_wgs, zones_wgs[["school", "geometry"]],
                                how="left", predicate="within")
-            agg = (joined.dropna(subset=["school"]).groupby("school")
-                   .agg(sales=("close_price", "size"),
-                        median_price=("close_price", "median"))
-                   .reset_index())
+            valid = joined.dropna(subset=["school"])
+            agg_cols = dict(
+                sales=("close_price", "size"),
+                median_price=("close_price", "median"),
+            )
+            if "price_per_sqft" in valid.columns:
+                agg_cols["median_ppsf"] = ("price_per_sqft", "median")
+            agg = valid.groupby("school").agg(**agg_cols).reset_index()
             agg_dict = agg.set_index("school")
             sales = [int(agg_dict.loc[s, "sales"]) if s in agg_dict.index else 0
                      for s in school_names]
             prices = [round(float(agg_dict.loc[s, "median_price"])) if s in agg_dict.index else 0
                       for s in school_names]
-            return sales, prices
+            ppsf = [round(float(agg_dict.loc[s, "median_ppsf"])) if s in agg_dict.index and "median_ppsf" in agg_dict.columns else 0
+                    for s in school_names]
+            # Collect raw bedroom values per zone
+            bedrooms_by_zone = [[] for _ in range(n)]
+            has_bedrooms = "bedrooms" in valid.columns
+            if has_bedrooms:
+                name_to_idx = {s: i for i, s in enumerate(school_names)}
+                for _, row in valid.iterrows():
+                    si = name_to_idx.get(row["school"])
+                    if si is not None and pd.notna(row.get("bedrooms")):
+                        bedrooms_by_zone[si].append(int(row["bedrooms"]))
+            return sales, prices, ppsf, bedrooms_by_zone
 
         all_mls_sales = []  # list of lists, one per zone type
         all_mls_prices = []
+        all_mls_ppsf = []
+        all_mls_bedrooms = []
         for zt_gdf in active_zone_gdfs:
-            sales, prices = _mls_by_zone_type(mls_data, zt_gdf, master_school_names)
+            sales, prices, ppsf, bedrooms = _mls_by_zone_type(mls_data, zt_gdf, master_school_names)
             all_mls_sales.append(sales)
             all_mls_prices.append(prices)
+            all_mls_ppsf.append(ppsf)
+            all_mls_bedrooms.append(bedrooms)
         if not all_mls_sales:
             n = len(master_school_names)
             all_mls_sales = [[0] * n]
             all_mls_prices = [[0] * n]
+            all_mls_ppsf = [[0] * n]
+            all_mls_bedrooms = [[[] for _ in range(n)]]
         mls_sales_by_zone_js = _json.dumps(all_mls_sales, separators=(",", ":"))
         mls_price_by_zone_js = _json.dumps(all_mls_prices, separators=(",", ":"))
+        mls_ppsf_by_zone_js = _json.dumps(all_mls_ppsf, separators=(",", ":"))
+        mls_bedrooms_by_zone_js = _json.dumps(all_mls_bedrooms, separators=(",", ":"))
 
         # BG / Block layer JS refs
         bg_layers_js = "[" + ",".join(bg_fg_names) + "]"
@@ -2251,6 +2302,8 @@ def create_socioeconomic_map(
             var ahByZone = {ah_by_zone_js};
             var mlsSalesByZone = {mls_sales_by_zone_js};
             var mlsPriceByZone = {mls_price_by_zone_js};
+            var mlsPpsfByZone = {mls_ppsf_by_zone_js};
+            var mlsBedroomsByZone = {mls_bedrooms_by_zone_js};
             var blockColors = {block_colors_js};
             var blockValues = {block_values_js};
             var raceColors = {race_colors_js};
@@ -2291,7 +2344,7 @@ def create_socioeconomic_map(
             }}
             function isMlsMetric(idx) {{
                 var n = metricNames[idx];
-                return n && (n.indexOf('Homes Sold') === 0 || n.indexOf('Median Home Price') === 0);
+                return n && n.indexOf('Housing Market') === 0;
             }}
             function isCountOrZoneMetric(idx) {{
                 return isHousingMetric(idx) || isMlsMetric(idx);
@@ -2311,15 +2364,27 @@ def create_socioeconomic_map(
                     card.className = 'zone-card';
                     card.innerHTML = '<div class="zone-card-avg" style="padding:10px;">Select a metric to see zone distributions</div>';
                     zoneStrip.appendChild(card);
-                }} else if (isHousing || isMls) {{
-                    currentLayout = isHousing ? 'housing' : 'mls';
-                    var title = isHousing ? 'Total Affordable Housing Units by Zone' : metricNames[currentMetric] + ' by Zone';
+                }} else if (isHousing) {{
+                    currentLayout = 'housing';
                     zoneStrip.innerHTML =
                         '<div id="barplot-panel" style="display:flex;gap:12px;width:100%;">' +
                         '  <div style="flex:1;max-width:500px;margin:0 auto;">' +
-                        '    <div class="barplot-title">' + title + '</div>' +
+                        '    <div class="barplot-title">Total Affordable Housing Units by Zone</div>' +
                         '    <canvas id="bar-ah" width="460" height="320"></canvas>' +
                         '  </div>' +
+                        '</div>';
+                }} else if (isMls) {{
+                    currentLayout = 'mls';
+                    zoneStrip.innerHTML =
+                        '<div id="mls-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:960px;margin:0 auto;padding:8px;">' +
+                        '  <div><div class="barplot-title">Homes Sold</div>' +
+                        '    <canvas id="bar-mls-sales" width="440" height="260"></canvas></div>' +
+                        '  <div><div class="barplot-title">Median Home Price</div>' +
+                        '    <canvas id="bar-mls-price" width="440" height="260"></canvas></div>' +
+                        '  <div><div class="barplot-title">Median Price / Sq Ft</div>' +
+                        '    <canvas id="bar-mls-ppsf" width="440" height="260"></canvas></div>' +
+                        '  <div><div class="barplot-title">Bedrooms Distribution</div>' +
+                        '    <canvas id="hist-bedrooms" width="440" height="260"></canvas></div>' +
                         '</div>';
                 }} else if (isIncome) {{
                     currentLayout = 'histogram';
@@ -2505,6 +2570,104 @@ def create_socioeconomic_map(
                 ctx.textAlign = 'left';
             }}
 
+            // Zone colors for bedroom histogram stacking
+            var zoneHslColors = (function() {{
+                var colors = [];
+                var n = masterSchools.length;
+                for (var i = 0; i < n; i++) {{
+                    var hue = Math.round(i * 360 / n);
+                    colors.push('hsl(' + hue + ',60%,55%)');
+                }}
+                return colors;
+            }})();
+
+            function drawBedroomHistogram(canvasId, bedroomArrays, zoneNames) {{
+                var canvas = document.getElementById(canvasId);
+                if (!canvas) return;
+                var ctx = canvas.getContext('2d');
+                var W = canvas.width, H = canvas.height;
+                ctx.clearRect(0, 0, W, H);
+
+                // Check if any data exists
+                var hasData = false;
+                for (var i = 0; i < bedroomArrays.length; i++) {{
+                    if (bedroomArrays[i] && bedroomArrays[i].length > 0) {{ hasData = true; break; }}
+                }}
+                if (!hasData) {{
+                    ctx.fillStyle = '#999'; ctx.font = '12px sans-serif';
+                    ctx.fillText('No bedroom data available', 20, H / 2);
+                    return;
+                }}
+
+                var binLabels = ['1 BR', '2 BR', '3 BR', '4 BR', '5+ BR'];
+                var nBins = binLabels.length;
+                var nZones = zoneNames.length;
+
+                // Count per bin per zone
+                var counts = [];  // [bin][zone]
+                for (var b = 0; b < nBins; b++) {{
+                    counts.push(new Array(nZones).fill(0));
+                }}
+                for (var zi = 0; zi < nZones; zi++) {{
+                    var arr = bedroomArrays[zi] || [];
+                    for (var k = 0; k < arr.length; k++) {{
+                        var br = arr[k];
+                        var bin = (br >= 5) ? 4 : (br >= 1 ? br - 1 : 0);
+                        counts[bin][zi]++;
+                    }}
+                }}
+
+                // Find max stacked height
+                var maxStack = 0;
+                for (var b = 0; b < nBins; b++) {{
+                    var s = 0;
+                    for (var zi = 0; zi < nZones; zi++) s += counts[b][zi];
+                    if (s > maxStack) maxStack = s;
+                }}
+                if (maxStack === 0) maxStack = 1;
+
+                var leftPad = 35, rightPad = 10, topPad = 8, botPad = 40;
+                var chartW = W - leftPad - rightPad;
+                var chartH = H - topPad - botPad;
+                var barW = Math.floor(chartW / nBins) - 4;
+
+                // Draw bars
+                for (var b = 0; b < nBins; b++) {{
+                    var x = leftPad + b * (barW + 4) + 2;
+                    var yOff = 0;
+                    for (var zi = 0; zi < nZones; zi++) {{
+                        if (counts[b][zi] === 0) continue;
+                        var segH = (counts[b][zi] / maxStack) * chartH;
+                        ctx.fillStyle = zoneHslColors[zi];
+                        ctx.fillRect(x, topPad + chartH - yOff - segH, barW, segH);
+                        yOff += segH;
+                    }}
+                    // Bin label
+                    ctx.fillStyle = '#333'; ctx.font = '10px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(binLabels[b], x + barW / 2, topPad + chartH + 14);
+                }}
+
+                // Y-axis label
+                ctx.fillStyle = '#999'; ctx.font = '10px sans-serif';
+                ctx.textAlign = 'right';
+                ctx.fillText(maxStack.toString(), leftPad - 4, topPad + 6);
+                ctx.fillText('0', leftPad - 4, topPad + chartH);
+
+                // Compact legend (below bin labels)
+                ctx.font = '8px sans-serif'; ctx.textAlign = 'left';
+                var lx = leftPad, ly = topPad + chartH + 26;
+                function shortN(s) {{ return s.replace(' Elementary', '').replace(' Bilingue', ''); }}
+                for (var zi = 0; zi < nZones; zi++) {{
+                    ctx.fillStyle = zoneHslColors[zi];
+                    ctx.fillRect(lx, ly, 8, 8);
+                    ctx.fillStyle = '#333';
+                    ctx.fillText(shortN(zoneNames[zi]), lx + 10, ly + 7);
+                    lx += ctx.measureText(shortN(zoneNames[zi])).width + 16;
+                    if (lx > W - 40) {{ lx = leftPad; ly += 11; }}
+                }}
+            }}
+
             function drawHistogram(canvasId, values, vmin, vmax, prefix, suffix, globalMax) {{
                 var canvas = document.getElementById(canvasId);
                 if (!canvas) return;
@@ -2614,22 +2777,12 @@ def create_socioeconomic_map(
                     return;
                 }}
 
-                // Special case: MLS metrics - use pre-computed zone-level data
+                // Special case: MLS Housing Market — draw all 4 charts
                 if (isMls) {{
-                    var mName = metricNames[currentMetric];
-                    var zoneTotals;
-                    var fmt;
-                    if (mName.indexOf('Homes Sold') === 0) {{
-                        zoneTotals = mlsSalesByZone[currentZoneType];
-                        fmt = 'count';
-                    }} else if (mName.indexOf('Median Home Price') === 0) {{
-                        zoneTotals = mlsPriceByZone[currentZoneType];
-                        fmt = 'dollar';
-                    }}
-                    // Update title to reflect current MLS metric
-                    var titleEl = zoneStrip.querySelector('.barplot-title');
-                    if (titleEl) titleEl.textContent = mName + ' by Zone';
-                    drawBarplot('bar-ah', zoneNames, zoneTotals, fmt);
+                    drawBarplot('bar-mls-sales', zoneNames, mlsSalesByZone[currentZoneType], 'count');
+                    drawBarplot('bar-mls-price', zoneNames, mlsPriceByZone[currentZoneType], 'dollar');
+                    drawBarplot('bar-mls-ppsf', zoneNames, mlsPpsfByZone[currentZoneType], 'dollar');
+                    drawBedroomHistogram('hist-bedrooms', mlsBedroomsByZone[currentZoneType], zoneNames);
                     return;
                 }}
 

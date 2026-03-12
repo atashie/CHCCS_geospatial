@@ -160,13 +160,13 @@ For a detailed, visual explanation of every step — from Census data loading th
 
 The socioeconomic map also incorporates MLS (Multiple Listing Service) home sales data to show recent real estate market conditions across attendance zones.
 
-**Data:** 2,193 closed residential sales from the Triangle MLS, covering 2023-2025. Each record includes the sale address and close price.
+**Data:** 2,193 closed residential sales from the Triangle MLS, covering 2023-2025. Each record includes the sale address, close price, and bedroom count (from the "Bedrooms Total" field in the raw CSV).
 
 **Geocoding:** Addresses are geocoded using the U.S. Census Bureau batch geocoding API (primary) with OpenStreetMap Nominatim as a fallback for unmatched records. Successfully geocoded sales are spatially joined to attendance zones and Census blocks.
 
-**What you see:** MLS sales are spatially joined to all zone types (attendance zones, walk zones, nearest walk/bike/drive). The interactive map shows per-zone sale counts and median close prices that update dynamically when switching zone types. Per-block and per-zone price-per-square-foot data is retained in the CSV output but not shown in the map UI.
+**What you see:** MLS sales are spatially joined to all zone types (attendance zones, walk zones, nearest walk/bike/drive). The interactive map provides a consolidated **"Housing Market (2023-2025)"** toggle that displays a 2x2 chart grid per zone: Homes Sold, Median Price, Median Price/SqFt, and Bedroom Distribution histogram. Charts update dynamically when switching zone types. Individual MLS markers show sale price, close date, and bedroom count on hover.
 
-**Privacy:** Map markers show sale price and close date on hover — addresses are not displayed. Point locations are approximate (interpolated along road centerlines by the geocoder, not exact rooftops or parcel centroids), which provides an additional degree of location privacy.
+**Privacy:** Map markers show sale price, close date, and bedroom count on hover — addresses are not displayed. Point locations are approximate (interpolated along road centerlines by the geocoder, not exact rooftops or parcel centroids), which provides an additional degree of location privacy.
 
 **Key limitations:**
 - **MLS-only:** Does not include for-sale-by-owner (FSBO) or off-market transactions
