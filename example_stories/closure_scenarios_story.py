@@ -85,17 +85,17 @@ DEFAULT_COLOR = "#888888"
 # UNC Carolina Demography / Carolina Population Center (PMR2 Forecast)
 # Pre-Woolpert capacity figures
 ENROLLMENT_PROJECTIONS = [
-    {"school": "Carrboro Elementary",              "capacity": 518, "enroll_2035": 386, "util_2035": 75},
-    {"school": "Ephesus Elementary",               "capacity": 436, "enroll_2035": 363, "util_2035": 83},
-    {"school": "Estes Hills Elementary",           "capacity": 516, "enroll_2035": 348, "util_2035": 67},
-    {"school": "Frank Porter Graham Bilingue",     "capacity": 522, "enroll_2035": 493, "util_2035": 94},
-    {"school": "Glenwood Elementary",              "capacity": 412, "enroll_2035": 409, "util_2035": 99},
-    {"school": "McDougle Elementary",              "capacity": 548, "enroll_2035": 499, "util_2035": 91},
-    {"school": "Morris Grove Elementary",          "capacity": 568, "enroll_2035": 330, "util_2035": 58},
-    {"school": "Northside Elementary",             "capacity": 568, "enroll_2035": 288, "util_2035": 51},
-    {"school": "Rashkis Elementary",               "capacity": 568, "enroll_2035": 247, "util_2035": 43},
-    {"school": "Scroggs Elementary",               "capacity": 558, "enroll_2035": 277, "util_2035": 50},
-    {"school": "Seawell Elementary",               "capacity": 450, "enroll_2035": 319, "util_2035": 71},
+    {"school": "Carrboro Elementary",              "capacity": 518, "enroll_2030": 398, "util_2030": 77},
+    {"school": "Ephesus Elementary",               "capacity": 436, "enroll_2030": 375, "util_2030": 86},
+    {"school": "Estes Hills Elementary",           "capacity": 516, "enroll_2030": 359, "util_2030": 70},
+    {"school": "Frank Porter Graham Bilingue",     "capacity": 522, "enroll_2030": 508, "util_2030": 97},
+    {"school": "Glenwood Elementary",              "capacity": 412, "enroll_2030": 420, "util_2030": 102},
+    {"school": "McDougle Elementary",              "capacity": 548, "enroll_2030": 517, "util_2030": 94},
+    {"school": "Morris Grove Elementary",          "capacity": 568, "enroll_2030": 340, "util_2030": 60},
+    {"school": "Northside Elementary",             "capacity": 568, "enroll_2030": 299, "util_2030": 53},
+    {"school": "Rashkis Elementary",               "capacity": 568, "enroll_2030": 254, "util_2030": 45},
+    {"school": "Scroggs Elementary",               "capacity": 558, "enroll_2030": 286, "util_2030": 51},
+    {"school": "Seawell Elementary",               "capacity": 450, "enroll_2030": 325, "util_2030": 72},
 ]
 
 
@@ -643,7 +643,7 @@ a {{ color: #1565C0; }}
     {seawell_roads_04}
     <p>The pattern is similar to the 5&ndash;9 analysis but at lower
     magnitude &mdash; Seawell&rsquo;s zone has relatively few young
-    children ({seawell_kids["children_0_4"]} ages 0&ndash;4).</p>
+    ({seawell_kids["children_0_4"]}) young children aged 0&ndash;4.</p>
   </div>
 
   <!-- Step 3: Ephesus Closure — Children 5-9 -->
@@ -703,21 +703,24 @@ a {{ color: #1565C0; }}
   <!-- Step 6: Enrollment Projections vs Capacity -->
   <div class="step" data-step="6">
     <div class="step-number">4b</div>
-    <h2>Projected Enrollment vs. Capacity (2035)</h2>
-    <p>UNC Carolina Demography projections (PMR2 Forecast) estimate 2035
+    <h2>Projected Enrollment vs. Capacity (2030)</h2>
+    <p>UNC Carolina Demography projections (PMR2 Forecast) estimate 2030
     enrollment against current (pre-Woolpert) building capacities. The chart
     shows each school&rsquo;s projected utilization rate.</p>
 
     <h3>Key observations</h3>
     <ul style="margin:8px 0 12px 20px;line-height:1.8;">
-      <li><span class="glenwood-label">Glenwood</span> is nearly at capacity
-        (99%) &mdash; virtually no room for additional students</li>
-      <li><span class="fpg-label">FPG</span> (94%) and McDougle (91%) have
-        little remaining capacity</li>
-      <li><span class="ephesus-label">Ephesus</span> at 83% &mdash; moderate
+      <li><span class="glenwood-label">Glenwood</span> is <strong>over</strong>
+        capacity (102%) &mdash; no room for additional students</li>
+      <li><span class="fpg-label">FPG</span> (97%) and McDougle (94%) are
+        near capacity</li>
+      <li><span class="ephesus-label">Ephesus</span> at 86% &mdash; moderate
         utilization, not underused</li>
-      <li>Schools with the most spare capacity (Rashkis 43%, Scroggs 50%,
-        Northside 51%) are in the west/south of the district</li>
+      <li>Schools with the most spare capacity (Rashkis 45%, Scroggs 51%,
+        Northside 53%) are in the west/south of the district</li>
+      <li>Rashkis (45% occupied, 314 spare seats) may be able to accommodate
+        Glenwood&rsquo;s dual language program given its projected low
+        enrollment</li>
     </ul>
 
     <div class="insight">
@@ -791,9 +794,9 @@ a {{ color: #1565C0; }}
         in the area with the most children, forcing the longest commutes
         on the most families</li>
       <li><strong>Nearby schools are near capacity</strong> &mdash;
-        Glenwood (99%), FPG (94%), and McDougle (91%) have little room
+        Glenwood (102%), FPG (97%), and McDougle (94%) have little room
         to absorb displaced students, while spare capacity sits in the
-        west/south (Rashkis 43%, Scroggs 50%)</li>
+        west/south (Rashkis 45%, Scroggs 51%)</li>
     </ol>
     <div class="source">
       <strong>Interactive closure map:</strong>
@@ -995,7 +998,7 @@ function renderEnrollmentChart(containerId, data) {{
   var maxScale = 110;
   var html = "";
   data.forEach(function(d) {{
-    var util = d.util_2035;
+    var util = d.util_2030;
     var width = (util / maxScale * 100).toFixed(1);
     var label = d.school.replace(" Elementary", "").replace(" Bilingue", "");
     var barColor;
@@ -1022,7 +1025,7 @@ function showEnrollmentChart() {{
   document.getElementById("chart-panel").style.display = "block";
   var titleEl = document.querySelector("#chart-title h3");
   var subtitleEl = document.querySelector("#chart-title p");
-  titleEl.textContent = "Projected 2035 Utilization by School";
+  titleEl.textContent = "Projected 2030 Utilization by School";
   subtitleEl.textContent = "UNC Carolina Demography PMR2 Forecast \u2014 pre-Woolpert capacity";
   document.getElementById("chart-footer").innerHTML =
     '<span style="display:inline-block;width:12px;height:12px;background:#1565C0;border-radius:2px;vertical-align:middle;"></span> &lt;75%&ensp;'
@@ -1101,7 +1104,15 @@ layers.schools = L.geoJSON(SCHOOLS, {{
     }});
   }},
   onEachFeature: function(f, layer) {{
-    layer.bindTooltip(f.properties.school, {{permanent: false}});
+    var name = f.properties.school;
+    var tip = "<strong>" + name + "</strong>";
+    var enr = ENROLLMENT_DATA.find(function(d) {{ return d.school === name; }});
+    if (enr) {{
+        tip += "<br>Projected Enrollment (2030): " + enr.enroll_2030
+            + "<br>Capacity: " + enr.capacity
+            + "<br>% Occupied (2030): " + enr.util_2030 + "%";
+    }}
+    layer.bindTooltip(tip, {{permanent: false}});
   }}
 }});
 
@@ -1120,13 +1131,15 @@ layers.schoolsLabeled = L.geoJSON(SCHOOLS, {{
     }});
   }},
   onEachFeature: function(f, layer) {{
-    var label = f.properties.school.replace(" Elementary", "").replace(" Bilingue", "");
-    layer.bindTooltip(label, {{
-      permanent: true,
-      direction: "right",
-      offset: [10, 0],
-      className: "school-label-tip"
-    }});
+    var name = f.properties.school;
+    var tip = "<strong>" + name + "</strong>";
+    var enr = ENROLLMENT_DATA.find(function(d) {{ return d.school === name; }});
+    if (enr) {{
+        tip += "<br>Projected Enrollment (2030): " + enr.enroll_2030
+            + "<br>Capacity: " + enr.capacity
+            + "<br>% Occupied (2030): " + enr.util_2030 + "%";
+    }}
+    layer.bindTooltip(tip, {{permanent: false}});
   }}
 }});
 
@@ -1418,7 +1431,7 @@ def main():
     # [6/9] Enrollment projections
     print("[6/9] Preparing enrollment projections ...")
     enrollment_sorted = sorted(
-        ENROLLMENT_PROJECTIONS, key=lambda d: d["util_2035"], reverse=True
+        ENROLLMENT_PROJECTIONS, key=lambda d: d["util_2030"], reverse=True
     )
     enrollment_json = json.dumps(enrollment_sorted, separators=(",", ":"))
     _progress(f"Enrollment projections: {len(enrollment_sorted)} schools")
