@@ -82,6 +82,22 @@ SCHOOL_COLORS = {
 }
 DEFAULT_COLOR = "#888888"
 
+# UNC Carolina Demography / Carolina Population Center (PMR2 Forecast)
+# Pre-Woolpert capacity figures
+ENROLLMENT_PROJECTIONS = [
+    {"school": "Carrboro Elementary",              "capacity": 518, "enroll_2035": 386, "util_2035": 75},
+    {"school": "Ephesus Elementary",               "capacity": 436, "enroll_2035": 363, "util_2035": 83},
+    {"school": "Estes Hills Elementary",           "capacity": 516, "enroll_2035": 348, "util_2035": 67},
+    {"school": "Frank Porter Graham Bilingue",     "capacity": 522, "enroll_2035": 493, "util_2035": 94},
+    {"school": "Glenwood Elementary",              "capacity": 412, "enroll_2035": 409, "util_2035": 99},
+    {"school": "McDougle Elementary",              "capacity": 548, "enroll_2035": 499, "util_2035": 91},
+    {"school": "Morris Grove Elementary",          "capacity": 568, "enroll_2035": 330, "util_2035": 58},
+    {"school": "Northside Elementary",             "capacity": 568, "enroll_2035": 288, "util_2035": 51},
+    {"school": "Rashkis Elementary",               "capacity": 568, "enroll_2035": 247, "util_2035": 43},
+    {"school": "Scroggs Elementary",               "capacity": 558, "enroll_2035": 277, "util_2035": 50},
+    {"school": "Seawell Elementary",               "capacity": 450, "enroll_2035": 319, "util_2035": 71},
+]
+
 
 # ---------------------------------------------------------------------------
 # Utility functions
@@ -684,8 +700,41 @@ a {{ color: #1565C0; }}
     </div>
   </div>
 
-  <!-- Step 6: Where the Children Live (Choropleth) -->
+  <!-- Step 6: Enrollment Projections vs Capacity -->
   <div class="step" data-step="6">
+    <div class="step-number">4b</div>
+    <h2>Projected Enrollment vs. Capacity (2035)</h2>
+    <p>UNC Carolina Demography projections (PMR2 Forecast) estimate 2035
+    enrollment against current (pre-Woolpert) building capacities. The chart
+    shows each school&rsquo;s projected utilization rate.</p>
+
+    <h3>Key observations</h3>
+    <ul style="margin:8px 0 12px 20px;line-height:1.8;">
+      <li><span class="glenwood-label">Glenwood</span> is nearly at capacity
+        (99%) &mdash; virtually no room for additional students</li>
+      <li><span class="fpg-label">FPG</span> (94%) and McDougle (91%) have
+        little remaining capacity</li>
+      <li><span class="ephesus-label">Ephesus</span> at 83% &mdash; moderate
+        utilization, not underused</li>
+      <li>Schools with the most spare capacity (Rashkis 43%, Scroggs 50%,
+        Northside 51%) are in the west/south of the district</li>
+    </ul>
+
+    <div class="insight">
+      <strong>Capacity geography:</strong> Closing a school pushes students
+      toward schools that are already near capacity, while the spare seats
+      are geographically distant &mdash; in the west and south of the
+      district.
+    </div>
+
+    <div class="source">
+      <strong>Source:</strong> UNC Carolina Demography / Carolina Population
+      Center (PMR2 Forecast, pre-Woolpert capacity)
+    </div>
+  </div>
+
+  <!-- Step 7: Where the Children Live (Choropleth) -->
+  <div class="step" data-step="7">
     <div class="step-number">5</div>
     <h2>Where the Children Live</h2>
     <p>The choropleth shows the concentration of elementary-age children
@@ -696,8 +745,8 @@ a {{ color: #1565C0; }}
     <p>This is where elementary capacity is needed most.</p>
   </div>
 
-  <!-- Step 7: The School Desert Scenario -->
-  <div class="step" data-step="7">
+  <!-- Step 8: The School Desert Scenario -->
+  <div class="step" data-step="8">
     <div class="step-number">6</div>
     <h2>The School Desert Scenario</h2>
     <p>Now imagine closing <strong>both</strong>
@@ -721,11 +770,11 @@ a {{ color: #1565C0; }}
     farthest.</p>
   </div>
 
-  <!-- Step 8: Summary — What the Data Shows -->
-  <div class="step" data-step="8">
+  <!-- Step 9: Summary — What the Data Shows -->
+  <div class="step" data-step="9">
     <div class="step-number">7</div>
     <h2>What the Data Shows</h2>
-    <p>Three key findings from the closure analysis:</p>
+    <p>Four key findings from the closure analysis:</p>
     <ol style="margin:8px 0 12px 20px;line-height:1.8;">
       <li><strong>Ephesus closure creates larger traffic impacts than
         Seawell</strong> &mdash; Ephesus serves ~{int(kids_ratio)}x more
@@ -741,6 +790,10 @@ a {{ color: #1565C0; }}
       <li><strong>Closing eastern schools creates a school desert</strong>
         in the area with the most children, forcing the longest commutes
         on the most families</li>
+      <li><strong>Nearby schools are near capacity</strong> &mdash;
+        Glenwood (99%), FPG (94%), and McDougle (91%) have little room
+        to absorb displaced students, while spare capacity sits in the
+        west/south (Rashkis 43%, Scroggs 50%)</li>
     </ol>
     <div class="source">
       <strong>Interactive closure map:</strong>
@@ -753,7 +806,8 @@ a {{ color: #1565C0; }}
     <p style="margin-top:16px;font-size:0.85em;color:#888;">
       <strong>Data sources:</strong> NCES EDGE 2023-24 &bull; ACS 5-Year
       &bull; OpenStreetMap road network &bull;
-      Orange County parcel data
+      Orange County parcel data &bull;
+      UNC Carolina Demography (PMR2 Forecast)
     </p>
   </div>
 
@@ -781,6 +835,7 @@ var DISTRICT = {data["district_json"]};
 var ROAD_GEOJSON = {data["road_geojson"]};
 var BLOCK_GROUPS = {data["blockgroups_json"]};
 var CHILDREN_DATA = {data["children_chart_data"]};
+var ENROLLMENT_DATA = {data["enrollment_json"]};
 
 // Traffic base64 arrays — extracted directly from school_closure_analysis.html
 var TRAFFIC_B64 = {json.dumps(data["traffic_b64"])};
@@ -933,6 +988,49 @@ function showChart() {{
   document.getElementById("chart-footer").textContent =
     "Higher values = more future kindergarteners in that school's drive-time zone.";
   renderBars("chart-bars", CHILDREN_DATA, "children_0_4");
+}}
+
+// === Enrollment chart ===
+function renderEnrollmentChart(containerId, data) {{
+  var maxScale = 110;
+  var html = "";
+  data.forEach(function(d) {{
+    var util = d.util_2035;
+    var width = (util / maxScale * 100).toFixed(1);
+    var label = d.school.replace(" Elementary", "").replace(" Bilingue", "");
+    var barColor;
+    if (util > 100) barColor = "#C62828";
+    else if (util >= 90) barColor = "#F9A825";
+    else if (util >= 75) barColor = "#757575";
+    else barColor = "#1565C0";
+    var fontColor = SCHOOL_COLORS[d.school] ? (SCHOOL_COLORS[d.school]) : "#555";
+    var fontWeight = SCHOOL_COLORS[d.school] ? "bold" : "normal";
+    html += '<div style="display:flex;align-items:center;margin:4px 0;font-size:0.82em;padding:2px 4px;border-radius:4px;">'
+      + '<div style="width:140px;text-align:right;padding-right:8px;color:' + fontColor + ';font-weight:' + fontWeight + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'
+      + label + '</div>'
+      + '<div style="flex:1;background:#eee;border-radius:3px;height:18px;position:relative;">'
+      + '<div style="width:' + width + '%;height:100%;background:' + barColor + ';border-radius:3px;opacity:0.85;"></div>'
+      + '<div style="position:absolute;left:' + (100/maxScale*100).toFixed(1) + '%;top:0;height:100%;border-left:2px dashed #C62828;"></div>'
+      + '</div>'
+      + '<div style="width:50px;text-align:right;padding-left:6px;color:#555;font-size:0.95em;">'
+      + util + '%</div></div>';
+  }});
+  document.getElementById(containerId).innerHTML = html;
+}}
+
+function showEnrollmentChart() {{
+  document.getElementById("chart-panel").style.display = "block";
+  var titleEl = document.querySelector("#chart-title h3");
+  var subtitleEl = document.querySelector("#chart-title p");
+  titleEl.textContent = "Projected 2035 Utilization by School";
+  subtitleEl.textContent = "UNC Carolina Demography PMR2 Forecast \u2014 pre-Woolpert capacity";
+  document.getElementById("chart-footer").innerHTML =
+    '<span style="display:inline-block;width:12px;height:12px;background:#1565C0;border-radius:2px;vertical-align:middle;"></span> &lt;75%&ensp;'
+    + '<span style="display:inline-block;width:12px;height:12px;background:#757575;border-radius:2px;vertical-align:middle;"></span> 75\u201390%&ensp;'
+    + '<span style="display:inline-block;width:12px;height:12px;background:#F9A825;border-radius:2px;vertical-align:middle;"></span> 90\u2013100%&ensp;'
+    + '<span style="display:inline-block;width:12px;height:12px;background:#C62828;border-radius:2px;vertical-align:middle;"></span> &gt;100%&ensp;'
+    + '<span style="color:#C62828;">---|</span> 100% capacity';
+  renderEnrollmentChart("chart-bars", ENROLLMENT_DATA);
 }}
 
 // === Map setup ===
@@ -1159,14 +1257,18 @@ function handleStep(idx) {{
       showChart();
       break;
 
-    case 6: // Block Group Choropleth
+    case 6: // Enrollment Projections
+      showEnrollmentChart();
+      break;
+
+    case 7: // Block Group Choropleth
       layers.district.addTo(map);
       layers.blockGroups.addTo(map);
       layers.schoolsLabeled.addTo(map);
       districtView();
       break;
 
-    case 7: // School Desert — choropleth + closed markers
+    case 8: // School Desert — choropleth + closed markers
       layers.blockGroups.addTo(map);
       layers.schoolsLabeled.addTo(map);
       if (layers.closedXEphesus) layers.closedXEphesus.addTo(map);
@@ -1174,7 +1276,7 @@ function handleStep(idx) {{
       zoomToEast();
       break;
 
-    case 8: // Summary
+    case 9: // Summary
       layers.district.addTo(map);
       layers.schools.addTo(map);
       dimOverlay.style.display = "block";
@@ -1232,8 +1334,8 @@ def main():
     print("School Closure Scenarios: Editorial Story Generator")
     print("=" * 60)
 
-    # [1/8] Load schools
-    print("\n[1/8] Loading school locations ...")
+    # [1/9] Load schools
+    print("\n[1/9] Loading school locations ...")
     schools = load_schools()
     schools_gdf = gpd.GeoDataFrame(
         schools,
@@ -1243,13 +1345,13 @@ def main():
     schools_json = gdf_to_geojson_str(schools_gdf, properties=["school"])
     _progress(f"Loaded {len(schools)} schools")
 
-    # [2/8] District boundary
-    print("[2/8] Loading district boundary ...")
+    # [2/9] District boundary
+    print("[2/9] Loading district boundary ...")
     district = load_district_boundary()
     district_json = gdf_to_geojson_str(district, simplify_m=50)
 
-    # [3/8] Extract road network + traffic arrays from working map
-    print("[3/8] Extracting from working school_closure_analysis.html ...")
+    # [3/9] Extract road network + traffic arrays from working map
+    print("[3/9] Extracting from working school_closure_analysis.html ...")
     working = extract_from_working_map()
     road_geojson_str = working["road_geojson_str"]
     traffic_b64 = working["traffic_b64"]
@@ -1258,8 +1360,8 @@ def main():
               f"N_EDGES: {n_edges}")
     _progress(f"Traffic arrays extracted: {list(traffic_b64.keys())}")
 
-    # [4/8] Compute diff metrics from the extracted arrays
-    print("[4/8] Computing traffic metrics ...")
+    # [4/9] Compute diff metrics from the extracted arrays
+    print("[4/9] Computing traffic metrics ...")
 
     def _decode_b64(key):
         raw = base64.b64decode(traffic_b64[key])
@@ -1304,8 +1406,8 @@ def main():
     seawell_edges = count_significant_edges(diff_seawell_04, threshold=3.0)
     ephesus_edges = count_significant_edges(diff_ephesus_04, threshold=3.0)
 
-    # [5/8] Children by nearest school
-    print("[5/8] Computing children by nearest school ...")
+    # [5/9] Children by nearest school
+    print("[5/9] Computing children by nearest school ...")
     assignments = load_assignments()
     pixels = load_pixel_children()
     children_by_school = compute_children_by_school(pixels, assignments)
@@ -1313,8 +1415,16 @@ def main():
     for rec in children_by_school:
         _progress(f"  {rec['school']}: {rec['children_0_4']} (0-4), {rec['children_5_9']} (5-9)")
 
-    # [6/8] Block groups for choropleth
-    print("[6/8] Loading block groups ...")
+    # [6/9] Enrollment projections
+    print("[6/9] Preparing enrollment projections ...")
+    enrollment_sorted = sorted(
+        ENROLLMENT_PROJECTIONS, key=lambda d: d["util_2035"], reverse=True
+    )
+    enrollment_json = json.dumps(enrollment_sorted, separators=(",", ":"))
+    _progress(f"Enrollment projections: {len(enrollment_sorted)} schools")
+
+    # [7/9] Block groups for choropleth
+    print("[7/9] Loading block groups ...")
     bg = load_block_groups()
     dist_union = (district.to_crs(CRS_UTM17N).buffer(500)
                   .to_crs(CRS_WGS84))
@@ -1329,8 +1439,8 @@ def main():
     )
     _progress(f"Block groups: {len(bg_clip)} features")
 
-    # [7/8] Build HTML
-    print("[7/8] Building HTML ...")
+    # [8/9] Build HTML
+    print("[8/9] Building HTML ...")
     data = {
         "schools_json": schools_json,
         "district_json": district_json,
@@ -1345,6 +1455,7 @@ def main():
         "seawell_top_roads_04": seawell_top_roads_04,
         "ephesus_top_roads_59": ephesus_top_roads_59,
         "ephesus_top_roads_04": ephesus_top_roads_04,
+        "enrollment_json": enrollment_json,
     }
     html = build_html(data)
 
