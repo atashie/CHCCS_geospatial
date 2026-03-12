@@ -6,12 +6,12 @@ urban heat) for all 11 CHCCS elementary schools, making the case that
 environmental factors should inform closure decisions.
 
 First in an Ephesus-focused editorial series; precedes the demographics
-story (ephesus_seawell_comparison.html).
+story (chccs_demographics.html).
 
 Siloed in example_stories/ to keep editorial content separate from neutral
 methodology pages in src/.
 
-Architecture mirrors ephesus_seawell_story.py: two-column layout (45%
+Architecture mirrors chccs_demographics_story.py: two-column layout (45%
 narrative / 55% Leaflet map) with Scrollama-driven step transitions.
 
 Usage:
@@ -847,7 +847,7 @@ a {{ color: #1565C0; }}
     people, communities, and socioeconomic patterns that define each
     school&rsquo;s role in the district.</p>
     <p style="margin-top:20px;">
-      <a href="https://atashie.github.io/CHCCS_geospatial/example_stories/ephesus_seawell_comparison.html" style="font-size:1.1em;font-weight:bold;">
+      <a href="https://atashie.github.io/CHCCS_geospatial/example_stories/chccs_demographics.html" style="font-size:1.1em;font-weight:bold;">
         Continue to Demographics Analysis &rarr;
       </a>
     </p>

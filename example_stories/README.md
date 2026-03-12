@@ -56,10 +56,10 @@ python example_stories/environmental_conditions_story.py --cache-only
 
 ---
 
-## Ephesus vs. Seawell Comparison
+## CHCCS Demographics
 
-**File:** `ephesus_seawell_story.py`
-**Output:** `ephesus_seawell_comparison.html`
+**File:** `chccs_demographics_story.py`
+**Output:** `chccs_demographics.html`
 
 A data-driven comparison of Ephesus Elementary and Seawell Elementary across four dimensions:
 
@@ -91,10 +91,10 @@ Seawell's attendance zone appears economically vulnerable, but drive-time analys
 
 ```bash
 # Generate the HTML (requires cached data from prior analyses)
-python example_stories/ephesus_seawell_story.py
+python example_stories/chccs_demographics_story.py
 
 # Same behavior — all data is cache-only
-python example_stories/ephesus_seawell_story.py --cache-only
+python example_stories/chccs_demographics_story.py --cache-only
 ```
 
 ### Prerequisites
