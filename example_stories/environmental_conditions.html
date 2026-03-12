@@ -261,8 +261,8 @@ a { color: #1565C0; }
         <div class="metric-label">of Rashkis property in<br>500-year flood zone<br>(0.81 acres)</div>
       </div>
     </div>
-    <p>Neither is being considered for closure, but both represent assets at
-    ongoing flood risk.</p>
+    <p><strong>Neither is being considered for closure, but both represent assets at
+    ongoing flood risk.</strong></p>
   </div>
 
   <!-- Step 5: FPG Relocation -->
@@ -378,17 +378,18 @@ a { color: #1565C0; }
     <p>Net TRAP exposure (500m radius, normalized 0&ndash;100) for all schools,
     including FPG&rsquo;s planned new location:</p>
     <p><span class="glenwood-label">Glenwood</span> has the highest net TRAP
-    exposure &mdash; bordered by Estes Drive and near US 15-501.
-    <span class="fpg-label">FPG</span>&rsquo;s current site ranks #2, but its
-    <strong>new planned location drops to #9</strong> &mdash; a dramatic
-    improvement.</p>
+    exposure of any CHCCS elementary school &mdash; bordered by Estes Drive and
+    near US 15-501. <strong>Its location directly adjacent to major roadways
+    makes it fundamentally unsuitable as a long-term elementary school
+    site.</strong></p>
+    <p><span class="fpg-label">FPG</span>&rsquo;s current site ranks #2,
+    similarly compromised by its proximity to major roads.
+    <strong>Its new planned location drops to #9</strong> &mdash; a dramatic
+    improvement that underscores how much site selection matters for children&rsquo;s
+    health.</p>
     <p><span class="ephesus-label">Ephesus</span> (12.8) and
     <span class="seawell-label">Seawell</span> (3.9) have relatively low
     exposure.</p>
-    <div class="limitation">
-      <strong>Note:</strong> FPG&rsquo;s current site is not ideal for students.
-      The planned relocation would significantly reduce their pollution exposure.
-    </div>
   </div>
 
   <!-- ========== URBAN HEAT ISLAND (Steps 13-15) ========== -->
@@ -426,6 +427,11 @@ a { color: #1565C0; }
     are hotter; forested areas along stream buffers are cooler.</p>
     <p>Blue indicates cooler (more vegetation), red indicates hotter (more
     impervious surface).</p>
+    <p>Urban heat matters for elementary schools because children are more
+    vulnerable to heat stress than adults &mdash; their smaller body mass and
+    less developed thermoregulation increase the risk of heat-related illness.
+    High-UHI school sites mean reduced outdoor recess time on hot days, higher
+    cooling costs, and greater health risk during arrival and dismissal.</p>
   </div>
 
   <!-- Step 15: UHI Bar Chart -->
@@ -637,6 +643,27 @@ layers.schools = L.geoJSON(SCHOOLS, {
   }
 });
 
+// Schools without FPG (for slides where FPG marker should not appear)
+var schoolsNoFpgData = {
+  type: "FeatureCollection",
+  features: SCHOOLS.features.filter(function(f) {
+    return f.properties.school.indexOf("Frank Porter Graham") < 0;
+  })
+};
+layers.schoolsNoFpg = L.geoJSON(schoolsNoFpgData, {
+  pointToLayer: function(f, ll) {
+    var name = f.properties.school || "";
+    var color = SCHOOL_COLORS[name] || "#888";
+    var radius = SCHOOL_COLORS[name] ? 8 : 5;
+    return L.circleMarker(ll, {
+      radius: radius, fillColor: color, color: "#fff", weight: 2, fillOpacity: 0.9
+    });
+  },
+  onEachFeature: function(f, layer) {
+    layer.bindTooltip(f.properties.school, {permanent: false});
+  }
+});
+
 // Schools with permanent labels
 layers.schoolsLabeled = L.geoJSON(SCHOOLS, {
   pointToLayer: function(f, ll) {
@@ -749,13 +776,13 @@ function handleStep(idx) {
   switch(idx) {
     case 0: // District Overview
       layers.district.addTo(map);
-      layers.schools.addTo(map);
+      layers.schoolsNoFpg.addTo(map);
       districtView();
       break;
 
     case 1: // Environmental Overview
       layers.district.addTo(map);
-      layers.schools.addTo(map);
+      layers.schoolsNoFpg.addTo(map);
       districtView();
       break;
 
@@ -763,7 +790,7 @@ function handleStep(idx) {
       layers.district.addTo(map);
       layers.flood500.addTo(map);
       layers.flood100.addTo(map);
-      layers.schools.addTo(map);
+      layers.schoolsNoFpg.addTo(map);
       districtView();
       break;
 
@@ -771,7 +798,7 @@ function handleStep(idx) {
       layers.district.addTo(map);
       layers.flood500.addTo(map);
       layers.flood100.addTo(map);
-      layers.schools.addTo(map);
+      layers.schoolsNoFpg.addTo(map);
       districtView();
       break;
 
@@ -799,26 +826,26 @@ function handleStep(idx) {
       layers.flood100.addTo(map);
       layers.schoolProps.addTo(map);
       layers.floodOverlaps.addTo(map);
-      layers.schools.addTo(map);
+      layers.schoolsNoFpg.addTo(map);
       districtView();
       break;
 
     case 7: // TRAP & Children's Health
       layers.district.addTo(map);
-      layers.schools.addTo(map);
+      layers.schoolsNoFpg.addTo(map);
       districtView();
       break;
 
     case 8: // Policies
       layers.district.addTo(map);
-      layers.schools.addTo(map);
+      layers.schoolsNoFpg.addTo(map);
       dimOverlay.style.display = "block";
       districtView();
       break;
 
     case 9: // TRAP Methodology
       layers.district.addTo(map);
-      layers.schools.addTo(map);
+      layers.schoolsNoFpg.addTo(map);
       districtView();
       break;
 
@@ -842,7 +869,7 @@ function handleStep(idx) {
 
     case 13: // What Is Urban Heat?
       layers.district.addTo(map);
-      layers.schools.addTo(map);
+      layers.schoolsNoFpg.addTo(map);
       districtView();
       break;
 
@@ -862,13 +889,13 @@ function handleStep(idx) {
       layers.trapNet.addTo(map);
       layers.flood500.addTo(map);
       layers.flood100.addTo(map);
-      layers.schools.addTo(map);
+      layers.schoolsNoFpg.addTo(map);
       districtView();
       break;
 
     case 17: // Transition
       layers.district.addTo(map);
-      layers.schools.addTo(map);
+      layers.schoolsNoFpg.addTo(map);
       dimOverlay.style.display = "block";
       districtView();
       break;
