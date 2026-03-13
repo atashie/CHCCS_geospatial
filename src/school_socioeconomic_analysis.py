@@ -1272,7 +1272,7 @@ def _random_points_fallback(geom, n: int, rng) -> list:
 # Metric dot-map configuration: (metric_col, display_name, colormap, prefix, suffix, fmt)
 METRIC_DOT_SPECS = [
     ("median_hh_income", "Median Household Income", "YlGn", "$", "", ",.0f"),
-    ("pct_below_185_poverty", "% Below 185% Poverty (FRL Proxy)", "YlOrRd", "", "%", ".0f"),
+    ("pct_below_185_poverty", "% Below 185% Poverty (Free/Reduced Lunch Proxy)", "YlOrRd", "", "%", ".0f"),
     ("pct_minority", "% Minority (Non-White NH)", "PuBuGn", "", "%", ".0f"),
     ("pct_renter", "% Renter-Occupied Housing", "OrRd", "", "%", ".0f"),
     ("pct_zero_vehicle", "% Households with No Vehicle", "Reds", "", "%", ".0f"),
@@ -1835,7 +1835,8 @@ FAQ
         <div class="faq-item">
             <div class="faq-q">What does "Census ACS 2022 5-Year" mean?</div>
             <div class="faq-a"><b>ACS</b> = American Community Survey, an ongoing Census Bureau survey.
-            <b>5-Year</b> means data averaged over 2018-2022 for statistical reliability in small areas like block groups.</div>
+            <b>5-Year</b> means data averaged over 2018-2022 for statistical reliability in small areas like block groups.
+            This is official data collected and published by the U.S. Census Bureau.</div>
         </div>
         <div class="faq-item">
             <div class="faq-q">What is an Attendance Zone?</div>
@@ -1871,6 +1872,13 @@ FAQ
             <div class="faq-q">What does "% Below 185% Poverty (FRL Proxy)" mean?</div>
             <div class="faq-a">The percentage of residents with household income below <b>185% of the federal poverty line</b>.
             This threshold is the eligibility cutoff for <b>Free/Reduced-price Lunch (FRL)</b> in public schools, making it a useful proxy for school-level economic disadvantage.</div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-q">Why do some areas that look close on the map belong to different drive zones?</div>
+            <div class="faq-a">Drive zones are based on actual driving distance along roads, not straight-line distance.
+            Two places might look close on a map but be far apart by car if there's no direct road connecting them &mdash;
+            they may need to go around a highway, river, or neighborhood without a through-street.
+            So the "nearest school by driving" depends on which roads are available, not just how close things appear.</div>
         </div>
         <div class="faq-item">
             <div class="faq-q">Where can I learn more about the methodology?</div>
@@ -2006,7 +2014,7 @@ FAQ
         ah_legend_html = """
         <div style="padding: 10px 14px; background: white; border-radius: 5px;
                     box-shadow: 0 2px 6px rgba(0,0,0,0.3); max-width: 320px; font-size: 13px;">
-            <div style="font-weight: bold; margin-bottom: 8px;">Affordable Housing by AMI Level</div>
+            <div style="font-weight: bold; margin-bottom: 8px;">Affordable Housing by AMI (Area Median Income) Level</div>
             <div style="display: flex; align-items: center; margin: 4px 0;">
                 <span style="display:inline-block; width:14px; height:14px; background:#d73027;
                       border-radius:50%; margin-right:8px;"></span>0-30% AMI (Deeply Affordable)
@@ -2378,13 +2386,13 @@ FAQ
                     zoneStrip.innerHTML =
                         '<div id="mls-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:960px;margin:0 auto;padding:8px;">' +
                         '  <div><div class="barplot-title">Homes Sold</div>' +
-                        '    <canvas id="bar-mls-sales" width="440" height="260"></canvas></div>' +
+                        '    <canvas id="bar-mls-sales" width="440" height="320"></canvas></div>' +
                         '  <div><div class="barplot-title">Median Home Price</div>' +
-                        '    <canvas id="bar-mls-price" width="440" height="260"></canvas></div>' +
+                        '    <canvas id="bar-mls-price" width="440" height="320"></canvas></div>' +
                         '  <div><div class="barplot-title">Median Price / Sq Ft</div>' +
-                        '    <canvas id="bar-mls-ppsf" width="440" height="260"></canvas></div>' +
+                        '    <canvas id="bar-mls-ppsf" width="440" height="320"></canvas></div>' +
                         '  <div><div class="barplot-title">Bedrooms Distribution</div>' +
-                        '    <canvas id="hist-bedrooms" width="440" height="260"></canvas></div>' +
+                        '    <canvas id="hist-bedrooms" width="440" height="320"></canvas></div>' +
                         '</div>';
                 }} else if (isIncome) {{
                     currentLayout = 'histogram';
@@ -2626,7 +2634,7 @@ FAQ
                 }}
                 if (maxStack === 0) maxStack = 1;
 
-                var leftPad = 35, rightPad = 10, topPad = 8, botPad = 40;
+                var leftPad = 35, rightPad = 10, topPad = 8, botPad = 55;
                 var chartW = W - leftPad - rightPad;
                 var chartH = H - topPad - botPad;
                 var barW = Math.floor(chartW / nBins) - 4;
@@ -2935,7 +2943,7 @@ def create_comparison_charts(zone_demographics: pd.DataFrame):
     _progress("Creating static comparison charts ...")
 
     metrics = [
-        ("pct_below_185_poverty", "% Below 185% Poverty (FRL Proxy)", "%"),
+        ("pct_below_185_poverty", "% Below 185% Poverty (Free/Reduced Lunch Proxy)", "%"),
         ("pct_minority", "% Minority", "%"),
         ("median_hh_income", "Median Household Income", "$"),
         ("pct_renter", "% Renter-Occupied", "%"),
