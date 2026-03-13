@@ -670,8 +670,9 @@ details[open] summary {{ margin-bottom: 8px; }}
     <p>The map shows all 11 attendance zones with colored fills and school
     locations.</p>
     <div class="limitation">
-      <strong>Note:</strong> FPG Bilingue is a district-wide magnet school.
-      Its &ldquo;zone&rdquo; is administrative, not geographic.
+      <strong>Note:</strong> Glenwood Elementary is a partial magnet/choice school.
+      FPG Bilingue is a full district-wide magnet school whose &ldquo;zone&rdquo;
+      is administrative, not geographic.
     </div>
   </div>
 
@@ -694,6 +695,11 @@ details[open] summary {{ margin-bottom: 8px; }}
     pocket neighborhoods on the zone&rsquo;s edges have simpler, quicker access
     to Morris Grove and McDougle Elementary on the west, and Estes Hills
     Elementary on the east.</p>
+    <div class="limitation">
+      <strong>Note:</strong> A large drive-time zone means that a school is more
+      accessible to more people &mdash; more households have that school as their
+      closest option by driving time.
+    </div>
   </div>
 
   <!-- Step 3: Two Community Schools Compared -->
@@ -978,20 +984,6 @@ details[open] summary {{ margin-bottom: 8px; }}
     <h2>Summary</h2>
 
     <div id="final-summary-text">
-    </div>
-
-    <div class="limitation">
-      <strong>Important caveats:</strong> All values are Census estimates with
-      margins of error. Zone demographics describe <em>residents</em>, not
-      enrolled students. Attendance boundaries will be redrawn after any closure.
-      This analysis is one input among many; it does not by itself determine
-      which school should close.
-    </div>
-    <div class="source">
-      <strong>Full methodology:</strong>
-      <a href="../assets/maps/closure_methodology.html">School Closure Methodology</a>
-      &mdash; complete documentation of data sources, algorithms, and 26+
-      documented limitations.
     </div>
   </div>
 
@@ -1358,37 +1350,20 @@ function populateMetrics() {{
   // Final summary (step 20)
   el = document.getElementById("final-summary-text");
   if (el) {{
-    var fEphPov = eph.below_185_pov || ephZ.below_185_pov || 0;
-    var fSeaPov = sea.below_185_pov || seaZ.below_185_pov || 0;
-    var fEphMin = (eph.race_total || ephZ.race_total || 0) - (eph.white_nh || ephZ.white_nh || 0);
-    var fSeaMin = (sea.race_total || seaZ.race_total || 0) - (sea.white_nh || seaZ.white_nh || 0);
-    var fEphHisp = eph.hispanic || ephZ.hispanic || 0;
-    var fSeaHisp = sea.hispanic || seaZ.hispanic || 0;
-    var fEphYoung = (eph.male_under_5 || ephZ.male_under_5 || 0) + (eph.female_under_5 || ephZ.female_under_5 || 0);
-    var fSeaYoung = (sea.male_under_5 || seaZ.male_under_5 || 0) + (sea.female_under_5 || seaZ.female_under_5 || 0);
-    var fEphSales = eph.mls_total_sales || ephZ.mls_total_sales || 0;
-    var fSeaSales = sea.mls_total_sales || seaZ.mls_total_sales || 0;
-    var fEphPrice = eph.mls_median_price || ephZ.mls_median_price || 0;
-    var fSeaPrice = sea.mls_median_price || seaZ.mls_median_price || 0;
-    var fEphPop = eph.total_pop || ephZ.total_pop || 0;
-    var fSeaPop = sea.total_pop || seaZ.total_pop || 0;
-
-    el.innerHTML = '<p>Across all four dimensions of CHCCS&rsquo;s closure criteria, '
-      + 'the Ephesus drive-time zone consistently shows larger numbers. '
-      + 'Economically, ' + fmt(fEphPov) + ' people below 185% poverty live in the '
-      + 'Ephesus zone compared to ' + fmt(fSeaPov) + ' in the Seawell zone, and '
-      + 'Ephesus is situated near nearly 3&times; the affordable housing units '
-      + '(202 vs. 73). In diversity, the Ephesus zone has ' + fmt(fEphMin)
-      + ' minority residents vs. ' + fmt(fSeaMin) + ' for Seawell, with '
-      + fmt(fEphHisp) + ' Hispanic residents vs. ' + fmt(fSeaHisp)
-      + '. For anticipated enrollment, roughly ' + fmt(fEphYoung) + ' young children '
-      + '(ages 0&ndash;4) live near Ephesus compared to ' + fmt(fSeaYoung)
-      + ' near Seawell, signaling higher future demand. In real estate, '
-      + fmt(fEphSales) + ' homes sold near Ephesus vs. ' + fmt(fSeaSales)
-      + ' near Seawell at median prices of $' + fmt(fEphPrice) + ' vs. $'
-      + fmt(fSeaPrice) + ', indicating more housing turnover at more accessible '
-      + 'price points. In total, the Ephesus zone encompasses ' + fmt(fEphPop)
-      + ' residents vs. ' + fmt(fSeaPop) + ' for Seawell.</p>';
+    el.innerHTML = '<p>This is a direct analysis of two community schools whose purpose '
+      + 'is to serve its surrounding communities, not CHCCS staff members or budget '
+      + 'spreadsheets. Part of what is important to community members is having schools '
+      + 'that are easily accessible to ALL populations.</p>'
+      + '<p>We have demonstrated that</p>'
+      + '<ul>'
+      + '<li>Ephesus is simply more accessible to more people (due to access to major '
+      + 'road ways and geographic location far enough from other nearby schools)</li>'
+      + '<li>Ephesus serves a population skewed to lower income communities</li>'
+      + '<li>Ephesus is accessible to more young children which may drive future '
+      + 'enrollment increases</li>'
+      + '<li>Homes around Ephesus are more affordable which means younger families '
+      + 'are more likely to be able afford living near Ephesus</li>'
+      + '</ul>';
   }}
 }}
 
