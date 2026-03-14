@@ -132,7 +132,7 @@ All weights are clipped to [0.0, 1.0] to prevent over-allocation.
 
 **Dot-density layer:** Each dot represents a group of residents, color-coded by race/ethnicity (White, Black, Hispanic/Latino, Asian, Multiracial, Native American/Other). Dots are placed randomly within the Census block where people live — the exact dot positions do not represent actual home addresses.
 
-**Other layers:** School markers, attendance zone boundaries, affordable housing locations.
+**Other layers:** School markers, attendance zone boundaries, affordable housing locations, planned development markers.
 
 ### 1.5 Key Limitations
 
@@ -174,6 +174,24 @@ The socioeconomic map also incorporates MLS (Multiple Listing Service) home sale
 - **Small samples:** Some Census blocks have very few sales, making block-level medians unreliable
 - **Geocoding is approximate:** Points represent interpolated road-segment positions, not exact property locations. This is intentional — it avoids pinpointing individual homes while remaining accurate enough for zone/block aggregation
 - **No property controls:** Price differences between areas may reflect housing stock (size, age, condition) rather than location alone
+
+---
+
+### 1.9 Planned Developments Data
+
+The socioeconomic map includes a "Planned Developments" layer showing approved and proposed residential development projects within the district.
+
+**Data:** 36 planned development projects hand-transcribed from the Town of Chapel Hill [Active Development](https://www.chapelhillnc.gov/Business-and-Development/Active-Development) page on March 12, 2026, saved to `data/raw/properties/planned/CH_Development-3_26.csv`. Each record includes the project name, address, and estimated unit count from planning documents.
+
+**Geocoding:** Project addresses are geocoded using the same two-stage pipeline as MLS data: U.S. Census Bureau batch geocoding API (primary) with OpenStreetMap Nominatim as a fallback for unmatched records. Successfully geocoded projects are stored as a GeoPackage (`data/cache/planned_developments.gpkg`) with point geometry in WGS84 (EPSG:4326).
+
+**What you see:** Planned development markers are displayed on the socioeconomic map as a toggleable layer under the HOUSING metric category. Each marker shows the project name, status, and estimated unit count on hover.
+
+**Key limitations:**
+- **Projects may not all proceed:** Planned and approved developments are not guaranteed to be built. Market conditions, financing, or regulatory changes may alter or cancel projects.
+- **Unit counts are estimates:** The number of housing units comes from planning documents and may change during construction or final approval.
+- **Geocoding is approximate:** Points represent interpolated road-segment positions from the Census geocoder, not exact project boundaries or parcel centroids.
+- **Single data snapshot:** The project list reflects a point-in-time extract from the Town of Chapel Hill and may not include recently submitted or withdrawn applications.
 
 ---
 

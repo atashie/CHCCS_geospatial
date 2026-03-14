@@ -54,6 +54,7 @@ PARCEL_POLYS = DATA_RAW / "properties" / "combined_data_polys.gpkg"
 ACS_CACHE = DATA_CACHE / "census_acs_blockgroups.gpkg"
 DECENNIAL_CACHE = DATA_CACHE / "census_decennial_blocks.gpkg"
 AH_CACHE = DATA_CACHE / "affordable_housing.gpkg"
+DEV_CACHE = DATA_CACHE / "planned_developments.gpkg"
 ZONE_DEMOGRAPHICS_CSV = DATA_PROCESSED / "census_school_demographics.csv"
 GRID_CSV = DATA_PROCESSED / "school_desert_grid.csv"
 
@@ -556,7 +557,7 @@ def _random_points_fallback(geom, n: int, rng) -> list:
 # HTML builder
 # ---------------------------------------------------------------------------
 def build_html(data: dict) -> str:
-    """Build the scrollytelling HTML page with 18 steps (incl. bar chart comparison)."""
+    """Build the scrollytelling HTML page with 19 steps (incl. bar chart comparison)."""
 
     race_colors_js = json.dumps(
         [v[0] for v in RACE_CATEGORIES.values()], separators=(",", ":")
@@ -1138,64 +1139,38 @@ details[open] summary {{ margin-bottom: 8px; }}
     </div>
   </div>
 
-  <!-- Step 14: School Community Zones -->
+  <!-- Step 14: MLS Home Sales — Ephesus & Seawell -->
   <div class="step" data-step="14">
     <div class="step-number">15</div>
-    <h2>School Community Zones</h2>
-    <p>The same neighborhood can be &ldquo;served by&rdquo; different schools
-    depending on how you define the boundary. The production map lets users
-    switch between <strong>5 zone types</strong> via the
-    &ldquo;School Community Zones&rdquo; control panel:</p>
-    <ul style="margin: 4px 0 12px 20px; line-height: 1.7; font-size: 0.93em;">
-      <li><strong>School Zones</strong> &mdash; the official CHCCS attendance
-      zones (the default assignment for each student)</li>
-      <li><strong>Walk Zones</strong> &mdash; smaller areas from which students
-      are expected to walk to school (7 of 11 schools have these, shown as
-      <span style="color:#27ae60;font-weight:bold;">green dashed outlines</span>
-      on the map)</li>
-      <li><strong>Nearest Walk</strong> &mdash; which school is closest by
-      walking distance on the road network</li>
-      <li><strong>Nearest Bike</strong> &mdash; which school is closest by
-      biking distance on the road network</li>
-      <li><strong>Nearest Drive</strong> &mdash; which school is closest by
-      driving distance on the road network</li>
-    </ul>
-    <p>The Nearest Walk / Bike / Drive zones are computed using Dijkstra
-    shortest-path routing on OpenStreetMap road networks. The full methodology
-    for these travel-time computations is described in the
-    <strong>school closure methodology</strong> scrollytelling page.</p>
-    <p>When the user switches zone type, every dot on the map is reassigned
-    to whichever school&rsquo;s zone it falls within under the new definition,
-    and the demographic bar charts update accordingly (see Step 17).</p>
+    <h2>MLS Home Sales</h2>
+    <p>The map shows <strong>MLS home sale records</strong> (2023&ndash;2025)
+    for all schools, color-coded by price quartile. Each dot is a closed sale.</p>
+    <h3>Ephesus &amp; Seawell: Zone Comparison</h3>
+    <p>The same homes fall into different school zones depending on how you
+    define the boundary. Compare <strong>Attendance Zones</strong> (official
+    CHCCS assignment) with <strong>Drive Zones</strong> (nearest school by
+    Dijkstra shortest-path driving distance):</p>
+    <div id="mls-comparison"></div>
+    <div class="source">
+      <strong>Data:</strong> Triangle MLS, closed sales 2023&ndash;2025
+      within CHCCS district
+    </div>
   </div>
 
-  <!-- Step 15: Affordable Housing -->
+  <!-- Step 15: Housing Costs — Ephesus & Seawell -->
   <div class="step" data-step="15">
     <div class="step-number">16</div>
-    <h2>Affordable Housing</h2>
-    <p>The map can overlay <strong>affordable housing locations</strong> from
-    the Town of Chapel Hill&rsquo;s ArcGIS data (2025). These points are
-    spatially joined to attendance zones to count affordable units per zone.</p>
-    <p>Affordable housing is color-coded by <strong>AMI (Area Median Income)
-    </strong> band &mdash; the midpoint household income for the region.
-    Lower AMI bands serve lower-income households:</p>
-    <div class="dot-legend">
-      <div class="dot-legend-item">
-        <span class="dot-legend-swatch" style="background:#d73027;"></span> 0&ndash;30% AMI
-      </div>
-      <div class="dot-legend-item">
-        <span class="dot-legend-swatch" style="background:#fc8d59;"></span> 30&ndash;60% AMI
-      </div>
-      <div class="dot-legend-item">
-        <span class="dot-legend-swatch" style="background:#fee090;"></span> 60&ndash;80% AMI
-      </div>
-      <div class="dot-legend-item">
-        <span class="dot-legend-swatch" style="background:#91bfdb;"></span> 80%+ AMI
-      </div>
-    </div>
+    <h2>Housing Costs</h2>
+    <p>The map shows <strong>affordable housing locations</strong> for all
+    schools, color-coded by AMI band. Each dot is a subsidized unit.</p>
+    <h3>Ephesus &amp; Seawell: Zone Comparison</h3>
+    <p>Compare <strong>Attendance Zones</strong> (official CHCCS assignment)
+    with <strong>Drive Zones</strong> (nearest school by Dijkstra
+    shortest-path driving distance):</p>
+    <div id="housing-comparison"></div>
     <div class="source">
-      <strong>Data:</strong> Town of Chapel Hill ArcGIS, affordable housing
-      inventory (2025)
+      <strong>Data:</strong> Town of Chapel Hill ArcGIS (2025);
+      U.S. Census ACS 5-Year
     </div>
   </div>
 
@@ -1244,9 +1219,59 @@ details[open] summary {{ margin-bottom: 8px; }}
     </div>
   </div>
 
-  <!-- Step 17: Complete Map — Bar Chart Comparison -->
+  <!-- Step 17: Planned Developments -->
   <div class="step" data-step="17">
     <div class="step-number">18</div>
+    <h2>Planned Developments</h2>
+    <p>The map can overlay <strong>planned residential developments</strong>
+    from the Town of Chapel Hill&rsquo;s
+    <a href="https://www.chapelhillnc.gov/Business-and-Development/Active-Development"
+    target="_blank" style="color:#1565C0;">Active Development</a> page
+    (hand-transcribed March 12, 2026). Each circle represents one development,
+    colored by expected unit count:</p>
+    <div class="dot-legend">
+      <div class="dot-legend-item">
+        <span class="dot-legend-swatch" style="background:#d73027;"></span> 400+ units
+      </div>
+      <div class="dot-legend-item">
+        <span class="dot-legend-swatch" style="background:#fc8d59;"></span> 150&ndash;400 units
+      </div>
+      <div class="dot-legend-item">
+        <span class="dot-legend-swatch" style="background:#fee090;"></span> 50&ndash;150 units
+      </div>
+      <div class="dot-legend-item">
+        <span class="dot-legend-swatch" style="background:#91bfdb;"></span> &lt;50 units
+      </div>
+    </div>
+    <p>Developments are geocoded using the <strong>Census Bureau batch geocoder
+    </strong> (primary) with Nominatim fallback, then clipped to the CHCCS
+    district boundary. Two metrics are computed per zone:</p>
+    <ul style="margin: 4px 0 12px 20px; line-height: 1.7; font-size: 0.93em;">
+      <li><strong>Total Expected Units</strong> &mdash; sum of expected units
+      across all developments in the zone</li>
+      <li><strong>Number of Developments</strong> &mdash; count of projects
+      in the zone</li>
+    </ul>
+    <h3>Limitations</h3>
+    <ul style="margin: 4px 0 12px 20px; line-height: 1.7; font-size: 0.93em;">
+      <li>Projects at various approval stages &mdash; some may not proceed
+      or may change scope.</li>
+      <li>Unit counts are estimates from planning documents, not final
+      construction figures.</li>
+      <li>Geocoding is approximate (road-segment interpolation, not exact
+      site boundaries).</li>
+      <li>Single data snapshot; new projects are added and existing ones
+      modified regularly.</li>
+    </ul>
+    <div class="source">
+      <strong>Data:</strong> Town of Chapel Hill Active Development page,
+      hand-transcribed March 12, 2026
+    </div>
+  </div>
+
+  <!-- Step 18: Complete Map — Bar Chart Comparison -->
+  <div class="step" data-step="18">
+    <div class="step-number">19</div>
     <h2>Zone Definitions Matter</h2>
     <p>The bar charts show <strong>% below 185% poverty</strong> for each
     school under two different zone definitions &mdash; computed from the
@@ -1264,9 +1289,9 @@ details[open] summary {{ margin-bottom: 8px; }}
     that update in real time.</p>
   </div>
 
-  <!-- Step 18: Limitations -->
-  <div class="step" data-step="18">
-    <div class="step-number">19</div>
+  <!-- Step 19: Limitations -->
+  <div class="step" data-step="19">
+    <div class="step-number">20</div>
     <h2>Limitations &amp; Caveats</h2>
     <p>The socioeconomic analysis has 26 documented limitations. Key ones:</p>
     <h3>Data Quality</h3>
@@ -1356,6 +1381,7 @@ var FRAGMENTS_DASY = {data["fragments_dasy_json"]};
 var DOT_DATA = {data["dot_data"]};
 var AH = {data["ah_json"]};
 var MLS_SALES = {data["mls_json"]};
+var PLANNED_DEV = {data["dev_json"]};
 var ZONE_STATS = {zone_stats};
 var DRIVE_STATS = {drive_stats};
 var WALK_ZONES = {data["walk_zones_json"]};
@@ -1432,6 +1458,70 @@ var districtBounds = L.geoJSON(DISTRICT).getBounds();
 function districtView() {{
   map.fitBounds(districtBounds.pad(0.05));
 }}
+
+// === Ephesus & Seawell comparison tables ===
+(function() {{
+  var focus = ["Ephesus Elementary", "Seawell Elementary"];
+  var zLookup = {{}}, dLookup = {{}};
+  ZONE_STATS.forEach(function(s) {{ zLookup[s.school] = s; }});
+  DRIVE_STATS.forEach(function(s) {{ dLookup[s.school] = s; }});
+
+  function fmt(v, type) {{
+    if (v === undefined || v === null || isNaN(v)) return "&mdash;";
+    if (type === "dollar") return "$" + Math.round(v).toLocaleString();
+    if (type === "pct") return v.toFixed(1) + "%";
+    if (type === "int") return Math.round(v).toLocaleString();
+    return String(v);
+  }}
+
+  function buildTable(containerId, metrics) {{
+    var el = document.getElementById(containerId);
+    if (!el) return;
+    var html = "";
+    focus.forEach(function(name) {{
+      var z = zLookup[name] || {{}};
+      var d = dLookup[name] || {{}};
+      var short = name.replace(" Elementary", "");
+      html += '<div style="margin:0 0 14px 0;">'
+        + '<div style="font-weight:700;font-size:0.95em;margin:0 0 4px;">' + short + '</div>'
+        + '<table style="width:100%;border-collapse:collapse;font-size:0.82em;">'
+        + '<tr style="background:#f0f0f0;"><th style="text-align:left;padding:3px 6px;">Metric</th>'
+        + '<th style="text-align:right;padding:3px 6px;">Attendance</th>'
+        + '<th style="text-align:right;padding:3px 6px;">Drive</th></tr>';
+      metrics.forEach(function(m, i) {{
+        var bg = i % 2 === 0 ? "#fff" : "#f8f8f8";
+        html += '<tr style="background:' + bg + ';">'
+          + '<td style="padding:3px 6px;">' + m.label + '</td>'
+          + '<td style="text-align:right;padding:3px 6px;">' + fmt(z[m.key], m.type) + '</td>'
+          + '<td style="text-align:right;padding:3px 6px;">' + fmt(d[m.key], m.type) + '</td>'
+          + '</tr>';
+      }});
+      html += '</table></div>';
+    }});
+    el.innerHTML = html;
+  }}
+
+  // MLS comparison (slide 15)
+  buildTable("mls-comparison", [
+    {{label: "Homes Sold", key: "mls_total_sales", type: "int"}},
+    {{label: "Median Home Price", key: "mls_median_price", type: "dollar"}},
+    {{label: "Median $/SqFt", key: "mls_median_ppsf", type: "dollar"}},
+    {{label: "Population", key: "total_pop", type: "int"}},
+    {{label: "Median Income", key: "median_hh_income", type: "dollar"}},
+    {{label: "Below 185% Poverty", key: "pct_below_185_poverty", type: "pct"}},
+    {{label: "Minority", key: "pct_minority", type: "pct"}}
+  ]);
+
+  // Housing costs comparison (slide 16)
+  buildTable("housing-comparison", [
+    {{label: "Affordable Units", key: "ah_total_units", type: "int"}},
+    {{label: "Population", key: "total_pop", type: "int"}},
+    {{label: "Median Income", key: "median_hh_income", type: "dollar"}},
+    {{label: "Below 185% Poverty", key: "pct_below_185_poverty", type: "pct"}},
+    {{label: "Renter", key: "pct_renter", type: "pct"}},
+    {{label: "Minority", key: "pct_minority", type: "pct"}}
+  ]);
+}})();
 
 // Zone colors (consistent palette)
 var zoneColors = [
@@ -1769,6 +1859,60 @@ if (MLS_SALES && MLS_SALES.features && MLS_SALES.features.length > 0) {{
   layers.mlsSales = null;
 }}
 
+// Planned developments — color by unit count (blue→yellow→red)
+var DEV_MAX_UNITS = 1;
+if (PLANNED_DEV && PLANNED_DEV.features) {{
+  PLANNED_DEV.features.forEach(function(f) {{
+    var u = f.properties.expected_units || 0;
+    if (u > DEV_MAX_UNITS) DEV_MAX_UNITS = u;
+  }});
+}}
+function devColor(units) {{
+  var frac = Math.min(units / DEV_MAX_UNITS, 1.0);
+  // 4-stop gradient: #91bfdb → #fee090 → #fc8d59 → #d73027
+  var stops = [
+    [0.0,  0x91, 0xbf, 0xdb],
+    [0.33, 0xfe, 0xe0, 0x90],
+    [0.66, 0xfc, 0x8d, 0x59],
+    [1.0,  0xd7, 0x30, 0x27]
+  ];
+  var i = 0;
+  for (var s = 1; s < stops.length; s++) {{
+    if (frac <= stops[s][0]) {{ i = s - 1; break; }}
+    i = s - 1;
+  }}
+  var t = (frac - stops[i][0]) / (stops[i+1][0] - stops[i][0]);
+  var r = Math.round(stops[i][1] + t * (stops[i+1][1] - stops[i][1]));
+  var g = Math.round(stops[i][2] + t * (stops[i+1][2] - stops[i][2]));
+  var b = Math.round(stops[i][3] + t * (stops[i+1][3] - stops[i][3]));
+  return "rgb(" + r + "," + g + "," + b + ")";
+}}
+if (PLANNED_DEV && PLANNED_DEV.features && PLANNED_DEV.features.length > 0) {{
+  layers.plannedDev = L.geoJSON(PLANNED_DEV, {{
+    pointToLayer: function(f, ll) {{
+      var units = f.properties.expected_units || 0;
+      var color = devColor(units);
+      return L.circleMarker(ll, {{
+        radius: 10,
+        fillColor: color,
+        color: '#555',
+        weight: 1.5,
+        fillOpacity: 0.85,
+      }});
+    }},
+    onEachFeature: function(f, layer) {{
+      var p = f.properties;
+      var units = p.expected_units || 0;
+      layer.bindTooltip(
+        (p.name || "Development") + "<br>" +
+        units.toLocaleString() + " units"
+      );
+    }}
+  }});
+}} else {{
+  layers.plannedDev = null;
+}}
+
 // === Step handler ===
 var currentStep = -1;
 
@@ -1889,14 +2033,14 @@ function handleStep(idx) {{
       districtView();
       break;
 
-    case 14: // Walk zones
+    case 14: // MLS home sales — Ephesus & Seawell
+      if (layers.mlsSales) layers.mlsSales.addTo(map);
       layers.zones.addTo(map);
-      layers.walkZones.addTo(map);
       layers.schools.addTo(map);
-      map.setView(ns, 13);
+      districtView();
       break;
 
-    case 15: // Affordable housing
+    case 15: // Housing costs — Ephesus & Seawell
       layers.affordableHousing.addTo(map);
       layers.zones.addTo(map);
       layers.schools.addTo(map);
@@ -1910,11 +2054,18 @@ function handleStep(idx) {{
       districtView();
       break;
 
-    case 17: // Complete map — bar chart comparison
+    case 17: // Planned developments
+      if (layers.plannedDev) layers.plannedDev.addTo(map);
+      layers.zones.addTo(map);
+      layers.schools.addTo(map);
+      districtView();
+      break;
+
+    case 18: // Complete map — bar chart comparison
       document.getElementById("chart-panel").style.display = "block";
       break;
 
-    case 18: // Limitations
+    case 19: // Limitations
       ensureDotsLoaded();
       layers.dots.addTo(map);
       layers.zones.addTo(map);
@@ -2093,12 +2244,27 @@ def main():
     else:
         _progress("MLS cache not found, skipping")
 
+    # Step 10c: Planned developments
+    print("[10c/14] Loading planned developments ...")
+    dev_json = '{"type":"FeatureCollection","features":[]}'
+    if DEV_CACHE.exists():
+        dev_gdf = gpd.read_file(DEV_CACHE)
+        dev_json = gdf_to_geojson_str(
+            dev_gdf,
+            properties=["name", "address", "expected_units"],
+        )
+        _progress(f"Loaded {len(dev_gdf)} planned developments")
+    else:
+        _progress("Planned developments cache not found, skipping")
+
     # Step 11: Zone demographics
-    print("[11/13] Loading zone demographics ...")
+    print("[11/14] Loading zone demographics ...")
     zone_demo = load_zone_demographics()
     stat_cols = ["school", "total_pop", "median_hh_income",
                  "pct_below_185_poverty", "pct_minority", "pct_renter",
-                 "pct_zero_vehicle", "pct_elementary_age"]
+                 "pct_zero_vehicle", "pct_elementary_age",
+                 "ah_total_units", "mls_total_sales", "mls_median_price",
+                 "mls_median_ppsf"]
     if len(zone_demo) > 0:
         avail_cols = [c for c in stat_cols if c in zone_demo.columns]
         zone_stats = zone_demo[avail_cols].to_dict("records")
@@ -2156,6 +2322,7 @@ def main():
         "dot_data": dot_data,
         "ah_json": ah_json,
         "mls_json": mls_json,
+        "dev_json": dev_json,
         "walk_zones_json": walk_zones_json,
         "zone_stats": zone_stats_json,
         "drive_stats": drive_stats_json,

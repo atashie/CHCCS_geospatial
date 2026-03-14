@@ -59,6 +59,7 @@ CHCCS_SHP = DATA_RAW / "properties" / "CHCCS" / "CHCCS.shp"
 PARCEL_POLYS = DATA_RAW / "properties" / "combined_data_polys.gpkg"
 
 MLS_CACHE = DATA_CACHE / "mls_home_sales.gpkg"
+DEV_CACHE = DATA_CACHE / "planned_developments.gpkg"
 
 ACS_CACHE = DATA_CACHE / "census_acs_blockgroups.gpkg"
 DECENNIAL_CACHE = DATA_CACHE / "census_decennial_blocks.gpkg"
@@ -1280,6 +1281,7 @@ METRIC_DOT_SPECS = [
     ("pct_young_children", "% Population Aged 0-4", "PuRd", "", "%", ".1f"),
     ("ah_units", "Affordable Housing Units", "Blues", "", " units", ",.0f"),
     ("mls_housing", "Housing Market (2023–2025)", "YlGnBu", "", "", ""),
+    ("planned_dev", "Planned Developments", "YlGnBu", "", " units", ",.0f"),
 ]
 
 
@@ -1378,6 +1380,7 @@ def create_socioeconomic_map(
     enriched_blocks: gpd.GeoDataFrame | None = None,
     affordable_housing: gpd.GeoDataFrame | None = None,
     mls_data: gpd.GeoDataFrame | None = None,
+    planned_dev: gpd.GeoDataFrame | None = None,
 ) -> folium.Map:
     """Create interactive map with choropleth, dot-density, and zone overlays."""
     _progress("Creating interactive socioeconomic map ...")
@@ -1779,6 +1782,63 @@ def create_socioeconomic_map(
     else:
         mls_fg = None
 
+    # -- Planned developments layer --
+    if planned_dev is not None and len(planned_dev) > 0:
+        import math
+        import matplotlib.colors as mcolors
+        dev_fg = folium.FeatureGroup(name="Planned Developments", show=False)
+
+        # Color scale by unit count: light blue (few) → yellow → red (many)
+        # Same palette as Affordable Housing AMI colors
+        dev_unit_vals = planned_dev["expected_units"].dropna()
+        dev_max_units = float(dev_unit_vals.max()) if len(dev_unit_vals) > 0 else 1
+        if dev_max_units <= 0:
+            dev_max_units = 1
+        dev_color_stops = [
+            (0.0, "#91bfdb"),   # light blue (fewest units)
+            (0.33, "#fee090"),  # light yellow
+            (0.66, "#fc8d59"),  # orange
+            (1.0, "#d73027"),   # deep red (most units)
+        ]
+        dev_cmap = mcolors.LinearSegmentedColormap.from_list(
+            "dev_units", [(s, c) for s, c in dev_color_stops]
+        )
+
+        for _, row in planned_dev.iterrows():
+            name = row.get("name", "Unknown")
+            addr = row.get("address", "Unknown")
+            units = row.get("expected_units", 0)
+            if pd.isna(units):
+                units = 0
+            units = int(units)
+
+            frac = min(units / dev_max_units, 1.0)
+            color = mcolors.rgb2hex(dev_cmap(frac))
+
+            popup_html = f"""
+            <b>{name}</b><br>
+            {addr}<br>
+            Expected units: {units:,}
+            """
+
+            tooltip_html = f"{name} &bull; {units:,} units"
+
+            folium.CircleMarker(
+                location=[row.geometry.y, row.geometry.x],
+                radius=10,
+                color="#555",
+                weight=1.5,
+                fillColor=color,
+                fillOpacity=0.85,
+                popup=folium.Popup(popup_html, max_width=200),
+                tooltip=folium.Tooltip(tooltip_html),
+            ).add_to(dev_fg)
+
+        dev_fg.add_to(m)
+        _progress(f"Added {len(planned_dev)} planned development markers")
+    else:
+        dev_fg = None
+
     # -- Custom control panel replaces Folium LayerControl --
 
     # -- Banner with FAQ button (matching school_closure_analysis.html style) --
@@ -2064,11 +2124,40 @@ FAQ
         for mls_metric_name in ["Homes Sold (2023\u20132025)", "Median Home Price (2023\u20132025)"]:
             all_legends[mls_metric_name] = mls_legend_html
 
+        # Override Planned Developments legend with unit-count legend
+        dev_legend_html = """
+        <div style="padding: 10px 14px; background: white; border-radius: 5px;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.3); max-width: 320px; font-size: 13px;">
+            <div style="font-weight: bold; margin-bottom: 8px;">Planned Developments by Expected Unit Count</div>
+            <div style="display: flex; align-items: center; margin: 4px 0;">
+                <span style="display:inline-block; width:14px; height:14px; background:#d73027;
+                      border-radius:50%; margin-right:8px;"></span>400+ units
+            </div>
+            <div style="display: flex; align-items: center; margin: 4px 0;">
+                <span style="display:inline-block; width:14px; height:14px; background:#fc8d59;
+                      border-radius:50%; margin-right:8px;"></span>150–400 units
+            </div>
+            <div style="display: flex; align-items: center; margin: 4px 0;">
+                <span style="display:inline-block; width:14px; height:14px; background:#fee090;
+                      border-radius:50%; margin-right:8px;"></span>50–150 units
+            </div>
+            <div style="display: flex; align-items: center; margin: 4px 0;">
+                <span style="display:inline-block; width:14px; height:14px; background:#91bfdb;
+                      border-radius:50%; margin-right:8px;"></span>&lt;50 units
+            </div>
+            <div style="margin-top: 6px; font-size: 11px; color: #666;">
+                Source: Chapel Hill Active Development (hand-transcribed March 12, 2026)
+            </div>
+        </div>
+        """
+        all_legends["Planned Developments"] = dev_legend_html
+
         # ── JS data serialization ──
         dot_fg_name = dot_fg.get_name()
         map_name = m.get_name()
         ah_fg_name = ah_fg.get_name() if ah_fg is not None else "null"
         mls_fg_name = mls_fg.get_name() if mls_fg is not None else "null"
+        dev_fg_name = dev_fg.get_name() if dev_fg is not None else "null"
         school_fg_name = school_fg.get_name()
 
         race_colors_list = [color for color, label in RACE_CATEGORIES.values()]
@@ -2192,6 +2281,41 @@ FAQ
         mls_ppsf_by_zone_js = _json.dumps(all_mls_ppsf, separators=(",", ":"))
         mls_bedrooms_by_zone_js = _json.dumps(all_mls_bedrooms, separators=(",", ":"))
 
+        # Zone-level planned development aggregates — per zone type
+        def _dev_by_zone_type(dev_gdf, zone_gdf, school_names):
+            """Spatial-join planned dev points to zone polygons, return (units, counts)."""
+            n = len(school_names)
+            if dev_gdf is None or zone_gdf is None or len(dev_gdf) == 0 or len(zone_gdf) == 0:
+                return [0] * n, [0] * n
+            dev_wgs = dev_gdf.to_crs(CRS_WGS84)
+            zones_wgs = zone_gdf.to_crs(CRS_WGS84)
+            joined = gpd.sjoin(dev_wgs, zones_wgs[["school", "geometry"]],
+                               how="left", predicate="within")
+            valid = joined.dropna(subset=["school"])
+            agg = valid.groupby("school").agg(
+                total_units=("expected_units", "sum"),
+                dev_count=("expected_units", "size"),
+            ).reset_index()
+            agg_dict = agg.set_index("school")
+            units = [int(agg_dict.loc[s, "total_units"]) if s in agg_dict.index else 0
+                     for s in school_names]
+            counts = [int(agg_dict.loc[s, "dev_count"]) if s in agg_dict.index else 0
+                      for s in school_names]
+            return units, counts
+
+        all_dev_units = []
+        all_dev_counts = []
+        for zt_gdf in active_zone_gdfs:
+            units, counts = _dev_by_zone_type(planned_dev, zt_gdf, master_school_names)
+            all_dev_units.append(units)
+            all_dev_counts.append(counts)
+        if not all_dev_units:
+            n = len(master_school_names)
+            all_dev_units = [[0] * n]
+            all_dev_counts = [[0] * n]
+        dev_units_by_zone_js = _json.dumps(all_dev_units, separators=(",", ":"))
+        dev_counts_by_zone_js = _json.dumps(all_dev_counts, separators=(",", ":"))
+
         # BG / Block layer JS refs
         bg_layers_js = "[" + ",".join(bg_fg_names) + "]"
         blk_layers_js = "[" + ",".join(blk_fg_names) + "]"
@@ -2302,6 +2426,7 @@ FAQ
             var blkLayers = {blk_layers_js};
             var ahFg = {ah_fg_name};
             var mlsFg = {mls_fg_name};
+            var devFg = {dev_fg_name};
             var schoolFg = {school_fg_name};
             var dots = {data_js};
             var allDotZones = {all_dot_zones_js};
@@ -2312,6 +2437,8 @@ FAQ
             var mlsPriceByZone = {mls_price_by_zone_js};
             var mlsPpsfByZone = {mls_ppsf_by_zone_js};
             var mlsBedroomsByZone = {mls_bedrooms_by_zone_js};
+            var devUnitsByZone = {dev_units_by_zone_js};
+            var devCountsByZone = {dev_counts_by_zone_js};
             var blockColors = {block_colors_js};
             var blockValues = {block_values_js};
             var raceColors = {race_colors_js};
@@ -2343,7 +2470,7 @@ FAQ
             if (mapDiv) mapDiv.parentElement.appendChild(zoneStrip);
 
             // ── Zone card rebuild ──
-            var currentLayout = '';  // 'histogram', 'barplot', 'housing', 'mls', or 'race'
+            var currentLayout = '';  // 'histogram', 'barplot', 'housing', 'mls', 'dev', or 'race'
             var lastMetricIdx = metricNames.length - 1;
 
             // Helper: detect special metric types by name
@@ -2354,8 +2481,11 @@ FAQ
                 var n = metricNames[idx];
                 return n && n.indexOf('Housing Market') === 0;
             }}
+            function isDevMetric(idx) {{
+                return metricNames[idx] === 'Planned Developments';
+            }}
             function isCountOrZoneMetric(idx) {{
-                return isHousingMetric(idx) || isMlsMetric(idx);
+                return isHousingMetric(idx) || isMlsMetric(idx) || isDevMetric(idx);
             }}
 
             function rebuildZoneCards() {{
@@ -2363,8 +2493,9 @@ FAQ
                 var isRace = (currentMetric === 0);
                 var isHousing = isHousingMetric(currentMetric);
                 var isMls = isMlsMetric(currentMetric);
-                var isIncome = (!isRace && !isHousing && !isMls && metricPrefixes[currentMetric] === '$');
-                var isPct = (!isRace && !isIncome && !isHousing && !isMls);
+                var isDev = isDevMetric(currentMetric);
+                var isIncome = (!isRace && !isHousing && !isMls && !isDev && metricPrefixes[currentMetric] === '$');
+                var isPct = (!isRace && !isIncome && !isHousing && !isMls && !isDev);
 
                 if (isRace) {{
                     currentLayout = 'race';
@@ -2372,6 +2503,15 @@ FAQ
                     card.className = 'zone-card';
                     card.innerHTML = '<div class="zone-card-avg" style="padding:10px;">Select a metric to see zone distributions</div>';
                     zoneStrip.appendChild(card);
+                }} else if (isDev) {{
+                    currentLayout = 'dev';
+                    zoneStrip.innerHTML =
+                        '<div id="dev-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:960px;margin:0 auto;padding:8px;">' +
+                        '  <div><div class="barplot-title">Total Expected Units by Zone</div>' +
+                        '    <canvas id="bar-dev-units" width="440" height="320"></canvas></div>' +
+                        '  <div><div class="barplot-title">Number of Developments by Zone</div>' +
+                        '    <canvas id="bar-dev-count" width="440" height="320"></canvas></div>' +
+                        '</div>';
                 }} else if (isHousing) {{
                     currentLayout = 'housing';
                     zoneStrip.innerHTML =
@@ -2753,24 +2893,28 @@ FAQ
                 var sfx = metricSuffixes[currentMetric];
                 var isHousing = isHousingMetric(currentMetric);
                 var isMls = isMlsMetric(currentMetric);
-                var isIncome = (!isHousing && !isMls && pfx === '$');
+                var isDev = isDevMetric(currentMetric);
+                var isIncome = (!isHousing && !isMls && !isDev && pfx === '$');
                 var nSchools = masterSchools.length;
                 var zoneNames = allZoneNames[currentZoneType];
                 var nZones = zoneNames.length;
 
                 // Special case: Affordable Housing - compute zone totals dynamically
+                // NOTE: dotZones[i] are master school indices (0..nSchools-1),
+                // so we must use nSchools (not nZones) for array sizing and
+                // masterSchools for labels to keep labels aligned with values.
                 if (isHousing) {{
                     // Sum ah_units per zone (using unique blocks per zone)
                     var ahMi = mi;  // blockValues index for ah_units
                     var zoneTotals = [];
                     var seenBlocks = [];  // Track which blocks counted per zone
-                    for (var zi = 0; zi < nZones; zi++) {{
+                    for (var zi = 0; zi < nSchools; zi++) {{
                         zoneTotals.push(0);
                         seenBlocks.push({{}});
                     }}
                     for (var i = 0; i < dots.length; i++) {{
                         var zi = dotZones[i];
-                        if (zi >= 0 && zi < nZones) {{
+                        if (zi >= 0 && zi < nSchools) {{
                             var bi = dots[i][3];  // block index
                             if (!seenBlocks[zi][bi]) {{
                                 seenBlocks[zi][bi] = true;
@@ -2781,16 +2925,25 @@ FAQ
                             }}
                         }}
                     }}
-                    drawBarplot('bar-ah', zoneNames, zoneTotals, 'count');
+                    drawBarplot('bar-ah', masterSchools, zoneTotals, 'count');
+                    return;
+                }}
+
+                // Special case: Planned Developments — draw 2 charts
+                // Data arrays are indexed by masterSchools, so use masterSchools as labels
+                if (isDev) {{
+                    drawBarplot('bar-dev-units', masterSchools, devUnitsByZone[currentZoneType], 'count');
+                    drawBarplot('bar-dev-count', masterSchools, devCountsByZone[currentZoneType], 'count');
                     return;
                 }}
 
                 // Special case: MLS Housing Market — draw all 4 charts
+                // Data arrays are indexed by masterSchools, so use masterSchools as labels
                 if (isMls) {{
-                    drawBarplot('bar-mls-sales', zoneNames, mlsSalesByZone[currentZoneType], 'count');
-                    drawBarplot('bar-mls-price', zoneNames, mlsPriceByZone[currentZoneType], 'dollar');
-                    drawBarplot('bar-mls-ppsf', zoneNames, mlsPpsfByZone[currentZoneType], 'dollar');
-                    drawBedroomHistogram('hist-bedrooms', mlsBedroomsByZone[currentZoneType], zoneNames);
+                    drawBarplot('bar-mls-sales', masterSchools, mlsSalesByZone[currentZoneType], 'count');
+                    drawBarplot('bar-mls-price', masterSchools, mlsPriceByZone[currentZoneType], 'dollar');
+                    drawBarplot('bar-mls-ppsf', masterSchools, mlsPpsfByZone[currentZoneType], 'dollar');
+                    drawBedroomHistogram('hist-bedrooms', mlsBedroomsByZone[currentZoneType], masterSchools);
                     return;
                 }}
 
@@ -2868,16 +3021,17 @@ FAQ
                 var isRace = (idx === 0);
                 var isHousing = isHousingMetric(idx);
                 var isMls = isMlsMetric(idx);
-                var isIncome = (!isRace && !isHousing && !isMls && metricPrefixes[idx] === '$');
-                var needLayout = isRace ? 'race' : (isHousing ? 'housing' : (isMls ? 'mls' : (isIncome ? 'histogram' : 'barplot')));
+                var isDev = isDevMetric(idx);
+                var isIncome = (!isRace && !isHousing && !isMls && !isDev && metricPrefixes[idx] === '$');
+                var needLayout = isRace ? 'race' : (isDev ? 'dev' : (isHousing ? 'housing' : (isMls ? 'mls' : (isIncome ? 'histogram' : 'barplot'))));
                 if (needLayout !== prevLayout) {{
                     rebuildZoneCards();
                 }}
 
-                // Hide Layers section for Race/Ethnicity, AH, and MLS metrics
+                // Hide Layers section for Race/Ethnicity, AH, MLS, and Dev metrics
                 var layersSection = document.getElementById('layers-section');
                 if (layersSection) {{
-                    layersSection.style.display = (isRace || isHousing || isMls) ? 'none' : 'block';
+                    layersSection.style.display = (isRace || isHousing || isMls || isDev) ? 'none' : 'block';
                 }}
 
                 // Affordable Housing markers only visible in AH mode
@@ -2892,6 +3046,13 @@ FAQ
                     if (!map.hasLayer(mlsFg)) mlsFg.addTo(map);
                 }} else if (mlsFg) {{
                     if (map.hasLayer(mlsFg)) map.removeLayer(mlsFg);
+                }}
+
+                // Planned development markers visible in Dev mode
+                if (isDev && devFg) {{
+                    if (!map.hasLayer(devFg)) devFg.addTo(map);
+                }} else if (devFg) {{
+                    if (map.hasLayer(devFg)) map.removeLayer(devFg);
                 }}
 
                 recolorDots();
@@ -3130,6 +3291,9 @@ Used exclusively for dot-density visualization (highest spatial resolution).
 - **District boundary:** `data/cache/chccs_district_boundary.gpkg`
 - **School locations:** `data/cache/nces_school_locations.csv` (NCES EDGE 2023-24)
 - **Residential parcels:** `data/raw/properties/combined_data_polys.gpkg` (for dasymetric dot placement)
+- **Affordable housing:** `data/cache/affordable_housing.gpkg` (Town of Chapel Hill ArcGIS, 2025)
+- **MLS home sales:** `data/cache/mls_home_sales.gpkg` (Triangle MLS 2023-2025, geocoded)
+- **Planned developments:** `data/cache/planned_developments.gpkg` (Town of Chapel Hill, geocoded)
 
 ## Variable Definitions
 
@@ -3316,6 +3480,14 @@ def main():
     else:
         _progress("Note: mls_home_sales.gpkg not found (run mls_geocode.py to create)")
 
+    # ── 5c. Load planned developments data ─────────────────────────────
+    planned_dev = None
+    if DEV_CACHE.exists():
+        planned_dev = gpd.read_file(DEV_CACHE)
+        _progress(f"Loaded {len(planned_dev)} planned developments")
+    else:
+        _progress("Note: planned_developments.gpkg not found (run planned_dev_geocode.py to create)")
+
     # ── 5. Spatial analysis ───────────────────────────────────────────
     print("\n[6/8] Performing spatial analysis ...")
 
@@ -3402,6 +3574,30 @@ def main():
             )
             zone_demographics["mls_total_sales"] = zone_demographics["mls_total_sales"].fillna(0).astype(int)
             _progress(f"Added MLS sales data to {len(mls_zone_agg)} zones")
+
+        # Add planned development aggregates per zone
+        if planned_dev is not None and len(planned_dev) > 0:
+            dev_wgs = planned_dev.to_crs(CRS_WGS84)
+            zones_wgs = zones.to_crs(CRS_WGS84)
+
+            dev_with_zones = gpd.sjoin(
+                dev_wgs,
+                zones_wgs[["school", "geometry"]],
+                how="left",
+                predicate="within"
+            )
+
+            dev_zone_agg = dev_with_zones.dropna(subset=["school"]).groupby("school").agg(
+                dev_total_units=("expected_units", "sum"),
+                dev_count=("expected_units", "size"),
+            ).reset_index()
+
+            zone_demographics = zone_demographics.merge(
+                dev_zone_agg, on="school", how="left"
+            )
+            zone_demographics["dev_total_units"] = zone_demographics["dev_total_units"].fillna(0).astype(int)
+            zone_demographics["dev_count"] = zone_demographics["dev_count"].fillna(0).astype(int)
+            _progress(f"Added planned development data to {len(dev_zone_agg)} zones")
 
         # Save per-school demographics
         zone_demographics.to_csv(OUTPUT_SCHOOL_CSV, index=False)
@@ -3497,6 +3693,7 @@ def main():
             enriched_blocks=enriched_blocks,
             affordable_housing=affordable_housing,
             mls_data=mls_data,
+            planned_dev=planned_dev,
         )
         fmap.save(str(OUTPUT_MAP))
         _progress(f"Saved {OUTPUT_MAP}")

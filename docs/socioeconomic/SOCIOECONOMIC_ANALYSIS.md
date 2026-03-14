@@ -48,6 +48,9 @@ Used exclusively for dot-density visualization (highest spatial resolution).
 - **District boundary:** `data/cache/chccs_district_boundary.gpkg`
 - **School locations:** `data/cache/nces_school_locations.csv` (NCES EDGE 2023-24)
 - **Residential parcels:** `data/raw/properties/combined_data_polys.gpkg` (for dasymetric dot placement)
+- **Affordable housing:** `data/cache/affordable_housing.gpkg` (Town of Chapel Hill ArcGIS, 2025)
+- **MLS home sales:** `data/cache/mls_home_sales.gpkg` (Triangle MLS 2023-2025, geocoded)
+- **Planned developments:** `data/cache/planned_developments.gpkg` (Town of Chapel Hill, geocoded)
 
 ## Variable Definitions
 

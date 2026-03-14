@@ -633,6 +633,39 @@ To protect homeowner privacy, **addresses are not displayed** on the map. Hover 
 
 ---
 
+## 9c. Planned Developments Data
+
+### Data Source
+
+Town of Chapel Hill planned development data, hand-transcribed from the [Active Development](https://www.chapelhillnc.gov/Business-and-Development/Active-Development) page on March 12, 2026, saved to `data/raw/properties/planned/CH_Development-3_26.csv`. The dataset contains 36 planned residential development projects with project name, address, and estimated unit counts from planning documents.
+
+### Geocoding Pipeline
+
+Addresses are geocoded using the same two-stage pipeline as MLS data:
+
+1. **Census Bureau Batch Geocoder (primary):** Addresses are submitted to the U.S. Census Bureau batch geocoding API, which returns coordinates and Census geography.
+2. **Nominatim fallback:** Records that fail Census geocoding are retried against the OpenStreetMap Nominatim API with a 1-second rate limit per request.
+
+Successfully geocoded records are stored as a GeoPackage (`data/cache/planned_developments.gpkg`) with point geometry in WGS84 (EPSG:4326).
+
+### Integration
+
+Planned developments are displayed on the socioeconomic map as a toggleable marker layer under the HOUSING metric category. Each marker shows the project name, status, and estimated unit count on hover. Projects are spatially joined to attendance zones to show planned development activity per zone.
+
+### Limitations
+
+1. **Projects may not all proceed.** Planned and approved developments are not guaranteed to be built. Market conditions, financing, regulatory changes, or community opposition may delay, alter, or cancel projects at any stage.
+
+2. **Unit counts are estimates from planning documents.** The number of housing units associated with each project comes from planning applications and may change during the approval process or construction. Final built unit counts may differ.
+
+3. **Geocoding is approximate, not exact.** Census batch geocoding matches to interpolated address ranges on TIGER/Line road segments, not exact project boundaries or parcel centroids. Some projects may be placed on the wrong block or attendance zone, particularly for large developments that span multiple parcels.
+
+4. **Single point-in-time snapshot.** The project list reflects a point-in-time extract from the Town of Chapel Hill and does not automatically update. Recently submitted, withdrawn, or completed projects may not be reflected.
+
+5. **Chapel Hill only.** The dataset covers Town of Chapel Hill planned developments only. Planned developments in Carrboro or unincorporated Orange County within the CHCCS district boundary are not included.
+
+---
+
 ## 10. Output Files
 
 | File | Description |

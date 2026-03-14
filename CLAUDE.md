@@ -42,6 +42,7 @@ CHCCS_geospatial/
 │   ├── property_data.py                  # Orange County parcel processing
 │   ├── affordable_housing.py             # Affordable housing data download & assessment
 │   ├── mls_geocode.py                   # MLS home sales geocoding (Census + Nominatim)
+│   ├── planned_dev_geocode.py            # Planned development geocoding (Census + Nominatim)
 │   ├── environmental_map.py              # Consolidated environmental map (TRAP + flood + UHI)
 │   ├── environmental_story.py            # Scrollytelling methodology walkthrough generator
 │   ├── school_closure_analysis.py        # School closure impact (travel + traffic)
@@ -105,6 +106,10 @@ python src/affordable_housing.py --cache-only  # cached data only
 # Geocode MLS home sales data
 python src/mls_geocode.py
 
+# Geocode planned development data
+python src/planned_dev_geocode.py
+python src/planned_dev_geocode.py --cache-only  # cached data only
+
 # Generate consolidated environmental analysis map (TRAP + flood + UHI)
 python src/environmental_map.py
 python src/environmental_map.py --cache-only   # cached data only
@@ -145,6 +150,7 @@ python src/socioeconomic_story.py --cache-only  # cached data only
 | NCDOT AADT stations | `data/cache/ncdot_aadt_orange_county.gpkg` | NCDOT ArcGIS (Orange County) |
 | Affordable housing | `data/cache/affordable_housing.gpkg` | Town of Chapel Hill ArcGIS (2025) |
 | MLS home sales | `data/cache/mls_home_sales.gpkg` | Triangle MLS (2023-2025), geocoded via Census + Nominatim |
+| Planned developments | `data/cache/planned_developments.gpkg` | Town of Chapel Hill Active Development page (hand-transcribed 2026-03-12), geocoded via Census + Nominatim |
 | UHI proxy scores | `data/processed/uhi_proxy_scores.csv` | Computed (ESA WorldCover proxy) |
 | TRAP grid cache | `data/cache/trap_grids.npz` | Computed (road_pollution grid) |
 | UHI grid cache | `data/cache/uhi_grid.npz` | Computed (ESA WorldCover proxy) |

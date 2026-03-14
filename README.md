@@ -17,6 +17,7 @@ Objective spatial analysis of all 11 Chapel Hill-Carrboro City Schools (CHCCS) e
 | `socioeconomic_story.py` | Interactive scrollytelling walkthrough of how the socioeconomic map is built | `socioeconomic_methodology.html` |
 | `affordable_housing.py` | Affordable housing data download and quality assessment | `affordable_housing.gpkg` |
 | `mls_geocode.py` | MLS home sales geocoding (Census batch + Nominatim fallback) | `mls_home_sales.gpkg` |
+| `planned_dev_geocode.py` | Planned development geocoding (Census batch + Nominatim fallback) | `planned_developments.gpkg` |
 | `childcare_geocode.py` | Childcare facility geocoding and proximity analysis by distance bands | CSVs in `data/processed/` |
 | `property_data.py` | Orange County residential parcel classification and centroid extraction | `combined_data_centroids.gpkg` |
 
@@ -37,6 +38,7 @@ python src/environmental_map.py          # Consolidated environmental analysis m
 python src/environmental_story.py        # Environmental methodology scrollytelling page
 python src/affordable_housing.py         # Affordable housing data download
 python src/mls_geocode.py               # Geocode MLS home sales data
+python src/planned_dev_geocode.py      # Geocode planned development data
 python src/school_closure_analysis.py   # School closure impact (travel + traffic)
 python src/closure_story.py            # School closure methodology scrollytelling page
 python src/socioeconomic_story.py     # Socioeconomic methodology scrollytelling page
@@ -63,6 +65,7 @@ Most modules are independent, but some depend on cached data:
 | Parcel data | Orange County GIS | Committed in `data/raw/properties/` |
 | Childcare facilities | NC DCDEE | Committed in `data/raw/childcare/` |
 | MLS home sales | Triangle MLS (2023-2025) | Committed in `data/raw/MLS/`, geocoded to `data/cache/mls_home_sales.gpkg` |
+| Planned developments | Town of Chapel Hill (2025) | Committed in `data/raw/properties/planned/`, geocoded to `data/cache/planned_developments.gpkg` |
 | Attendance zones | CHCCS GIS | Auto-downloaded, cached as GeoPackage |
 
 ## Prerequisites
