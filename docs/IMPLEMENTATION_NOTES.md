@@ -113,6 +113,7 @@ Census-based demographic analysis of CHCCS elementary school attendance zones us
 
 - **7 choropleth layers** (block level): median income, % below 185% poverty, % minority, % renter, % zero-vehicle, % elementary age 5-9, % young children 0-4
 - **1:1 dot-density race layer** (~95,764 dots) with dasymetric placement constrained to residential parcels
+- **3 marker layers** under HOUSING category: affordable housing (AMI-colored), MLS home sales (price-colored), planned developments (blue-yellow-red by unit count, fixed radius with dark grey border)
 - **5 zone types** with radio-button switching: School Zones (10 attendance zones), Walk Zones (7 CHCCS walk zones), Nearest Walk (11 Voronoi-like zones), Nearest Bike (11), Nearest Drive (11)
 - **Per-zone barplots and histograms** rendered in a sidebar panel, updating on zone type and school selection
 - **Batch JS rendering** for dot-density (compact array + for-loop, Canvas renderer)
@@ -245,7 +246,7 @@ Mirrors `closure_story.py` exactly: loads all data from existing caches (require
 
 ### Key Implementation Details
 
-- **18-step story arc** covering zones, block groups, the mismatch problem, area vs. dasymetric weighting, derived metrics, block-level data, dot-density generation, zone aggregation, walk zones, affordable housing, and limitations
+- **20-step story arc** covering zones, block groups, the mismatch problem, area vs. dasymetric weighting, derived metrics, block-level data, dot-density generation, zone aggregation, walk zones, affordable housing, MLS home sales, planned developments, and limitations
 - **Focus area:** Northside Elementary bbox (~0.02° padding) — generates ~5-10K dots instead of 95K for the full district, keeping file size < 5 MB
 - **Fragment visualization:** Computes zone-BG intersection fragments for Northside with both area and dasymetric weights, showing the contrast visually
 - **Dot-density generation:** Same algorithm as `generate_racial_dots()` in `school_socioeconomic_analysis.py`, spatially filtered to focus area, 1:1 dot-to-person ratio
@@ -305,6 +306,40 @@ Geocodes Triangle MLS closed residential sales (2023-2025) and produces a point 
 - Census geocoding returns Census geography FIPS codes, enabling direct block-level joins without a separate spatial join step for Census-matched records.
 - The pipeline extracts a `bedrooms` column from the "Bedrooms Total" field in the raw MLS CSV. This is carried through geocoding into the GeoPackage output and displayed in map marker tooltips.
 - The socioeconomic map presents MLS data under a consolidated **"Housing Market (2023-2025)"** toggle. The chart panel renders a 2x2 grid: Homes Sold (bar), Median Price (bar), Median Price/SqFt (bar), and Bedroom Distribution (histogram). All four charts update per zone when the zone type or school selection changes.
+- **Bar chart labeling:** All HOUSING metric bar charts (AH, MLS, Planned Dev) use the master school list (all 11 schools) as labels, matching the master-indexed data arrays produced by spatial joins. This ensures correct label-value alignment across all zone types, including those with fewer than 11 zones (e.g., School Zones has 10, Walk Zones has 7). Schools absent from a zone type show zero values.
+
+---
+
+## Planned Developments Geocoding
+
+### Overview
+
+Geocodes planned development addresses hand-transcribed from the Town of Chapel Hill [Active Development](https://www.chapelhillnc.gov/Business-and-Development/Active-Development) page (March 12, 2026) and produces a point GeoPackage for spatial analysis with attendance zones.
+
+### Workflow
+
+1. **Load raw CSV** — `data/raw/properties/planned/CH_Development-3_26.csv` containing project name, address, and expected unit count
+2. **Address cleaning** — Fix known typos (`_ADDRESS_FIXES` dict: "Erwin Toad" → "Erwin Road", "Weaver Diary" → "Weaver Dairy", "Martin Luther Kind" → "Martin Luther King") and simplify range/multi addresses via regex (e.g., "207 and 209 Meadowmont Lane" → "207 Meadowmont Lane", "1708 - 1712 Legion Road" → "1708 Legion Road")
+3. **Census batch geocoding** — Addresses submitted to Census Bureau batch API. Chapel Hill first, then Carrboro retry for unmatched.
+4. **Nominatim fallback** — Remaining unmatched addresses retried via Nominatim with 1-second rate limiting.
+5. **District clipping** — Results clipped to CHCCS district boundary via `gpd.clip()`.
+6. **Output** — GeoPackage with point geometry (WGS84) saved to `data/cache/planned_developments.gpkg`.
+
+### Key Outputs
+
+| File | Purpose |
+|------|---------|
+| `src/planned_dev_geocode.py` | Geocoding script: address cleaning + Census batch + Nominatim fallback |
+| `data/cache/planned_developments.gpkg` | Geocoded planned developments as point GeoPackage |
+
+### Technical Notes
+
+- The socioeconomic map presents planned developments as CircleMarkers under the HOUSING radio group, colored by unit count using the same blue→yellow→red palette as affordable housing (`#91bfdb` → `#fee090` → `#fc8d59` → `#d73027`). A categorical legend shows four unit-count bands (<50, 50–150, 150–400, 400+).
+- Markers use a fixed radius of 10 px with a dark grey (`#555`) border (weight 1.5) for visual prominence, matching the Affordable Housing marker style.
+- The chart panel renders a 1×2 grid: Total Expected Units (bar) and Number of Developments (bar), both updating per zone type.
+- The demographics editorial story (`example_stories/chccs_demographics_story.py`) embeds planned development data as a `var DEV` GeoJSON variable and renders CircleMarkers with the same blue→yellow→red color scheme and fixed radius/border styling as the methodology map. The planned dev slide shows drive zone polygons + dev markers on the Leaflet map (matching the MLS slides pattern) with an Ephesus-vs-Seawell comparison table showing expected units by drive zone and attendance zone.
+- Zone-level aggregation uses spatial join (`gpd.sjoin`) for each zone type, summing expected units and counting projects per zone.
+- Loaded by `school_socioeconomic_analysis.py` as optional data — graceful degradation if cache is missing.
 
 ---
 

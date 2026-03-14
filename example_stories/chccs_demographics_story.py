@@ -2,8 +2,8 @@
 
 This module creates an interactive scrollytelling HTML page comparing the
 demographic profiles of Ephesus Elementary and Seawell Elementary attendance
-zones, using Census data, drive-time analysis, dot-density mapping, and
-age distribution choropleth.
+zones, using Census data, drive-time analysis, dot-density mapping,
+age distribution choropleth, and planned development analysis.
 
 Key insight: Seawell's attendance zone looks economically vulnerable, but
 drive-time aggregation reveals much of that vulnerable population is actually
@@ -68,6 +68,7 @@ ACS_CACHE = DATA_CACHE / "census_acs_blockgroups.gpkg"
 DECENNIAL_CACHE = DATA_CACHE / "census_decennial_blocks.gpkg"
 AH_CACHE = DATA_CACHE / "affordable_housing.gpkg"
 MLS_CACHE = DATA_CACHE / "mls_home_sales.gpkg"
+DEV_CACHE = DATA_CACHE / "planned_developments.gpkg"
 ZONE_DEMOGRAPHICS_CSV = DATA_PROCESSED / "census_school_demographics.csv"
 GRID_CSV = DATA_PROCESSED / "school_desert_grid.csv"
 
@@ -322,6 +323,13 @@ def load_mls_data() -> gpd.GeoDataFrame:
         _progress("MLS home sales cache not found, skipping")
         return gpd.GeoDataFrame()
     return gpd.read_file(MLS_CACHE)
+
+
+def load_planned_dev() -> gpd.GeoDataFrame:
+    if not DEV_CACHE.exists():
+        _progress("Planned developments cache not found, skipping")
+        return gpd.GeoDataFrame()
+    return gpd.read_file(DEV_CACHE)
 
 
 def load_zone_demographics() -> pd.DataFrame:
@@ -914,10 +922,7 @@ details[open] summary {{ margin-bottom: 8px; }}
     <p>School enrollment depends on where families move. <strong>MLS home
     sales data</strong> (2023&ndash;2025) reveals which zones attract the
     most new residents.</p>
-    <p>The bar charts show <strong>total closed residential sales</strong>
-    by school zone &mdash; drive-time zones on the left, attendance zones
-    on the right.</p>
-    <div class="metric-box" id="sales-comparison-metrics">
+    <div id="sales-comparison-metrics">
     </div>
     <div class="source">
       <strong>Data:</strong> Triangle MLS closed sales 2023&ndash;2025.
@@ -932,10 +937,7 @@ details[open] summary {{ margin-bottom: 8px; }}
     <p>Declining CHCCS enrollment is partly driven by housing costs. When
     median home prices exceed what young families can afford, zones lose
     the demographic pipeline that sustains enrollment.</p>
-    <p>The bar charts show <strong>median closed sale price</strong> per
-    zone. Closing a school in an affordable area displaces families with
-    fewer options to relocate within the district.</p>
-    <div class="metric-box" id="price-comparison-metrics">
+    <div id="price-comparison-metrics">
     </div>
     <p>Higher median home prices around Seawell are consistent with
     the wealthier population surrounding that school.</p>
@@ -945,11 +947,46 @@ details[open] summary {{ margin-bottom: 8px; }}
     </div>
   </div>
 
-  <!-- ========== CONCLUSION (Step 16) ========== -->
-
-  <!-- Step 16: Summary -->
+  <!-- Step 16: Planned Developments -->
   <div class="step" data-step="16">
     <div class="step-number">17</div>
+    <h2>Where Is Growth Headed?</h2>
+    <p>Chapel Hill has <strong>29 planned residential developments</strong>
+    within the CHCCS district, representing thousands of new housing units.
+    Each circle is colored by expected unit count:</p>
+    <div class="dot-legend">
+      <div class="dot-legend-item">
+        <span class="dot-legend-swatch" style="background:#d73027;"></span> 400+ units
+      </div>
+      <div class="dot-legend-item">
+        <span class="dot-legend-swatch" style="background:#fc8d59;"></span> 150&ndash;400 units
+      </div>
+      <div class="dot-legend-item">
+        <span class="dot-legend-swatch" style="background:#fee090;"></span> 50&ndash;150 units
+      </div>
+      <div class="dot-legend-item">
+        <span class="dot-legend-swatch" style="background:#91bfdb;"></span> &lt;50 units
+      </div>
+    </div>
+    <div id="dev-comparison-metrics">
+    </div>
+    <p>New planned development is <strong>heavily concentrated</strong> around
+    communities for whom <strong style="color:{EPHESUS_COLOR};">Ephesus</strong>
+    would be the most convenient school by driving distance. Closing Ephesus
+    would force these future residents to drive farther to reach their assigned
+    school.</p>
+    <div class="source">
+      <strong>Data:</strong> Town of Chapel Hill
+      <a href="https://www.townofchapelhill.org/government/departments-services/planning/development-activity/under-review-approved" target="_blank">Active Development</a> page,
+      hand-transcribed March 12, 2026
+    </div>
+  </div>
+
+  <!-- ========== CONCLUSION (Step 17) ========== -->
+
+  <!-- Step 17: Summary -->
+  <div class="step" data-step="17">
+    <div class="step-number">18</div>
     <h2>Summary</h2>
 
     <div id="final-summary-text">
@@ -990,6 +1027,8 @@ var ZONES = {data["zones_json"]};
 var BG = {data["bg_json"]};
 var DOT_DATA = {data["dot_data"]};
 var AH = {data["ah_json"]};
+var MLS = {data["mls_json"]};
+var DEV = {data["dev_json"]};
 var ZONE_STATS = {zone_stats};
 var DRIVE_STATS = {drive_stats};
 var DRIVE_ZONES = {data.get("drive_zones_json", '{{"type":"FeatureCollection","features":[]}}')};
@@ -1144,29 +1183,58 @@ function showAgeCharts() {{
   );
 }}
 
-function showSalesCharts() {{
+function showDevCharts() {{
   dualPanelChart(
-    "Home Sales by School Zone (2023\u20132025)",
-    "Total closed residential sales from Triangle MLS",
-    "More sales activity signals residential turnover and opportunities for new families.",
-    "mls_total_sales",
+    "Planned Developments by School Zone",
+    "Total expected housing units from planned developments",
+    "More planned units means more future families \u2014 and more future students.",
+    "dev_total_units",
     {{ mode: "count" }}
-  );
-}}
-
-function showPriceCharts() {{
-  dualPanelChart(
-    "Median Home Price by School Zone",
-    "Median closed sale price (2023\u20132025)",
-    "Higher prices mean fewer young families can afford to move in.",
-    "mls_median_price",
-    {{ mode: "dollar" }}
   );
 }}
 
 // === Dynamic metric boxes ===
 function fmt(val) {{ return Math.round(val).toLocaleString(); }}
 function pctNote(val) {{ return '<div class="metric-label" style="font-size:0.75em;color:#999;">(' + val.toFixed(1) + '% of zone)</div>'; }}
+
+function buildTwoRowMetricTable(metric, label, mode) {{
+  // Ephesus and Seawell only — two rows: drive zones (top), attendance zones (bottom)
+  var driveSrc = (DRIVE_STATS && DRIVE_STATS.length) ? DRIVE_STATS : ZONE_STATS;
+  var ephD = findSchool(driveSrc, "Ephesus") || {{}};
+  var seaD = findSchool(driveSrc, "Seawell") || {{}};
+  var ephZ = findSchool(ZONE_STATS, "Ephesus") || {{}};
+  var seaZ = findSchool(ZONE_STATS, "Seawell") || {{}};
+
+  function fmtVal(v) {{
+    if (mode === "dollar") return "$" + fmt(v);
+    return fmt(v);
+  }}
+
+  var ephDVal = ephD[metric] || 0;
+  var seaDVal = seaD[metric] || 0;
+  var ephZVal = ephZ[metric] || 0;
+  var seaZVal = seaZ[metric] || 0;
+
+  // Table layout: header row + two data sections with clear labels
+  var html = '<table style="width:100%;border-collapse:collapse;margin:8px 0;font-size:0.9em;">'
+    + '<thead><tr>'
+    + '<th style="text-align:left;padding:4px 8px;color:#555;font-size:0.85em;width:40%;"></th>'
+    + '<th style="text-align:center;padding:4px 8px;color:' + EPHESUS_COLOR + ';font-weight:bold;">Ephesus</th>'
+    + '<th style="text-align:center;padding:4px 8px;color:' + SEAWELL_COLOR + ';font-weight:bold;">Seawell</th>'
+    + '</tr></thead><tbody>'
+    + '<tr style="background:#f5f5f5;">'
+    + '<td style="padding:6px 8px;font-weight:bold;color:#555;">Drive Zones</td>'
+    + '<td style="text-align:center;padding:6px 8px;font-size:1.2em;font-weight:bold;color:' + EPHESUS_COLOR + ';">' + fmtVal(ephDVal) + '</td>'
+    + '<td style="text-align:center;padding:6px 8px;font-size:1.2em;font-weight:bold;color:' + SEAWELL_COLOR + ';">' + fmtVal(seaDVal) + '</td>'
+    + '</tr>'
+    + '<tr>'
+    + '<td style="padding:6px 8px;font-weight:bold;color:#555;">Attendance Zones</td>'
+    + '<td style="text-align:center;padding:6px 8px;font-size:1.2em;font-weight:bold;color:' + EPHESUS_COLOR + ';">' + fmtVal(ephZVal) + '</td>'
+    + '<td style="text-align:center;padding:6px 8px;font-size:1.2em;font-weight:bold;color:' + SEAWELL_COLOR + ';">' + fmtVal(seaZVal) + '</td>'
+    + '</tr>'
+    + '</tbody></table>';
+  return html;
+}}
 
 function populateMetrics() {{
   // Use drive stats if available, fall back to zone stats
@@ -1257,33 +1325,25 @@ function populateMetrics() {{
       + '<div class="metric-label">Seawell: Children Under 5</div></div>';
   }}
 
-  // Sales comparison metrics (step 14)
+  // Sales comparison metrics (step 14) — two-row table
   el = document.getElementById("sales-comparison-metrics");
   if (el) {{
-    var ephSales = eph.mls_total_sales || ephZ.mls_total_sales || 0;
-    var seaSales = sea.mls_total_sales || seaZ.mls_total_sales || 0;
-    el.innerHTML = '<div class="metric" style="border:2px solid {EPHESUS_COLOR};">'
-      + '<div class="metric-value" style="color:{EPHESUS_COLOR};">' + fmt(ephSales) + '</div>'
-      + '<div class="metric-label">Ephesus: Homes Sold</div></div>'
-      + '<div class="metric" style="border:2px solid {SEAWELL_COLOR};">'
-      + '<div class="metric-value" style="color:{SEAWELL_COLOR};">' + fmt(seaSales) + '</div>'
-      + '<div class="metric-label">Seawell: Homes Sold</div></div>';
+    el.innerHTML = buildTwoRowMetricTable("mls_total_sales", "Homes Sold", "count");
   }}
 
-  // Price comparison metrics (step 15)
+  // Price comparison metrics (step 15) — two-row table
   el = document.getElementById("price-comparison-metrics");
   if (el) {{
-    var ephPrice = eph.mls_median_price || ephZ.mls_median_price || 0;
-    var seaPrice = sea.mls_median_price || seaZ.mls_median_price || 0;
-    el.innerHTML = '<div class="metric" style="border:2px solid {EPHESUS_COLOR};">'
-      + '<div class="metric-value" style="color:{EPHESUS_COLOR};">$' + fmt(ephPrice) + '</div>'
-      + '<div class="metric-label">Ephesus: Median Price</div></div>'
-      + '<div class="metric" style="border:2px solid {SEAWELL_COLOR};">'
-      + '<div class="metric-value" style="color:{SEAWELL_COLOR};">$' + fmt(seaPrice) + '</div>'
-      + '<div class="metric-label">Seawell: Median Price</div></div>';
+    el.innerHTML = buildTwoRowMetricTable("mls_median_price", "Median Price", "dollar");
   }}
 
-  // Final summary (step 16)
+  // Planned dev metrics (step 16)
+  el = document.getElementById("dev-comparison-metrics");
+  if (el) {{
+    el.innerHTML = buildTwoRowMetricTable("dev_total_units", "Expected Units", "count");
+  }}
+
+  // Final summary (step 17)
   el = document.getElementById("final-summary-text");
   if (el) {{
     el.innerHTML = '<p>This is a direct analysis of two community schools whose purpose '
@@ -1302,6 +1362,9 @@ function populateMetrics() {{
       + 'which may drive future enrollment increases</li>'
       + '<li><strong>Housing Boom</strong> &mdash; Homes around Ephesus are more affordable '
       + 'which means younger families are more likely to be able to afford living near Ephesus</li>'
+      + '<li><strong>Growth Magnet</strong> &mdash; Planned developments near Ephesus represent '
+      + '~8&times; more housing units than near Seawell, signaling future enrollment growth '
+      + 'in the Ephesus area</li>'
       + '</ul>';
   }}
 }}
@@ -1495,6 +1558,109 @@ layers.affordableHousing = L.geoJSON(AH, {{
   }}
 }});
 
+// MLS home sales — dots for location density (step 14)
+layers.mlsSales = L.geoJSON(MLS, {{
+  pointToLayer: function(f, ll) {{
+    return L.circleMarker(ll, {{
+      radius: 3,
+      fillColor: "#e67e22",
+      color: "#b5651d",
+      weight: 0.5,
+      fillOpacity: 0.6,
+    }});
+  }},
+  onEachFeature: function(f, layer) {{
+    var p = f.properties;
+    layer.bindTooltip("$" + Math.round(p.close_price || 0).toLocaleString());
+  }}
+}});
+
+// MLS home prices — dots colored by price (step 15)
+function priceColor(price) {{
+  // Green (affordable) → Yellow → Red (expensive)
+  // $200k = green, $600k = yellow, $1M+ = red
+  var t = Math.min(Math.max((price - 200000) / 800000, 0), 1);
+  if (t < 0.5) {{
+    var s = t * 2;
+    var r = Math.round(50 + s * 205);
+    var g = Math.round(180 - s * 20);
+    var b = Math.round(50);
+    return "rgb(" + r + "," + g + "," + b + ")";
+  }} else {{
+    var s = (t - 0.5) * 2;
+    var r = Math.round(255);
+    var g = Math.round(160 - s * 160);
+    var b = Math.round(50 - s * 50);
+    return "rgb(" + r + "," + g + "," + b + ")";
+  }}
+}}
+layers.mlsPrices = L.geoJSON(MLS, {{
+  pointToLayer: function(f, ll) {{
+    var price = f.properties.close_price || 0;
+    return L.circleMarker(ll, {{
+      radius: 4,
+      fillColor: priceColor(price),
+      color: "#555",
+      weight: 0.5,
+      fillOpacity: 0.7,
+    }});
+  }},
+  onEachFeature: function(f, layer) {{
+    var p = f.properties;
+    layer.bindTooltip("$" + Math.round(p.close_price || 0).toLocaleString());
+  }}
+}});
+
+// Planned developments — color by unit count (blue→yellow→red), matching methodology map
+var DEV_MAX_UNITS = 1;
+if (DEV && DEV.features) {{
+  DEV.features.forEach(function(f) {{
+    var u = f.properties.expected_units || 0;
+    if (u > DEV_MAX_UNITS) DEV_MAX_UNITS = u;
+  }});
+}}
+function devColor(units) {{
+  var frac = Math.min(units / DEV_MAX_UNITS, 1.0);
+  // 4-stop gradient: #91bfdb → #fee090 → #fc8d59 → #d73027
+  var stops = [
+    [0.0,  0x91, 0xbf, 0xdb],
+    [0.33, 0xfe, 0xe0, 0x90],
+    [0.66, 0xfc, 0x8d, 0x59],
+    [1.0,  0xd7, 0x30, 0x27]
+  ];
+  var i = 0;
+  for (var s = 1; s < stops.length; s++) {{
+    if (frac <= stops[s][0]) {{ i = s - 1; break; }}
+    i = s - 1;
+  }}
+  var t = (frac - stops[i][0]) / (stops[i+1][0] - stops[i][0]);
+  var r = Math.round(stops[i][1] + t * (stops[i+1][1] - stops[i][1]));
+  var g = Math.round(stops[i][2] + t * (stops[i+1][2] - stops[i][2]));
+  var b = Math.round(stops[i][3] + t * (stops[i+1][3] - stops[i][3]));
+  return "rgb(" + r + "," + g + "," + b + ")";
+}}
+layers.devMarkers = L.geoJSON(DEV, {{
+  pointToLayer: function(f, ll) {{
+    var units = f.properties.expected_units || 0;
+    var color = devColor(units);
+    return L.circleMarker(ll, {{
+      radius: 10,
+      fillColor: color,
+      color: "#555",
+      weight: 1.5,
+      fillOpacity: 0.85,
+    }});
+  }},
+  onEachFeature: function(f, layer) {{
+    var p = f.properties;
+    var units = p.expected_units || 0;
+    layer.bindTooltip(
+      (p.name || "Development") + "<br>" +
+      units.toLocaleString() + " units"
+    );
+  }}
+}});
+
 // Block groups choropleth (for age steps)
 function bgChoropleth(metric, colorFn) {{
   return L.geoJSON(BG, {{
@@ -1669,15 +1835,28 @@ function handleStep(idx) {{
       showAgeCharts();
       break;
 
-    case 14: // Home sales bar charts
-      showSalesCharts();
+    case 14: // Home sales — drive zones + MLS dots
+      layers.driveZones.addTo(map);
+      layers.mlsSales.addTo(map);
+      layers.schools.addTo(map);
+      districtView();
       break;
 
-    case 15: // Median prices
-      showPriceCharts();
+    case 15: // Median prices — drive zones + price-colored dots
+      layers.driveZones.addTo(map);
+      layers.mlsPrices.addTo(map);
+      layers.schools.addTo(map);
+      districtView();
       break;
 
-    case 16: // Final summary
+    case 16: // Planned dev — drive zones + dev markers
+      layers.driveZones.addTo(map);
+      layers.devMarkers.addTo(map);
+      layers.schools.addTo(map);
+      districtView();
+      break;
+
+    case 17: // Final summary
       ensureDotsLoaded();
       layers.dots.addTo(map);
       layers.bothDriveZones.addTo(map);
@@ -1797,6 +1976,23 @@ def main():
     mls_data = load_mls_data()
     _progress(f"Loaded {len(mls_data)} MLS home sales")
 
+    # [7c/12] Load planned developments
+    print("[7c/12] Loading planned developments ...")
+    dev_data = load_planned_dev()
+    _progress(f"Loaded {len(dev_data)} planned developments")
+
+    # [7d/12] MLS GeoJSON for map layers
+    mls_json = gdf_to_geojson_str(
+        mls_data, properties=["close_price"],
+    ) if len(mls_data) > 0 else '{"type":"FeatureCollection","features":[]}'
+    _progress(f"Serialized {len(mls_data)} MLS points for map")
+
+    # [7e/12] Planned dev GeoJSON for map layers
+    dev_json = gdf_to_geojson_str(
+        dev_data, properties=["name", "expected_units"],
+    ) if len(dev_data) > 0 else '{"type":"FeatureCollection","features":[]}'
+    _progress(f"Serialized {len(dev_data)} planned dev points for map")
+
     # [8/12] Affordable housing
     print("[8/12] Loading affordable housing ...")
     ah = load_affordable_housing()
@@ -1819,6 +2015,7 @@ def main():
         "families_with_kids", "single_parent_with_kids",
         "ah_total_units",
         "mls_total_sales", "mls_median_price",
+        "dev_total_units", "dev_count",
         # Percentages (secondary)
         "pct_below_185_poverty", "pct_minority", "pct_black",
         "pct_hispanic", "pct_renter", "pct_zero_vehicle",
@@ -1876,6 +2073,20 @@ def main():
                 drive_demo = drive_demo.merge(ah_agg, on="school", how="left")
                 drive_demo["ah_total_units"] = drive_demo["ah_total_units"].fillna(0).astype(int)
                 _progress(f"Added affordable housing data to {len(ah_agg)} drive zones")
+            # Add planned dev spatial join to drive zones
+            if len(dev_data) > 0 and len(drive_demo) > 0:
+                dev_wgs = dev_data.to_crs(CRS_WGS84)
+                dz_wgs3 = drive_zones.to_crs(CRS_WGS84)
+                dev_joined = gpd.sjoin(dev_wgs, dz_wgs3[["school", "geometry"]],
+                                       how="left", predicate="within")
+                dev_agg = (dev_joined.dropna(subset=["school"]).groupby("school")
+                           .agg(dev_total_units=("expected_units", "sum"),
+                                dev_count=("expected_units", "size"))
+                           .reset_index())
+                drive_demo = drive_demo.merge(dev_agg, on="school", how="left")
+                drive_demo["dev_total_units"] = drive_demo["dev_total_units"].fillna(0).astype(int)
+                drive_demo["dev_count"] = drive_demo["dev_count"].fillna(0).astype(int)
+                _progress(f"Added planned dev data to {len(dev_agg)} drive zones")
             if len(drive_demo) > 0:
                 avail_drive = [c for c in stat_cols if c in drive_demo.columns]
                 drive_recs = drive_demo[avail_drive].to_dict("records")
@@ -1907,6 +2118,8 @@ def main():
         "bg_json": bg_json,
         "dot_data": dot_data,
         "ah_json": ah_json,
+        "mls_json": mls_json,
+        "dev_json": dev_json,
         "zone_stats": zone_stats_json,
         "drive_stats": drive_stats_json,
         "drive_zones_json": drive_zones_json,
