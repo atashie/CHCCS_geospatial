@@ -433,7 +433,7 @@ def _random_points_fallback(geom, n: int, rng) -> list:
 # HTML builder
 # ---------------------------------------------------------------------------
 def build_html(data: dict) -> str:
-    """Build the 21-step editorial scrollytelling HTML."""
+    """Build the 17-step editorial scrollytelling HTML."""
 
     race_colors_js = json.dumps(
         [v[0] for v in RACE_CATEGORIES.values()], separators=(",", ":")
@@ -671,8 +671,8 @@ details[open] summary {{ margin-bottom: 8px; }}
     locations.</p>
     <div class="limitation">
       <strong>Note:</strong> Glenwood Elementary is a partial magnet/choice school.
-      FPG Bilingue is a full district-wide magnet school whose &ldquo;zone&rdquo;
-      is administrative, not geographic.
+      FPG Bilingue is a district-wide magnet school, so its zone covers
+      the entire district rather than a specific neighborhood.
     </div>
   </div>
 
@@ -684,10 +684,10 @@ details[open] summary {{ margin-bottom: 8px; }}
     by driving time</strong>, computed via Dijkstra shortest-path on the
     OpenStreetMap road network. These maps are drawn entirely through a computing
     process &mdash; no manual boundary-drawing is involved.</p>
-    <p>Drive-time zones answer: &ldquo;If every family drove to the closest
+    <p><em>Drive-time zones answer: &ldquo;If every family drove to the closest
     school, which school would serve this location?&rdquo; Since any closure
     triggers rezoning, drive-time zones better predict where displaced students
-    would go.</p>
+    would go.</em></p>
     <p>The map now shows drive-time zones instead of attendance zones.
     Notice that Seawell&rsquo;s drive-time zone is notably small and unusually
     shaped. This is because Seawell&rsquo;s access to roadways is limited to
@@ -719,6 +719,8 @@ details[open] summary {{ margin-bottom: 8px; }}
     <p>Notice how the zones differ: Seawell&rsquo;s attendance zone extends into
     areas that are actually closer to other schools by driving time &mdash; a large
     zone, but sparsely populated in its outer reaches.</p>
+    <p>This analysis considers <strong>both</strong> attendance and drive-time
+    zones to limit bias introduced by CHCCS-drawn attendance boundaries.</p>
   </div>
 
   <!-- Step 4: Understanding the Data -->
@@ -770,27 +772,24 @@ details[open] summary {{ margin-bottom: 8px; }}
   <div class="step" data-step="6">
     <div class="step-number">7</div>
     <h2>Seawell: Socioeconomic Profile</h2>
+    <p>Seawell&rsquo;s zone shows meaningful economic vulnerability.</p>
     <p>Zooming into the <span class="seawell-label">Seawell</span> drive-time
     zone (solid blue border) with its attendance zone shown as a dashed overlay.</p>
     <div class="metric-box" id="seawell-ses-metrics">
     </div>
-    <p>Seawell&rsquo;s zone shows meaningful economic vulnerability, but notice the
-    large geographic zone with much of the outer area sparsely populated.</p>
-    <p>The markers show the <strong>73 affordable housing units</strong> within
-    Seawell&rsquo;s attendance zone.</p>
   </div>
 
   <!-- Step 7: Ephesus SES close-up -->
   <div class="step" data-step="7">
     <div class="step-number">8</div>
     <h2>Ephesus: Socioeconomic Profile</h2>
+    <p>Recall that Ephesus is more accessible to a larger population
+    (11,880 vs. Seawell&rsquo;s 3,663 by drive-time). A larger catchment
+    area means the zone captures more people experiencing economic hardship.</p>
     <p>Now the <span class="ephesus-label">Ephesus</span> drive-time zone
     (solid red border) with its attendance zone as dashed overlay.</p>
     <div class="metric-box" id="ephesus-ses-metrics">
     </div>
-    <p>Ephesus has <strong>nearly 3&times; the affordable housing units</strong>
-    (202 vs. 73) &mdash; including several large subsidized housing developments.
-    Closing Ephesus would displace more residents of affordable housing.</p>
   </div>
 
   <!-- Step 8: SES Summary -->
@@ -803,12 +802,12 @@ details[open] summary {{ margin-bottom: 8px; }}
     <div id="ses-summary-text">
     </div>
     <p>Under CHCCS&rsquo;s &ldquo;Inconvenience or Hardship&rdquo; criterion,
-    the Ephesus zone&rsquo;s geographic positioning places it closer to more
-    people overall and more affordable-housing residents, suggesting greater
-    potential hardship from closure.</p>
+    Ephesus&rsquo;s geographic positioning places it closer to more people
+    overall, more people in poverty, and more affordable-housing residents,
+    suggesting greater potential hardship from closure.</p>
   </div>
 
-  <!-- ========== SECTION 2: RACE/ETHNICITY (Steps 9-13) ========== -->
+  <!-- ========== SECTION 2: RACE/ETHNICITY (Steps 9-10) ========== -->
 
   <!-- Step 9: District-wide dots -->
   <div class="step" data-step="9">
@@ -849,47 +848,18 @@ details[open] summary {{ margin-bottom: 8px; }}
     <p>The bar charts show <strong>minority residents</strong> (non-White)
     for all 11 schools &mdash; drive-time zones on the left, attendance zones
     on the right. Counts, not percentages.</p>
+    <p>Notably, Ephesus has nearly <strong>twice the Hispanic population</strong>
+    of Seawell &mdash; consistent with the affordable housing developments in
+    the zone serving a disproportionately Hispanic population. Under any equity
+    lens, closing the school with more minority residents has greater impact
+    on communities of color.</p>
   </div>
 
-  <!-- Step 11: Seawell race close-up -->
+  <!-- ========== SECTION 3: AGE DISTRIBUTION (Steps 11-13) ========== -->
+
+  <!-- Step 11: Young children choropleth -->
   <div class="step" data-step="11">
     <div class="step-number">12</div>
-    <h2>Seawell: Race/Ethnicity</h2>
-    <p>Zooming into the <span class="seawell-label">Seawell</span> drive-time
-    zone with the dot-density layer:</p>
-    <div class="metric-box" id="seawell-race-metrics">
-    </div>
-  </div>
-
-  <!-- Step 12: Ephesus race close-up -->
-  <div class="step" data-step="12">
-    <div class="step-number">13</div>
-    <h2>Ephesus: Race/Ethnicity</h2>
-    <p>Now the <span class="ephesus-label">Ephesus</span> drive-time zone:</p>
-    <div class="metric-box" id="ephesus-race-metrics">
-    </div>
-    <p>Ephesus is more diverse overall and has a significantly larger
-    Hispanic/Latino population &mdash; consistent with the affordable housing
-    developments in the zone serving a disproportionately Hispanic population.</p>
-  </div>
-
-  <!-- Step 13: Race summary -->
-  <div class="step" data-step="13">
-    <div class="step-number">14</div>
-    <h2>Race/Ethnicity Summary</h2>
-    <div id="race-summary-text">
-    </div>
-    <p>Under any equity lens, closing the school with more minority residents
-    has greater impact on communities of color. Ephesus&rsquo;s Hispanic
-    population is particularly notable given historical underrepresentation
-    in school closure discussions.</p>
-  </div>
-
-  <!-- ========== SECTION 3: AGE DISTRIBUTION (Steps 14-17) ========== -->
-
-  <!-- Step 14: Young children choropleth -->
-  <div class="step" data-step="14">
-    <div class="step-number">15</div>
     <h2>Where Are the Youngest Children?</h2>
     <p>The Board&rsquo;s &ldquo;Anticipated Enrollment&rdquo; criterion
     depends on where young children live today. The map shows block groups
@@ -898,15 +868,18 @@ details[open] summary {{ margin-bottom: 8px; }}
     <p>Darker colors indicate higher concentrations of very young children
     who will enter elementary school in coming years. Both school zone outlines
     are shown for reference.</p>
+    <p>Since this is Census data from 2022, these children would be entering
+    or in elementary school in 2027. Therefore, this information matters more
+    than data on children ages 5&ndash;9.</p>
     <div class="source">
       <strong>Data:</strong> ACS 5-Year 2018&ndash;2022, tables B01001
       (age by sex)
     </div>
   </div>
 
-  <!-- Step 15: Elementary age choropleth -->
-  <div class="step" data-step="15">
-    <div class="step-number">16</div>
+  <!-- Step 12: Elementary age choropleth -->
+  <div class="step" data-step="12">
+    <div class="step-number">13</div>
     <h2>Where Are Elementary-Age Children?</h2>
     <p>Now showing <strong>% children ages 5&ndash;9</strong> (elementary
     age). This represents the current demand for elementary school seats.</p>
@@ -915,34 +888,28 @@ details[open] summary {{ margin-bottom: 8px; }}
     the near future.</p>
   </div>
 
-  <!-- Step 16: Young children count bars -->
-  <div class="step" data-step="16">
-    <div class="step-number">17</div>
+  <!-- Step 13: Young children count bars -->
+  <div class="step" data-step="13">
+    <div class="step-number">14</div>
     <h2>Young Children: All 11 Schools</h2>
     <p>The bar charts show <strong>young children (ages 0&ndash;4)</strong>
     by school zone &mdash; drive-time zones on the left, attendance zones on
     the right. Counts, not percentages.</p>
     <div class="metric-box" id="age-comparison-metrics">
     </div>
-  </div>
-
-  <!-- Step 17: Age/enrollment summary -->
-  <div class="step" data-step="17">
-    <div class="step-number">18</div>
-    <h2>Anticipated Enrollment</h2>
-    <p>The &ldquo;Anticipated Enrollment&rdquo; criterion favors keeping
-    schools open where future demand is highest.</p>
-    <div id="age-summary-text">
+    <div class="limitation">
+      <strong>Note:</strong> Rashkis&rsquo;s attendance zone was drawn within
+      neighborhoods that are more accessible to Ephesus. The odd boundaries
+      were intentionally delineated by CHCCS. Despite this, enrollment
+      numbers at Rashkis decline while Ephesus maintains.
     </div>
-    <p>The Ephesus zone&rsquo;s larger population means that even at a similar
-    rate, it generates substantially more enrollment demand.</p>
   </div>
 
-  <!-- ========== REAL ESTATE (Steps 18-19) ========== -->
+  <!-- ========== REAL ESTATE (Steps 14-15) ========== -->
 
-  <!-- Step 18: Home Sales -->
-  <div class="step" data-step="18">
-    <div class="step-number">19</div>
+  <!-- Step 14: Home Sales -->
+  <div class="step" data-step="14">
+    <div class="step-number">15</div>
     <h2>Where Are Homes Selling?</h2>
     <p>School enrollment depends on where families move. <strong>MLS home
     sales data</strong> (2023&ndash;2025) reveals which zones attract the
@@ -958,9 +925,9 @@ details[open] summary {{ margin-bottom: 8px; }}
     </div>
   </div>
 
-  <!-- Step 19: Median Prices -->
-  <div class="step" data-step="19">
-    <div class="step-number">20</div>
+  <!-- Step 15: Median Prices -->
+  <div class="step" data-step="15">
+    <div class="step-number">16</div>
     <h2>Can Young Families Afford to Move In?</h2>
     <p>Declining CHCCS enrollment is partly driven by housing costs. When
     median home prices exceed what young families can afford, zones lose
@@ -970,17 +937,19 @@ details[open] summary {{ margin-bottom: 8px; }}
     fewer options to relocate within the district.</p>
     <div class="metric-box" id="price-comparison-metrics">
     </div>
+    <p>Higher median home prices around Seawell are consistent with
+    the wealthier population surrounding that school.</p>
     <div class="limitation">
       <strong>Limitation:</strong> MLS covers listed sales only &mdash;
       not rentals or for-sale-by-owner transactions.
     </div>
   </div>
 
-  <!-- ========== CONCLUSION (Step 20) ========== -->
+  <!-- ========== CONCLUSION (Step 16) ========== -->
 
-  <!-- Step 20: Summary -->
-  <div class="step" data-step="20">
-    <div class="step-number">21</div>
+  <!-- Step 16: Summary -->
+  <div class="step" data-step="16">
+    <div class="step-number">17</div>
     <h2>Summary</h2>
 
     <div id="final-summary-text">
@@ -1208,95 +1177,74 @@ function populateMetrics() {{
   var ephZ = findSchool(zoneSrc, "Ephesus") || {{}};
   var seaZ = findSchool(zoneSrc, "Seawell") || {{}};
 
-  // Seawell SES metrics (step 5)
+  // Seawell SES metrics (step 6) — two rows: attendance zone / drive zone
   var el = document.getElementById("seawell-ses-metrics");
   if (el) {{
-    var seaPov = sea.below_185_pov || seaZ.below_185_pov || 0;
-    var seaPovPct = sea.pct_below_185_poverty || seaZ.pct_below_185_poverty || 0;
-    var seaPop = sea.total_pop || seaZ.total_pop || 0;
-    el.innerHTML = '<div class="metric"><div class="metric-value" style="color:{ACTUAL_COLOR};">' + fmt(seaPov) + '</div>'
-      + '<div class="metric-label">People Below 185% Poverty</div>' + pctNote(seaPovPct) + '</div>'
-      + '<div class="metric"><div class="metric-value">' + fmt(seaPop) + '</div>'
-      + '<div class="metric-label">Total Population</div></div>'
-      + '<div class="metric"><div class="metric-value">73</div>'
-      + '<div class="metric-label">Affordable Housing Units</div></div>';
+    var seaZPov = seaZ.below_185_pov || 0;
+    var seaZPovPct = seaZ.pct_below_185_poverty || 0;
+    var seaZAH = seaZ.ah_total_units || 0;
+    var seaDPov = sea.below_185_pov || 0;
+    var seaDPovPct = sea.pct_below_185_poverty || 0;
+    var seaDAH = sea.ah_total_units || 0;
+    el.innerHTML = '<div style="font-size:0.85em;font-weight:bold;color:#555;margin-bottom:4px;">Attendance Zone</div>'
+      + '<div class="metric-box" style="margin:0 0 10px;">'
+      + '<div class="metric"><div class="metric-value" style="color:{ACTUAL_COLOR};">' + fmt(seaZPov) + '</div>'
+      + '<div class="metric-label">People Below 185% Poverty</div>' + pctNote(seaZPovPct) + '</div>'
+      + '<div class="metric"><div class="metric-value">' + fmt(seaZAH) + '</div>'
+      + '<div class="metric-label">Affordable Housing Units</div></div></div>'
+      + '<div style="font-size:0.85em;font-weight:bold;color:#555;margin-bottom:4px;">Drive Zone</div>'
+      + '<div class="metric-box" style="margin:0;">'
+      + '<div class="metric"><div class="metric-value" style="color:{ACTUAL_COLOR};">' + fmt(seaDPov) + '</div>'
+      + '<div class="metric-label">People Below 185% Poverty</div>' + pctNote(seaDPovPct) + '</div>'
+      + '<div class="metric"><div class="metric-value">' + fmt(seaDAH) + '</div>'
+      + '<div class="metric-label">Affordable Housing Units</div></div></div>';
   }}
 
-  // Ephesus SES metrics (step 6)
+  // Ephesus SES metrics (step 7) — two rows: attendance zone / drive zone
   el = document.getElementById("ephesus-ses-metrics");
   if (el) {{
-    var ephPov = eph.below_185_pov || ephZ.below_185_pov || 0;
-    var ephPovPct = eph.pct_below_185_poverty || ephZ.pct_below_185_poverty || 0;
-    var ephPop = eph.total_pop || ephZ.total_pop || 0;
-    el.innerHTML = '<div class="metric"><div class="metric-value" style="color:{ACTUAL_COLOR};">' + fmt(ephPov) + '</div>'
-      + '<div class="metric-label">People Below 185% Poverty</div>' + pctNote(ephPovPct) + '</div>'
-      + '<div class="metric"><div class="metric-value">' + fmt(ephPop) + '</div>'
-      + '<div class="metric-label">Total Population</div></div>'
-      + '<div class="metric"><div class="metric-value">202</div>'
-      + '<div class="metric-label">Affordable Housing Units</div></div>';
+    var ephZPov = ephZ.below_185_pov || 0;
+    var ephZPovPct = ephZ.pct_below_185_poverty || 0;
+    var ephZAH = ephZ.ah_total_units || 0;
+    var ephDPov = eph.below_185_pov || 0;
+    var ephDPovPct = eph.pct_below_185_poverty || 0;
+    var ephDAH = eph.ah_total_units || 0;
+    el.innerHTML = '<div style="font-size:0.85em;font-weight:bold;color:#555;margin-bottom:4px;">Attendance Zone</div>'
+      + '<div class="metric-box" style="margin:0 0 10px;">'
+      + '<div class="metric"><div class="metric-value" style="color:{ACTUAL_COLOR};">' + fmt(ephZPov) + '</div>'
+      + '<div class="metric-label">People Below 185% Poverty</div>' + pctNote(ephZPovPct) + '</div>'
+      + '<div class="metric"><div class="metric-value">' + fmt(ephZAH) + '</div>'
+      + '<div class="metric-label">Affordable Housing Units</div></div></div>'
+      + '<div style="font-size:0.85em;font-weight:bold;color:#555;margin-bottom:4px;">Drive Zone</div>'
+      + '<div class="metric-box" style="margin:0;">'
+      + '<div class="metric"><div class="metric-value" style="color:{ACTUAL_COLOR};">' + fmt(ephDPov) + '</div>'
+      + '<div class="metric-label">People Below 185% Poverty</div>' + pctNote(ephDPovPct) + '</div>'
+      + '<div class="metric"><div class="metric-value">' + fmt(ephDAH) + '</div>'
+      + '<div class="metric-label">Affordable Housing Units</div></div></div>';
   }}
 
-  // SES summary (step 7)
+  // SES summary (step 8)
   el = document.getElementById("ses-summary-text");
   if (el) {{
     var ephPov2 = eph.below_185_pov || ephZ.below_185_pov || 0;
     var seaPov2 = sea.below_185_pov || seaZ.below_185_pov || 0;
     var ephPop2 = eph.total_pop || ephZ.total_pop || 0;
     var seaPop2 = sea.total_pop || seaZ.total_pop || 0;
+    var ephInc = eph.median_hh_income || ephZ.median_hh_income || 0;
+    var seaInc = sea.median_hh_income || seaZ.median_hh_income || 0;
+    var ephDAH2 = eph.ah_total_units || 0;
+    var ephZAH2 = ephZ.ah_total_units || 0;
+    var seaDAH2 = sea.ah_total_units || 0;
+    var seaZAH2 = seaZ.ah_total_units || 0;
     el.innerHTML = '<ul style="margin:8px 0 8px 20px;line-height:1.8;">'
-      + '<li><span class="ephesus-label">Ephesus</span> zone: ' + fmt(ephPov2) + ' people in poverty vs. '
-      + fmt(seaPov2) + ' for <span class="seawell-label">Seawell</span></li>'
-      + '<li><span class="ephesus-label">Ephesus</span> has nearly 3&times; more affordable housing units (202 vs. 73)</li>'
-      + '<li><span class="ephesus-label">Ephesus</span> serves a larger total population (' + fmt(ephPop2) + ' vs. ' + fmt(seaPop2) + ')</li>'
-      + '</ul>';
+      + '<li><span class="ephesus-label">Ephesus</span> is more accessible to a larger total population (' + fmt(ephPop2) + ' vs. ' + fmt(seaPop2) + ')</li>'
+      + '<li><span class="ephesus-label">Ephesus</span> serves more people in poverty (' + fmt(ephPov2) + ' vs. ' + fmt(seaPov2) + ')</li>'
+      + '<li><span class="ephesus-label">Ephesus</span> has nearly 3&times; more affordable housing units (' + fmt(ephDAH2 || ephZAH2) + ' vs. ' + fmt(seaDAH2 || seaZAH2) + ')</li>'
+      + '</ul>'
+      + '<p style="margin-top:8px;">Median household income in the Ephesus drive zone is <strong>$' + fmt(ephInc) + '</strong> vs. <strong>$' + fmt(seaInc) + '</strong> for Seawell &mdash; confirming the lower-income profile of the Ephesus community.</p>';
   }}
 
-  // Seawell race metrics (step 10)
-  el = document.getElementById("seawell-race-metrics");
-  if (el) {{
-    var seaMinority = (sea.race_total || seaZ.race_total || 0) - (sea.white_nh || seaZ.white_nh || 0);
-    var seaBlack = sea.black_nh || seaZ.black_nh || 0;
-    var seaHisp = sea.hispanic || seaZ.hispanic || 0;
-    var seaMinPct = (sea.pct_minority || seaZ.pct_minority || 0);
-    el.innerHTML = '<div class="metric"><div class="metric-value" style="color:{ACTUAL_COLOR};">' + fmt(seaMinority) + '</div>'
-      + '<div class="metric-label">Minority Residents</div>' + pctNote(seaMinPct) + '</div>'
-      + '<div class="metric"><div class="metric-value">' + fmt(seaBlack) + '</div>'
-      + '<div class="metric-label">Black Residents</div></div>'
-      + '<div class="metric"><div class="metric-value">' + fmt(seaHisp) + '</div>'
-      + '<div class="metric-label">Hispanic Residents</div></div>';
-  }}
-
-  // Ephesus race metrics (step 11)
-  el = document.getElementById("ephesus-race-metrics");
-  if (el) {{
-    var ephMinority = (eph.race_total || ephZ.race_total || 0) - (eph.white_nh || ephZ.white_nh || 0);
-    var ephBlack = eph.black_nh || ephZ.black_nh || 0;
-    var ephHisp = eph.hispanic || ephZ.hispanic || 0;
-    var ephMinPct = (eph.pct_minority || ephZ.pct_minority || 0);
-    el.innerHTML = '<div class="metric"><div class="metric-value" style="color:{ACTUAL_COLOR};">' + fmt(ephMinority) + '</div>'
-      + '<div class="metric-label">Minority Residents</div>' + pctNote(ephMinPct) + '</div>'
-      + '<div class="metric"><div class="metric-value">' + fmt(ephBlack) + '</div>'
-      + '<div class="metric-label">Black Residents</div></div>'
-      + '<div class="metric"><div class="metric-value">' + fmt(ephHisp) + '</div>'
-      + '<div class="metric-label">Hispanic Residents</div></div>';
-  }}
-
-  // Race summary (step 12)
-  el = document.getElementById("race-summary-text");
-  if (el) {{
-    var ephMin2 = (eph.race_total || ephZ.race_total || 0) - (eph.white_nh || ephZ.white_nh || 0);
-    var seaMin2 = (sea.race_total || seaZ.race_total || 0) - (sea.white_nh || seaZ.white_nh || 0);
-    var ephHisp2 = eph.hispanic || ephZ.hispanic || 0;
-    var seaHisp2 = sea.hispanic || seaZ.hispanic || 0;
-    el.innerHTML = '<ul style="margin:8px 0 8px 20px;line-height:1.8;">'
-      + '<li><span class="ephesus-label">Ephesus</span>: ' + fmt(ephMin2) + ' minority residents vs. '
-      + fmt(seaMin2) + ' for <span class="seawell-label">Seawell</span></li>'
-      + '<li><span class="ephesus-label">Ephesus</span>: ' + fmt(ephHisp2) + ' Hispanic residents vs. '
-      + fmt(seaHisp2) + ' &mdash; more than double</li>'
-      + '</ul>';
-  }}
-
-  // Age comparison metrics (step 15)
+  // Age comparison metrics (step 13)
   el = document.getElementById("age-comparison-metrics");
   if (el) {{
     var ephYoung = (eph.male_under_5 || ephZ.male_under_5 || 0) + (eph.female_under_5 || ephZ.female_under_5 || 0);
@@ -1309,19 +1257,7 @@ function populateMetrics() {{
       + '<div class="metric-label">Seawell: Children Under 5</div></div>';
   }}
 
-  // Age summary (step 16)
-  el = document.getElementById("age-summary-text");
-  if (el) {{
-    var ephYoung2 = (eph.male_under_5 || ephZ.male_under_5 || 0) + (eph.female_under_5 || ephZ.female_under_5 || 0);
-    var seaYoung2 = (sea.male_under_5 || seaZ.male_under_5 || 0) + (sea.female_under_5 || seaZ.female_under_5 || 0);
-    el.innerHTML = '<ul style="margin:8px 0 8px 20px;line-height:1.8;">'
-      + '<li><span class="ephesus-label">Ephesus</span>: ~' + fmt(ephYoung2) + ' young children (0&ndash;4)</li>'
-      + '<li><span class="seawell-label">Seawell</span>: ~' + fmt(seaYoung2) + ' young children (0&ndash;4)</li>'
-      + '</ul>'
-      + '<p>Ephesus has significantly more young children approaching kindergarten age.</p>';
-  }}
-
-  // Sales comparison metrics (step 17)
+  // Sales comparison metrics (step 14)
   el = document.getElementById("sales-comparison-metrics");
   if (el) {{
     var ephSales = eph.mls_total_sales || ephZ.mls_total_sales || 0;
@@ -1334,7 +1270,7 @@ function populateMetrics() {{
       + '<div class="metric-label">Seawell: Homes Sold</div></div>';
   }}
 
-  // Price comparison metrics (step 18)
+  // Price comparison metrics (step 15)
   el = document.getElementById("price-comparison-metrics");
   if (el) {{
     var ephPrice = eph.mls_median_price || ephZ.mls_median_price || 0;
@@ -1347,7 +1283,7 @@ function populateMetrics() {{
       + '<div class="metric-label">Seawell: Median Price</div></div>';
   }}
 
-  // Final summary (step 20)
+  // Final summary (step 16)
   el = document.getElementById("final-summary-text");
   if (el) {{
     el.innerHTML = '<p>This is a direct analysis of two community schools whose purpose '
@@ -1355,14 +1291,17 @@ function populateMetrics() {{
       + 'spreadsheets. Part of what is important to community members is having schools '
       + 'that are easily accessible to ALL populations.</p>'
       + '<p>We have demonstrated that</p>'
-      + '<ul>'
-      + '<li>Ephesus is simply more accessible to more people (due to access to major '
-      + 'road ways and geographic location far enough from other nearby schools)</li>'
-      + '<li>Ephesus serves a population skewed to lower income communities</li>'
-      + '<li>Ephesus is accessible to more young children which may drive future '
-      + 'enrollment increases</li>'
-      + '<li>Homes around Ephesus are more affordable which means younger families '
-      + 'are more likely to be able afford living near Ephesus</li>'
+      + '<ul style="line-height:1.8;">'
+      + '<li><strong>Easy Access</strong> &mdash; Ephesus is more accessible to more people '
+      + '(due to access to major roadways and geographic location far enough from other nearby schools)</li>'
+      + '<li><strong>Serving the Disadvantaged</strong> &mdash; Ephesus serves a population '
+      + 'skewed to lower income communities</li>'
+      + '<li><strong>Colorful Community</strong> &mdash; Ephesus is accessible to a greater '
+      + 'diversity of people, with nearly twice the Hispanic population of Seawell</li>'
+      + '<li><strong>New Beginnings</strong> &mdash; Ephesus is accessible to more young children '
+      + 'which may drive future enrollment increases</li>'
+      + '<li><strong>Housing Boom</strong> &mdash; Homes around Ephesus are more affordable '
+      + 'which means younger families are more likely to be able to afford living near Ephesus</li>'
       + '</ul>';
   }}
 }}
@@ -1706,35 +1645,11 @@ function handleStep(idx) {{
       districtView();
       break;
 
-    case 10: // Minority count bar charts (all 11)
+    case 10: // Minority count bar charts (all 11) + race summary
       showMinorityCharts();
       break;
 
-    case 11: // Seawell race close-up
-      ensureDotsLoaded();
-      layers.dots.addTo(map);
-      layers.seawellDriveZone.addTo(map);
-      layers.schools.addTo(map);
-      zoomToZone(seawellDriveData.features.length ? seawellDriveData : seawellZoneData);
-      break;
-
-    case 12: // Ephesus race close-up
-      ensureDotsLoaded();
-      layers.dots.addTo(map);
-      layers.ephesusDriveZone.addTo(map);
-      layers.schools.addTo(map);
-      zoomToZone(ephesusDriveData.features.length ? ephesusDriveData : ephesusZoneData);
-      break;
-
-    case 13: // Race summary
-      ensureDotsLoaded();
-      layers.dots.addTo(map);
-      layers.bothDriveZones.addTo(map);
-      layers.schools.addTo(map);
-      districtView();
-      break;
-
-    case 14: // Young children choropleth
+    case 11: // Young children choropleth
       layers.bgYoungChildren.addTo(map);
       layers.ephesusZoneFaint.addTo(map);
       layers.seawellZoneFaint.addTo(map);
@@ -1742,7 +1657,7 @@ function handleStep(idx) {{
       districtView();
       break;
 
-    case 15: // Elementary age choropleth
+    case 12: // Elementary age choropleth
       layers.bgElementaryAge.addTo(map);
       layers.ephesusZoneFaint.addTo(map);
       layers.seawellZoneFaint.addTo(map);
@@ -1750,26 +1665,19 @@ function handleStep(idx) {{
       districtView();
       break;
 
-    case 16: // Young children count bars
+    case 13: // Young children count bars
       showAgeCharts();
       break;
 
-    case 17: // Enrollment summary
-      layers.bgYoungChildren.addTo(map);
-      layers.bothDriveZones.addTo(map);
-      layers.schools.addTo(map);
-      districtView();
-      break;
-
-    case 18: // Home sales bar charts
+    case 14: // Home sales bar charts
       showSalesCharts();
       break;
 
-    case 19: // Median prices + both zones + AH
+    case 15: // Median prices
       showPriceCharts();
       break;
 
-    case 20: // Final summary
+    case 16: // Final summary
       ensureDotsLoaded();
       layers.dots.addTo(map);
       layers.bothDriveZones.addTo(map);
@@ -1957,6 +1865,17 @@ def main():
                 drive_demo = drive_demo.merge(mls_agg, on="school", how="left")
                 drive_demo["mls_total_sales"] = drive_demo["mls_total_sales"].fillna(0).astype(int)
                 _progress(f"Added MLS data to {len(mls_agg)} drive zones")
+            # Add affordable housing spatial join to drive zones
+            if len(ah) > 0 and len(drive_demo) > 0:
+                ah_wgs = ah.to_crs(CRS_WGS84)
+                dz_wgs2 = drive_zones.to_crs(CRS_WGS84)
+                ah_joined = gpd.sjoin(ah_wgs, dz_wgs2[["school", "geometry"]],
+                                      how="left", predicate="within")
+                ah_agg = (ah_joined.dropna(subset=["school"]).groupby("school")
+                          .size().reset_index(name="ah_total_units"))
+                drive_demo = drive_demo.merge(ah_agg, on="school", how="left")
+                drive_demo["ah_total_units"] = drive_demo["ah_total_units"].fillna(0).astype(int)
+                _progress(f"Added affordable housing data to {len(ah_agg)} drive zones")
             if len(drive_demo) > 0:
                 avail_drive = [c for c in stat_cols if c in drive_demo.columns]
                 drive_recs = drive_demo[avail_drive].to_dict("records")
