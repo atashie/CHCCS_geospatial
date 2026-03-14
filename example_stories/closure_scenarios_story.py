@@ -630,19 +630,6 @@ a {{ color: #1565C0; }}
       </div>
     </div>
 
-    <h3>Geographic distribution</h3>
-    <ul style="margin:8px 0 12px 20px;line-height:1.8;">
-      <li><strong>East/central (near capacity):</strong>
-        <span class="fpg-label">FPG</span> 97%,
-        McDougle 94%,
-        <span class="ephesus-label">Ephesus</span> 86%</li>
-      <li><strong>Over capacity:</strong>
-        <span class="glenwood-label">Glenwood</span> 102% &mdash;
-        already above its limit</li>
-      <li><strong>West/south (spare capacity):</strong>
-        Rashkis 45%, Scroggs 51%, Northside 53%, Morris Grove 60%</li>
-    </ul>
-
     <div class="insight">
       <strong>Redistricting implication:</strong> Spare capacity exists
       ({data["total_spare"]:,} seats) but is concentrated in the west and south
@@ -1200,6 +1187,22 @@ layers.schoolsLabeled = L.geoJSON(SCHOOLS, {{
 }});
 
 // Capacity label layer — DivIcon markers showing enrollment/capacity boxes
+// Per-school offsets [anchorX, anchorY] to prevent overlapping labels
+var capLabelOffsets = {{
+  // Offsets: [anchorX, anchorY]. +X=label LEFT, -X=label RIGHT, +Y=label UP, -Y=label DOWN
+  // anchorY ~22 = centered vertically on dot (half label height)
+  "Morris Grove Elementary":          [-12, 22],   // right, centered
+  "Seawell Elementary":               [85, 27],    // left, nudged up
+  "Estes Hills Elementary":           [85, 22],    // left, centered
+  "McDougle Elementary":              [85, 22],    // left, centered
+  "Carrboro Elementary":              [85, 22],    // left, centered
+  "Northside Elementary":             [-12, 27],   // right, nudged up
+  "Ephesus Elementary":               [-12, 22],   // right, centered
+  "Glenwood Elementary":              [85, 17],    // left, nudged down
+  "Rashkis Elementary":               [-12, 22],   // right, centered
+  "Frank Porter Graham Bilingue":     [105, 22],   // left, centered
+  "Scroggs Elementary":               [-12, 22],   // right, centered
+}};
 layers.capacityLabels = L.layerGroup();
 SCHOOLS.features.forEach(function(f) {{
   var name = f.properties.school || "";
@@ -1208,17 +1211,18 @@ SCHOOLS.features.forEach(function(f) {{
   var c = f.geometry.coordinates;
   var label = name.replace(" Elementary", "").replace(" Bilingue", "");
   var utilColor = enr.util_2030 > 100 ? "#C62828" : enr.util_2030 >= 90 ? "#F9A825" : "#555";
-  var html = '<div style="background:rgba(255,255,255,0.92);border:1px solid #ccc;border-radius:4px;'
-    + 'padding:3px 6px;font-size:10px;line-height:1.35;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,0.15);">'
-    + '<div style="font-weight:bold;font-size:11px;margin-bottom:2px;">' + label + '</div>'
-    + '<div>Enroll: ' + enr.enroll_2030 + ' / ' + enr.capacity + '</div>'
-    + '<div style="color:' + utilColor + ';font-weight:bold;">' + enr.util_2030 + '% occupied</div>'
+  var anchor = capLabelOffsets[name] || [-10, 25];
+  var html = '<div style="font-size:11.5px;line-height:1.4;white-space:nowrap;font-weight:bold;'
+    + 'color:#333;text-shadow:1px 1px 2px #fff, -1px -1px 2px #fff, 1px -1px 2px #fff, -1px 1px 2px #fff, 0 0 4px #fff;">'
+    + '<div style="font-size:12px;margin-bottom:1px;">' + label + '</div>'
+    + '<div>' + enr.enroll_2030 + ' out of ' + enr.capacity + '</div>'
+    + '<div style="color:' + utilColor + ';font-weight:900;font-size:12.5px;">' + enr.util_2030 + '%</div>'
     + '</div>';
   var icon = L.divIcon({{
     className: '',
     html: html,
     iconSize: [0, 0],
-    iconAnchor: [-8, 20]
+    iconAnchor: anchor
   }});
   L.marker([c[1], c[0]], {{ icon: icon }}).addTo(layers.capacityLabels);
 }});
