@@ -737,9 +737,12 @@ details[open] summary {{ margin-bottom: 8px; }}
     <h2>Understanding the Data</h2>
     <p>This analysis uses <strong>ACS Census data</strong> &mdash; the American
     Community Survey&rsquo;s 5-year estimates &mdash; aggregated by drive-time zone
-    to evaluate CHCCS&rsquo;s closure criteria: &ldquo;Inconvenience or
-    Hardship,&rdquo; &ldquo;Anticipated Enrollment,&rdquo; and
-    &ldquo;Real Estate Trends.&rdquo;</p>
+    to evaluate CHCCS&rsquo;s closure criteria:</p>
+    <ul style="margin-left:1.2em;padding-left:0;">
+      <li>Inconvenience or Hardship</li>
+      <li>Anticipated Enrollment</li>
+      <li>Real Estate Trends</li>
+    </ul>
     <p>Census data reflects the demographics of the <em>community surrounding</em>
     each school, which may differ from current enrollment demographics.
     This distinction matters: Seawell&rsquo;s current student body incorporates
@@ -783,7 +786,7 @@ details[open] summary {{ margin-bottom: 8px; }}
     <p>Seawell&rsquo;s zone shows meaningful economic vulnerability.</p>
     <p>Zooming into the <span class="seawell-label">Seawell</span> drive-time
     zone (solid blue border) with its attendance zone shown as a dashed overlay.</p>
-    <div class="metric-box" id="seawell-ses-metrics">
+    <div id="seawell-ses-metrics">
     </div>
   </div>
 
@@ -796,7 +799,7 @@ details[open] summary {{ margin-bottom: 8px; }}
     area means the zone captures more people experiencing economic hardship.</p>
     <p>Now the <span class="ephesus-label">Ephesus</span> drive-time zone
     (solid red border) with its attendance zone as dashed overlay.</p>
-    <div class="metric-box" id="ephesus-ses-metrics">
+    <div id="ephesus-ses-metrics">
     </div>
   </div>
 
@@ -1245,7 +1248,7 @@ function populateMetrics() {{
   var ephZ = findSchool(zoneSrc, "Ephesus") || {{}};
   var seaZ = findSchool(zoneSrc, "Seawell") || {{}};
 
-  // Seawell SES metrics (step 6) — two rows: attendance zone / drive zone
+  // Seawell SES metrics (step 6) — table format
   var el = document.getElementById("seawell-ses-metrics");
   if (el) {{
     var seaZPov = seaZ.below_185_pov || 0;
@@ -1254,21 +1257,26 @@ function populateMetrics() {{
     var seaDPov = sea.below_185_pov || 0;
     var seaDPovPct = sea.pct_below_185_poverty || 0;
     var seaDAH = sea.ah_total_units || 0;
-    el.innerHTML = '<div style="font-size:0.85em;font-weight:bold;color:#555;margin-bottom:4px;">Attendance Zone</div>'
-      + '<div class="metric-box" style="margin:0 0 10px;">'
-      + '<div class="metric"><div class="metric-value" style="color:{ACTUAL_COLOR};">' + fmt(seaZPov) + '</div>'
-      + '<div class="metric-label">People Below 185% Poverty</div>' + pctNote(seaZPovPct) + '</div>'
-      + '<div class="metric"><div class="metric-value">' + fmt(seaZAH) + '</div>'
-      + '<div class="metric-label">Affordable Housing Units</div></div></div>'
-      + '<div style="font-size:0.85em;font-weight:bold;color:#555;margin-bottom:4px;">Drive Zone</div>'
-      + '<div class="metric-box" style="margin:0;">'
-      + '<div class="metric"><div class="metric-value" style="color:{ACTUAL_COLOR};">' + fmt(seaDPov) + '</div>'
-      + '<div class="metric-label">People Below 185% Poverty</div>' + pctNote(seaDPovPct) + '</div>'
-      + '<div class="metric"><div class="metric-value">' + fmt(seaDAH) + '</div>'
-      + '<div class="metric-label">Affordable Housing Units</div></div></div>';
+    el.innerHTML = '<table style="width:100%;border-collapse:collapse;margin:8px 0;font-size:0.9em;">'
+      + '<thead><tr>'
+      + '<th style="text-align:left;padding:4px 8px;color:#555;font-size:0.85em;width:40%;"></th>'
+      + '<th style="text-align:center;padding:4px 8px;color:#555;font-weight:bold;">Below 185% Poverty</th>'
+      + '<th style="text-align:center;padding:4px 8px;color:#555;font-weight:bold;">Affordable Housing</th>'
+      + '</tr></thead><tbody>'
+      + '<tr style="background:#f5f5f5;">'
+      + '<td style="padding:6px 8px;font-weight:bold;color:#555;">Drive Zone</td>'
+      + '<td style="text-align:center;padding:6px 8px;font-size:1.2em;font-weight:bold;color:{SEAWELL_COLOR};">' + fmt(seaDPov) + ' <span style="font-size:0.7em;color:#888;">(' + seaDPovPct.toFixed(1) + '%)</span></td>'
+      + '<td style="text-align:center;padding:6px 8px;font-size:1.2em;font-weight:bold;color:{SEAWELL_COLOR};">' + fmt(seaDAH) + '</td>'
+      + '</tr>'
+      + '<tr>'
+      + '<td style="padding:6px 8px;font-weight:bold;color:#555;">Attendance Zone</td>'
+      + '<td style="text-align:center;padding:6px 8px;font-size:1.2em;font-weight:bold;color:{SEAWELL_COLOR};">' + fmt(seaZPov) + ' <span style="font-size:0.7em;color:#888;">(' + seaZPovPct.toFixed(1) + '%)</span></td>'
+      + '<td style="text-align:center;padding:6px 8px;font-size:1.2em;font-weight:bold;color:{SEAWELL_COLOR};">' + fmt(seaZAH) + '</td>'
+      + '</tr>'
+      + '</tbody></table>';
   }}
 
-  // Ephesus SES metrics (step 7) — two rows: attendance zone / drive zone
+  // Ephesus SES metrics (step 7) — table format
   el = document.getElementById("ephesus-ses-metrics");
   if (el) {{
     var ephZPov = ephZ.below_185_pov || 0;
@@ -1277,18 +1285,23 @@ function populateMetrics() {{
     var ephDPov = eph.below_185_pov || 0;
     var ephDPovPct = eph.pct_below_185_poverty || 0;
     var ephDAH = eph.ah_total_units || 0;
-    el.innerHTML = '<div style="font-size:0.85em;font-weight:bold;color:#555;margin-bottom:4px;">Attendance Zone</div>'
-      + '<div class="metric-box" style="margin:0 0 10px;">'
-      + '<div class="metric"><div class="metric-value" style="color:{ACTUAL_COLOR};">' + fmt(ephZPov) + '</div>'
-      + '<div class="metric-label">People Below 185% Poverty</div>' + pctNote(ephZPovPct) + '</div>'
-      + '<div class="metric"><div class="metric-value">' + fmt(ephZAH) + '</div>'
-      + '<div class="metric-label">Affordable Housing Units</div></div></div>'
-      + '<div style="font-size:0.85em;font-weight:bold;color:#555;margin-bottom:4px;">Drive Zone</div>'
-      + '<div class="metric-box" style="margin:0;">'
-      + '<div class="metric"><div class="metric-value" style="color:{ACTUAL_COLOR};">' + fmt(ephDPov) + '</div>'
-      + '<div class="metric-label">People Below 185% Poverty</div>' + pctNote(ephDPovPct) + '</div>'
-      + '<div class="metric"><div class="metric-value">' + fmt(ephDAH) + '</div>'
-      + '<div class="metric-label">Affordable Housing Units</div></div></div>';
+    el.innerHTML = '<table style="width:100%;border-collapse:collapse;margin:8px 0;font-size:0.9em;">'
+      + '<thead><tr>'
+      + '<th style="text-align:left;padding:4px 8px;color:#555;font-size:0.85em;width:40%;"></th>'
+      + '<th style="text-align:center;padding:4px 8px;color:#555;font-weight:bold;">Below 185% Poverty</th>'
+      + '<th style="text-align:center;padding:4px 8px;color:#555;font-weight:bold;">Affordable Housing</th>'
+      + '</tr></thead><tbody>'
+      + '<tr style="background:#f5f5f5;">'
+      + '<td style="padding:6px 8px;font-weight:bold;color:#555;">Drive Zone</td>'
+      + '<td style="text-align:center;padding:6px 8px;font-size:1.2em;font-weight:bold;color:{EPHESUS_COLOR};">' + fmt(ephDPov) + ' <span style="font-size:0.7em;color:#888;">(' + ephDPovPct.toFixed(1) + '%)</span></td>'
+      + '<td style="text-align:center;padding:6px 8px;font-size:1.2em;font-weight:bold;color:{EPHESUS_COLOR};">' + fmt(ephDAH) + '</td>'
+      + '</tr>'
+      + '<tr>'
+      + '<td style="padding:6px 8px;font-weight:bold;color:#555;">Attendance Zone</td>'
+      + '<td style="text-align:center;padding:6px 8px;font-size:1.2em;font-weight:bold;color:{EPHESUS_COLOR};">' + fmt(ephZPov) + ' <span style="font-size:0.7em;color:#888;">(' + ephZPovPct.toFixed(1) + '%)</span></td>'
+      + '<td style="text-align:center;padding:6px 8px;font-size:1.2em;font-weight:bold;color:{EPHESUS_COLOR};">' + fmt(ephZAH) + '</td>'
+      + '</tr>'
+      + '</tbody></table>';
   }}
 
   // SES summary (step 8)
@@ -1350,19 +1363,19 @@ function populateMetrics() {{
       + 'is to serve its surrounding communities, not CHCCS staff members or budget '
       + 'spreadsheets. Part of what is important to community members is having schools '
       + 'that are easily accessible to ALL populations.</p>'
-      + '<p>We have demonstrated that</p>'
-      + '<ul style="line-height:1.8;">'
-      + '<li><strong>Easy Access</strong> &mdash; Ephesus is more accessible to more people '
+      + '<p>We have demonstrated:</p>'
+      + '<ul style="line-height:1.8;margin-left:1.5em;padding-left:0.5em;">'
+      + '<li>Ephesus is <strong>accessible to more people</strong> '
       + '(due to access to major roadways and geographic location far enough from other nearby schools)</li>'
-      + '<li><strong>Serving the Disadvantaged</strong> &mdash; Ephesus serves a population '
-      + 'skewed to lower income communities</li>'
-      + '<li><strong>Colorful Community</strong> &mdash; Ephesus is accessible to a greater '
-      + 'diversity of people, with nearly twice the Hispanic population of Seawell</li>'
-      + '<li><strong>New Beginnings</strong> &mdash; Ephesus is accessible to more young children '
+      + '<li>Ephesus serves a population '
+      + 'skewed to <strong>lower income communities</strong></li>'
+      + '<li>Ephesus is accessible to a <strong>greater '
+      + 'diversity</strong> of people, with nearly twice the Hispanic population of Seawell</li>'
+      + '<li>Ephesus is accessible to <strong>more young children</strong> '
       + 'which may drive future enrollment increases</li>'
-      + '<li><strong>Housing Boom</strong> &mdash; Homes around Ephesus are more affordable '
+      + '<li>Homes around Ephesus are more <strong>affordable</strong> '
       + 'which means younger families are more likely to be able to afford living near Ephesus</li>'
-      + '<li><strong>Growth Magnet</strong> &mdash; Planned developments near Ephesus represent '
+      + '<li><strong>Planned developments</strong> near Ephesus represent '
       + '~8&times; more housing units than near Seawell, signaling future enrollment growth '
       + 'in the Ephesus area</li>'
       + '</ul>';
