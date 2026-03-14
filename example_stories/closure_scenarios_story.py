@@ -336,21 +336,31 @@ def compute_children_by_school(pixels: pd.DataFrame,
 # ---------------------------------------------------------------------------
 def find_road_deltas(diff_arr: np.ndarray,
                      graph_geojson: dict,
-                     road_names: list) -> list:
+                     road_names: list,
+                     max_roads: set = None) -> list:
     """Get peak traffic change for specific named roads.
 
     Returns list of dicts: [{"name": str, "delta": float}, ...]
     in the same order as road_names. For each road, reports the
-    single edge with the largest absolute change.
+    single edge with the largest absolute change — unless the road
+    is in *max_roads*, in which case it reports the most-positive
+    delta (highest traffic increase).
     """
-    road_peak = {}  # name → delta with largest |delta|
+    if max_roads is None:
+        max_roads = set()
+    road_peak = {}  # name → delta with largest |delta| (or max delta)
     name_set = set(road_names)
     for i in range(min(len(diff_arr), len(graph_geojson["features"]))):
         delta = float(diff_arr[i])
         name = graph_geojson["features"][i]["properties"].get("name", "")
         if name in name_set:
-            if name not in road_peak or abs(delta) > abs(road_peak[name]):
-                road_peak[name] = delta
+            if name in max_roads:
+                # Use most-positive delta for max_roads
+                if name not in road_peak or delta > road_peak[name]:
+                    road_peak[name] = delta
+            else:
+                if name not in road_peak or abs(delta) > abs(road_peak[name]):
+                    road_peak[name] = delta
     return [{"name": n, "delta": round(road_peak.get(n, 0), 1)}
             for n in road_names if n in road_peak]
 
@@ -601,8 +611,54 @@ a {{ color: #1565C0; }}
     </div>
   </div>
 
-  <!-- Step 1: Seawell Closure — Children 5-9 -->
+  <!-- Step 1: Capacity Overview -->
   <div class="step" data-step="1">
+    <div class="step-number">1b</div>
+    <h2>District Capacity at a Glance</h2>
+    <p>Before modeling closures, the map shows each school&rsquo;s projected
+    2030 enrollment against current building capacity. Labels above each
+    school display enrollment, capacity, and percent occupied.</p>
+
+    <div class="metrics-row">
+      <div class="metric">
+        <div class="metric-value">{data["below_cap_count"]}/11</div>
+        <div class="metric-label">schools below capacity</div>
+      </div>
+      <div class="metric">
+        <div class="metric-value">{data["total_spare"]:,}</div>
+        <div class="metric-label">total spare seats</div>
+      </div>
+    </div>
+
+    <h3>Geographic distribution</h3>
+    <ul style="margin:8px 0 12px 20px;line-height:1.8;">
+      <li><strong>East/central (near capacity):</strong>
+        <span class="fpg-label">FPG</span> 97%,
+        McDougle 94%,
+        <span class="ephesus-label">Ephesus</span> 86%</li>
+      <li><strong>Over capacity:</strong>
+        <span class="glenwood-label">Glenwood</span> 102% &mdash;
+        already above its limit</li>
+      <li><strong>West/south (spare capacity):</strong>
+        Rashkis 45%, Scroggs 51%, Northside 53%, Morris Grove 60%</li>
+    </ul>
+
+    <div class="insight">
+      <strong>Redistricting implication:</strong> Spare capacity exists
+      ({data["total_spare"]:,} seats) but is concentrated in the west and south
+      &mdash; geographically distant from where most elementary-age children
+      live in the eastern district.
+    </div>
+
+    <div class="limitation">
+      <strong>Limitation:</strong> Enrollment figures are PMR2 Forecast
+      projections (UNC Carolina Demography); capacity figures are pre-Woolpert.
+      Actual numbers may differ.
+    </div>
+  </div>
+
+  <!-- Step 2: Seawell Closure — Children 5-9 -->
+  <div class="step" data-step="2">
     <div class="step-number">2</div>
     <h2>Seawell Closure: Current Students (Ages 5&ndash;9)</h2>
     <p>When <span class="seawell-label">Seawell</span> closes, its
@@ -633,8 +689,8 @@ a {{ color: #1565C0; }}
     </div>
   </div>
 
-  <!-- Step 2: Seawell Closure — Children 0-4 -->
-  <div class="step" data-step="2">
+  <!-- Step 3: Seawell Closure — Children 0-4 -->
+  <div class="step" data-step="3">
     <div class="step-number">2b</div>
     <h2>Seawell Closure: Future Students (Ages 0&ndash;4)</h2>
     <p>Now the same scenario viewed through the lens of children under 5
@@ -646,8 +702,8 @@ a {{ color: #1565C0; }}
     ({seawell_kids["children_0_4"]}) young children aged 0&ndash;4.</p>
   </div>
 
-  <!-- Step 3: Ephesus Closure — Children 5-9 -->
-  <div class="step" data-step="3">
+  <!-- Step 4: Ephesus Closure — Children 5-9 -->
+  <div class="step" data-step="4">
     <div class="step-number">3</div>
     <h2>Ephesus Closure: Current Students (Ages 5&ndash;9)</h2>
     <p>When <span class="ephesus-label">Ephesus</span> closes, the
@@ -668,8 +724,8 @@ a {{ color: #1565C0; }}
     position in the most population-dense area of the district.</p>
   </div>
 
-  <!-- Step 4: Ephesus Closure — Children 0-4 -->
-  <div class="step" data-step="4">
+  <!-- Step 5: Ephesus Closure — Children 0-4 -->
+  <div class="step" data-step="5">
     <div class="step-number">3b</div>
     <h2>Ephesus Closure: Future Students (Ages 0&ndash;4)</h2>
     <p>For children under 5, the Ephesus closure creates even larger
@@ -682,8 +738,8 @@ a {{ color: #1565C0; }}
     greatest.</p>
   </div>
 
-  <!-- Step 5: Young Children Bar Chart -->
-  <div class="step" data-step="5">
+  <!-- Step 6: Young Children Bar Chart -->
+  <div class="step" data-step="6">
     <div class="step-number">4</div>
     <h2>Young Children by Nearest School</h2>
     <p>The chart shows children under 5 by nearest-drive school.
@@ -700,8 +756,8 @@ a {{ color: #1565C0; }}
     </div>
   </div>
 
-  <!-- Step 6: Enrollment Projections vs Capacity -->
-  <div class="step" data-step="6">
+  <!-- Step 7: Enrollment Projections vs Capacity -->
+  <div class="step" data-step="7">
     <div class="step-number">4b</div>
     <h2>Projected Enrollment vs. Capacity (2030)</h2>
     <p>UNC Carolina Demography projections (PMR2 Forecast) estimate 2030
@@ -736,8 +792,8 @@ a {{ color: #1565C0; }}
     </div>
   </div>
 
-  <!-- Step 7: Where the Children Live (Choropleth) -->
-  <div class="step" data-step="7">
+  <!-- Step 8: Where the Children Live (Choropleth) -->
+  <div class="step" data-step="8">
     <div class="step-number">5</div>
     <h2>Where the Children Live</h2>
     <p>The choropleth shows the concentration of elementary-age children
@@ -748,8 +804,8 @@ a {{ color: #1565C0; }}
     <p>This is where elementary capacity is needed most.</p>
   </div>
 
-  <!-- Step 8: The School Desert Scenario -->
-  <div class="step" data-step="8">
+  <!-- Step 9: The School Desert Scenario -->
+  <div class="step" data-step="9">
     <div class="step-number">6</div>
     <h2>The School Desert Scenario</h2>
     <p>Now imagine closing <strong>both</strong>
@@ -773,8 +829,8 @@ a {{ color: #1565C0; }}
     farthest.</p>
   </div>
 
-  <!-- Step 9: Summary — What the Data Shows -->
-  <div class="step" data-step="9">
+  <!-- Step 10: Summary — What the Data Shows -->
+  <div class="step" data-step="10">
     <div class="step-number">7</div>
     <h2>What the Data Shows</h2>
     <p>Four key findings from the closure analysis:</p>
@@ -1143,6 +1199,30 @@ layers.schoolsLabeled = L.geoJSON(SCHOOLS, {{
   }}
 }});
 
+// Capacity label layer — DivIcon markers showing enrollment/capacity boxes
+layers.capacityLabels = L.layerGroup();
+SCHOOLS.features.forEach(function(f) {{
+  var name = f.properties.school || "";
+  var enr = ENROLLMENT_DATA.find(function(d) {{ return d.school === name; }});
+  if (!enr) return;
+  var c = f.geometry.coordinates;
+  var label = name.replace(" Elementary", "").replace(" Bilingue", "");
+  var utilColor = enr.util_2030 > 100 ? "#C62828" : enr.util_2030 >= 90 ? "#F9A825" : "#555";
+  var html = '<div style="background:rgba(255,255,255,0.92);border:1px solid #ccc;border-radius:4px;'
+    + 'padding:3px 6px;font-size:10px;line-height:1.35;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,0.15);">'
+    + '<div style="font-weight:bold;font-size:11px;margin-bottom:2px;">' + label + '</div>'
+    + '<div>Enroll: ' + enr.enroll_2030 + ' / ' + enr.capacity + '</div>'
+    + '<div style="color:' + utilColor + ';font-weight:bold;">' + enr.util_2030 + '% occupied</div>'
+    + '</div>';
+  var icon = L.divIcon({{
+    className: '',
+    html: html,
+    iconSize: [0, 0],
+    iconAnchor: [-8, 20]
+  }});
+  L.marker([c[1], c[0]], {{ icon: icon }}).addTo(layers.capacityLabels);
+}});
+
 // Road layer is global (roadLayer), managed via showTrafficDiff/hideTraffic
 
 // Block group choropleth
@@ -1238,50 +1318,57 @@ function handleStep(idx) {{
       districtView();
       break;
 
-    case 1: // Seawell Traffic — Children 5-9
+    case 1: // Capacity Overview — schools + capacity labels
+      layers.district.addTo(map);
+      layers.schools.addTo(map);
+      layers.capacityLabels.addTo(map);
+      districtView();
+      break;
+
+    case 2: // Seawell Traffic — Children 5-9
       showTrafficDiff("no_seawell", "5_9");
       layers.schools.addTo(map);
       if (layers.closedXSeawell) layers.closedXSeawell.addTo(map);
       districtView();
       break;
 
-    case 2: // Seawell Traffic — Children 0-4
+    case 3: // Seawell Traffic — Children 0-4
       showTrafficDiff("no_seawell", "0_4");
       layers.schools.addTo(map);
       if (layers.closedXSeawell) layers.closedXSeawell.addTo(map);
       districtView();
       break;
 
-    case 3: // Ephesus Traffic — Children 5-9
+    case 4: // Ephesus Traffic — Children 5-9
       showTrafficDiff("no_ephesus", "5_9");
       layers.schools.addTo(map);
       if (layers.closedXEphesus) layers.closedXEphesus.addTo(map);
       districtView();
       break;
 
-    case 4: // Ephesus Traffic — Children 0-4
+    case 5: // Ephesus Traffic — Children 0-4
       showTrafficDiff("no_ephesus", "0_4");
       layers.schools.addTo(map);
       if (layers.closedXEphesus) layers.closedXEphesus.addTo(map);
       districtView();
       break;
 
-    case 5: // Bar Chart (children 0-4)
+    case 6: // Bar Chart (children 0-4)
       showChart();
       break;
 
-    case 6: // Enrollment Projections
+    case 7: // Enrollment Projections
       showEnrollmentChart();
       break;
 
-    case 7: // Block Group Choropleth
+    case 8: // Block Group Choropleth
       layers.district.addTo(map);
       layers.blockGroups.addTo(map);
       layers.schoolsLabeled.addTo(map);
       districtView();
       break;
 
-    case 8: // School Desert — choropleth + closed markers
+    case 9: // School Desert — choropleth + closed markers
       layers.blockGroups.addTo(map);
       layers.schoolsLabeled.addTo(map);
       if (layers.closedXEphesus) layers.closedXEphesus.addTo(map);
@@ -1289,7 +1376,7 @@ function handleStep(idx) {{
       zoomToEast();
       break;
 
-    case 9: // Summary
+    case 10: // Summary
       layers.district.addTo(map);
       layers.schools.addTo(map);
       dimOverlay.style.display = "block";
@@ -1408,8 +1495,9 @@ def main():
     graph_geojson = json.loads(road_geojson_str)
     seawell_top_roads_59 = find_road_deltas(diff_seawell_59, graph_geojson, SEAWELL_ROADS)
     seawell_top_roads_04 = find_road_deltas(diff_seawell_04, graph_geojson, SEAWELL_ROADS)
-    ephesus_top_roads_59 = find_road_deltas(diff_ephesus_59, graph_geojson, EPHESUS_ROADS)
-    ephesus_top_roads_04 = find_road_deltas(diff_ephesus_04, graph_geojson, EPHESUS_ROADS)
+    ephesus_max_roads = {"North Fordham Boulevard"}
+    ephesus_top_roads_59 = find_road_deltas(diff_ephesus_59, graph_geojson, EPHESUS_ROADS, max_roads=ephesus_max_roads)
+    ephesus_top_roads_04 = find_road_deltas(diff_ephesus_04, graph_geojson, EPHESUS_ROADS, max_roads=ephesus_max_roads)
     _progress(f"Seawell 5-9: {seawell_top_roads_59}")
     _progress(f"Seawell 0-4: {seawell_top_roads_04}")
     _progress(f"Ephesus 5-9: {ephesus_top_roads_59}")
@@ -1434,7 +1522,11 @@ def main():
         ENROLLMENT_PROJECTIONS, key=lambda d: d["util_2030"], reverse=True
     )
     enrollment_json = json.dumps(enrollment_sorted, separators=(",", ":"))
-    _progress(f"Enrollment projections: {len(enrollment_sorted)} schools")
+    # Compute summary stats for capacity overview slide
+    below_cap = [d for d in ENROLLMENT_PROJECTIONS if d["util_2030"] <= 100]
+    total_spare = sum(d["capacity"] - d["enroll_2030"] for d in below_cap)
+    _progress(f"Enrollment projections: {len(enrollment_sorted)} schools, "
+              f"{len(below_cap)} below capacity, {total_spare} total spare seats")
 
     # [7/9] Block groups for choropleth
     print("[7/9] Loading block groups ...")
@@ -1469,6 +1561,8 @@ def main():
         "ephesus_top_roads_59": ephesus_top_roads_59,
         "ephesus_top_roads_04": ephesus_top_roads_04,
         "enrollment_json": enrollment_json,
+        "total_spare": total_spare,
+        "below_cap_count": len(below_cap),
     }
     html = build_html(data)
 
