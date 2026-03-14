@@ -139,15 +139,17 @@ Same two-column scrollytelling pattern as `src/socioeconomic_story.py`:
 
 Third and final editorial story. Examines student movement under closure scenarios — traffic redistribution, transportation costs, and the school desert risk of closing eastern schools.
 
-Seven scrollytelling steps:
+Eight scrollytelling steps:
 
 1. **Introduction** — From demographics to movement; methodology overview
-2. **Seawell Closure: Traffic** — Traffic delta visualization with LEAP program context
-3. **Ephesus Closure: Traffic** — More road segments affected; 0-4 age disparity
-4. **Young Children Bar Chart** — Children under 5 by nearest-drive school
-5. **Where the Children Live** — Block group choropleth of children 5-9
-6. **School Desert Scenario** — Close both Ephesus + Glenwood; school desert in densest area
-7. **Summary** — Three key findings with links to other stories
+2. **Capacity Overview** — District-wide enrollment vs. capacity with per-school map labels (projected 2030 enrollment, capacity, % occupied)
+3. **Seawell Closure: Traffic** — Traffic delta visualization with LEAP program context (5-9 and 0-4 sub-slides)
+4. **Ephesus Closure: Traffic** — More road segments affected; 0-4 age disparity (5-9 and 0-4 sub-slides)
+5. **Young Children Bar Chart** — Children under 5 by nearest-drive school
+6. **Enrollment Projections** — Projected 2030 utilization bar chart (PMR2 Forecast)
+7. **Where the Children Live** — Block group choropleth of children 5-9
+8. **School Desert Scenario** — Close both Ephesus + Glenwood; school desert in densest area
+9. **Summary** — Four key findings with links to other stories
 
 ### Color Scheme
 
@@ -185,6 +187,7 @@ Same two-column scrollytelling pattern as the other editorial stories:
 - Scrollama 3.2.0 + Leaflet 1.9.3 with CARTO light basemap
 - Full road network colored by traffic delta (diverging red/blue scale)
 - Block group choropleth for children density
-- Red X SVG markers for closed schools (DivIcon)
-- Pure HTML/CSS bar charts for school comparisons
+- DivIcon capacity labels with per-school directional offsets showing enrollment/capacity/% occupied
+- Dashed-circle markers for closed schools
+- Pure HTML/CSS bar charts for school comparisons (children 0-4, enrollment utilization)
 - All data embedded as JS variables in a single self-contained HTML file

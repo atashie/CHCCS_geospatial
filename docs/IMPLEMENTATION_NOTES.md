@@ -343,6 +343,36 @@ Geocodes planned development addresses hand-transcribed from the Town of Chapel 
 
 ---
 
+## School Closure Scenarios (Editorial Story)
+
+### Overview
+
+Editorial scrollytelling page (`example_stories/closure_scenarios.html`) examining student movement under closure scenarios — traffic redistribution, capacity constraints, and school desert risk. Third story in the Ephesus-focused editorial series.
+
+**Script:** `example_stories/closure_scenarios_story.py`
+**Output:** `example_stories/closure_scenarios.html`
+
+### Architecture
+
+Same two-column layout as other editorial stories (45% narrative / 55% Leaflet map) with Scrollama-driven step transitions. 11 steps (data-step 0–10) covering introduction, capacity overview, Seawell/Ephesus closure traffic (5-9 and 0-4 age groups), children bar chart, enrollment projections, choropleth, school desert scenario, and summary.
+
+### Key Implementation Details
+
+- **Traffic data extracted from working map** — Reads `school_closure_analysis.html` to extract road GeoJSON and base64-encoded Float32Array traffic arrays, avoiding recomputation
+- **`find_road_deltas()` with `max_roads` parameter** — Reports most-positive delta (traffic increase) for specified roads instead of max-absolute; used for North Fordham Boulevard where the largest absolute delta is a large negative (traffic reduction near closed school) but the meaningful value is the max increase on receiving roads
+- **Capacity overview slide (step 1)** — DivIcon markers with per-school directional offsets (`capLabelOffsets` JS object) showing projected enrollment, capacity, and % occupied as bold text with white text-shadow halo. Offsets tuned to prevent label overlap at district zoom level.
+- **Enrollment projections from PMR2 Forecast** — `ENROLLMENT_PROJECTIONS` constant with pre-Woolpert capacity figures; total spare capacity and below-capacity school count computed at generation time and embedded in narrative
+- **11 handleStep cases** — Each Scrollama step triggers layer add/remove, traffic diff rendering, chart display, or choropleth display
+
+### Key Outputs
+
+| File | Purpose |
+|------|---------|
+| `example_stories/closure_scenarios_story.py` | Generator script |
+| `example_stories/closure_scenarios.html` | Self-contained scrollytelling page (~3.4 MB) |
+
+---
+
 ## Attribution
 
 This analysis was developed with assistance from Claude (Anthropic) for code generation, spatial analysis implementation, and documentation. All data comes from official public sources.
