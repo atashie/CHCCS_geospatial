@@ -217,10 +217,10 @@ details[open] summary { margin-bottom: 8px; }
     to follow natural travel patterns or community boundaries. They are
     periodically redrawn &mdash; and <strong>will be redrawn after any
     closure</strong>.</p>
-    <p>The map shows all 11 attendance zones with colored fills and school
-    locations.</p>
+    <p>The map shows all 10* attendance zones and 11 school locations, with
+    colored fills highlighting Seawell and Ephesus.</p>
     <div class="limitation">
-      <strong>Note:</strong> Glenwood Elementary is a partial magnet/choice school.
+      <strong>Note:</strong> *Glenwood Elementary is a partial magnet/choice school.
       FPG Bilingue is a district-wide magnet school, so its zone covers
       the entire district rather than a specific neighborhood.
     </div>
@@ -234,10 +234,10 @@ details[open] summary { margin-bottom: 8px; }
     by driving time</strong>, computed via Dijkstra shortest-path on the
     OpenStreetMap road network. These maps are drawn entirely through a computing
     process &mdash; no manual boundary-drawing is involved.</p>
-    <p><em>Drive-time zones answer: &ldquo;If every family drove to the closest
+    <div class="insight"><p><em>Drive-time zones answer: &ldquo;If every family drove to the closest
     school, which school would serve this location?&rdquo; Since any closure
     triggers rezoning, drive-time zones better predict where displaced students
-    would go.</em></p>
+    would go.</em></p></div>
     <p>The map now shows drive-time zones instead of attendance zones.
     Notice that Seawell&rsquo;s drive-time zone is notably small and unusually
     shaped. This is because Seawell&rsquo;s access to roadways is limited to
@@ -279,9 +279,12 @@ details[open] summary { margin-bottom: 8px; }
     <h2>Understanding the Data</h2>
     <p>This analysis uses <strong>ACS Census data</strong> &mdash; the American
     Community Survey&rsquo;s 5-year estimates &mdash; aggregated by drive-time zone
-    to evaluate CHCCS&rsquo;s closure criteria: &ldquo;Inconvenience or
-    Hardship,&rdquo; &ldquo;Anticipated Enrollment,&rdquo; and
-    &ldquo;Real Estate Trends.&rdquo;</p>
+    to evaluate CHCCS&rsquo;s closure criteria:</p>
+    <ul>
+      <li>Inconvenience or Hardship</li>
+      <li>Anticipated Enrollment</li>
+      <li>Real Estate Trends</li>
+    </ul>
     <p>Census data reflects the demographics of the <em>community surrounding</em>
     each school, which may differ from current enrollment demographics.
     This distinction matters: Seawell&rsquo;s current student body incorporates
@@ -347,8 +350,8 @@ details[open] summary { margin-bottom: 8px; }
     <div class="step-number">9</div>
     <h2>Socioeconomic Summary</h2>
     <p>Both schools are optimally situated to potentially serve communities with
-    economic need. In absolute terms, more economically vulnerable residents
-    live within the Ephesus zone:</p>
+    economic need. In absolute terms, <strong>more economically vulnerable residents
+    live within the Ephesus zone</strong>:</p>
     <div id="ses-summary-text">
     </div>
     <p>Under CHCCS&rsquo;s &ldquo;Inconvenience or Hardship&rdquo; criterion,
@@ -398,11 +401,6 @@ details[open] summary { margin-bottom: 8px; }
     <p>The bar charts show <strong>minority residents</strong> (non-White)
     for all 11 schools &mdash; drive-time zones on the left, attendance zones
     on the right. Counts, not percentages.</p>
-    <p>Notably, Ephesus has nearly <strong>twice the Hispanic population</strong>
-    of Seawell &mdash; consistent with the affordable housing developments in
-    the zone serving a disproportionately Hispanic population. Under any equity
-    lens, closing the school with more minority residents has greater impact
-    on communities of color.</p>
   </div>
 
   <!-- ========== SECTION 3: AGE DISTRIBUTION (Steps 11-13) ========== -->
@@ -451,7 +449,7 @@ details[open] summary { margin-bottom: 8px; }
       <strong>Note:</strong> Rashkis&rsquo;s attendance zone was drawn within
       neighborhoods that are more accessible to Ephesus. The odd boundaries
       were intentionally delineated by CHCCS. Despite this, enrollment
-      numbers at Rashkis decline while Ephesus maintains.
+      numbers at Rashkis decline while Ephesus is expected to sustain.
     </div>
   </div>
 
@@ -796,14 +794,14 @@ function populateMetrics() {
     var seaDPov = sea.below_185_pov || 0;
     var seaDPovPct = sea.pct_below_185_poverty || 0;
     var seaDAH = sea.ah_total_units || 0;
-    el.innerHTML = '<div style="font-size:0.85em;font-weight:bold;color:#555;margin-bottom:4px;">Attendance Zone</div>'
-      + '<div class="metric-box" style="margin:0 0 10px;">'
+    el.innerHTML = '<div style="font-size:0.85em;font-weight:bold;color:#555;margin-bottom:4px;text-align:center;">Attendance Zone</div>'
+      + '<div class="metric-box" style="margin:0 0 10px;justify-content:center;">'
       + '<div class="metric"><div class="metric-value" style="color:#6A1B9A;">' + fmt(seaZPov) + '</div>'
       + '<div class="metric-label">People Below 185% Poverty</div>' + pctNote(seaZPovPct) + '</div>'
       + '<div class="metric"><div class="metric-value">' + fmt(seaZAH) + '</div>'
       + '<div class="metric-label">Affordable Housing Units</div></div></div>'
-      + '<div style="font-size:0.85em;font-weight:bold;color:#555;margin-bottom:4px;">Drive Zone</div>'
-      + '<div class="metric-box" style="margin:0;">'
+      + '<div style="font-size:0.85em;font-weight:bold;color:#555;margin-bottom:4px;text-align:center;">Drive Zone</div>'
+      + '<div class="metric-box" style="margin:0;justify-content:center;">'
       + '<div class="metric"><div class="metric-value" style="color:#6A1B9A;">' + fmt(seaDPov) + '</div>'
       + '<div class="metric-label">People Below 185% Poverty</div>' + pctNote(seaDPovPct) + '</div>'
       + '<div class="metric"><div class="metric-value">' + fmt(seaDAH) + '</div>'
@@ -819,14 +817,14 @@ function populateMetrics() {
     var ephDPov = eph.below_185_pov || 0;
     var ephDPovPct = eph.pct_below_185_poverty || 0;
     var ephDAH = eph.ah_total_units || 0;
-    el.innerHTML = '<div style="font-size:0.85em;font-weight:bold;color:#555;margin-bottom:4px;">Attendance Zone</div>'
-      + '<div class="metric-box" style="margin:0 0 10px;">'
+    el.innerHTML = '<div style="font-size:0.85em;font-weight:bold;color:#555;margin-bottom:4px;text-align:center;">Attendance Zone</div>'
+      + '<div class="metric-box" style="margin:0 0 10px;justify-content:center;">'
       + '<div class="metric"><div class="metric-value" style="color:#6A1B9A;">' + fmt(ephZPov) + '</div>'
       + '<div class="metric-label">People Below 185% Poverty</div>' + pctNote(ephZPovPct) + '</div>'
       + '<div class="metric"><div class="metric-value">' + fmt(ephZAH) + '</div>'
       + '<div class="metric-label">Affordable Housing Units</div></div></div>'
-      + '<div style="font-size:0.85em;font-weight:bold;color:#555;margin-bottom:4px;">Drive Zone</div>'
-      + '<div class="metric-box" style="margin:0;">'
+      + '<div style="font-size:0.85em;font-weight:bold;color:#555;margin-bottom:4px;text-align:center;">Drive Zone</div>'
+      + '<div class="metric-box" style="margin:0;justify-content:center;">'
       + '<div class="metric"><div class="metric-value" style="color:#6A1B9A;">' + fmt(ephDPov) + '</div>'
       + '<div class="metric-label">People Below 185% Poverty</div>' + pctNote(ephDPovPct) + '</div>'
       + '<div class="metric"><div class="metric-value">' + fmt(ephDAH) + '</div>'
@@ -892,19 +890,19 @@ function populateMetrics() {
       + 'is to serve its surrounding communities, not CHCCS staff members or budget '
       + 'spreadsheets. Part of what is important to community members is having schools '
       + 'that are easily accessible to ALL populations.</p>'
-      + '<p>We have demonstrated that</p>'
-      + '<ul style="line-height:1.8;">'
-      + '<li><strong>Easy Access</strong> &mdash; Ephesus is more accessible to more people '
+      + '<p>We have demonstrated:</p>'
+      + '<ul style="line-height:1.8;margin-left:1.5em;padding-left:0.5em;">'
+      + '<li><strong>Easy Access</strong> &mdash; Ephesus is more <span style="color:#C62828;">accessible to more people</span> '
       + '(due to access to major roadways and geographic location far enough from other nearby schools)</li>'
       + '<li><strong>Serving the Disadvantaged</strong> &mdash; Ephesus serves a population '
-      + 'skewed to lower income communities</li>'
-      + '<li><strong>Colorful Community</strong> &mdash; Ephesus is accessible to a greater '
-      + 'diversity of people, with nearly twice the Hispanic population of Seawell</li>'
-      + '<li><strong>New Beginnings</strong> &mdash; Ephesus is accessible to more young children '
+      + 'skewed to <span style="color:#C62828;">lower income communities</span></li>'
+      + '<li><strong>Colorful Community</strong> &mdash; Ephesus is accessible to a <span style="color:#C62828;">greater '
+      + 'diversity</span> of people, with nearly twice the Hispanic population of Seawell</li>'
+      + '<li><strong>New Beginnings</strong> &mdash; Ephesus is accessible to <span style="color:#C62828;">more young children</span> '
       + 'which may drive future enrollment increases</li>'
-      + '<li><strong>Housing Boom</strong> &mdash; Homes around Ephesus are more affordable '
+      + '<li><strong>Housing Boom</strong> &mdash; Homes around Ephesus are more <span style="color:#C62828;">affordable</span> '
       + 'which means younger families are more likely to be able to afford living near Ephesus</li>'
-      + '<li><strong>Growth Magnet</strong> &mdash; Planned developments near Ephesus represent '
+      + '<li><strong>Growth Magnet</strong> &mdash; <span style="color:#C62828;">Planned developments</span> near Ephesus represent '
       + '~8&times; more housing units than near Seawell, signaling future enrollment growth '
       + 'in the Ephesus area</li>'
       + '</ul>';
