@@ -898,16 +898,16 @@ def _build_charts_html(all_metrics):
     School-by-School Comparison
   </h2>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-    <div style="background:#fff;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,0.15);padding:12px;">
+    <div style="background:#fff;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,0.15);padding:12px;height:340px;">
       <canvas id="chart-raw"></canvas>
     </div>
-    <div style="background:#fff;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,0.15);padding:12px;">
+    <div style="background:#fff;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,0.15);padding:12px;height:340px;">
       <canvas id="chart-net"></canvas>
     </div>
-    <div style="background:#fff;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,0.15);padding:12px;">
+    <div style="background:#fff;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,0.15);padding:12px;height:340px;">
       <canvas id="chart-uhi"></canvas>
     </div>
-    <div style="background:#fff;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,0.15);padding:12px;">
+    <div style="background:#fff;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,0.15);padding:12px;height:340px;">
       <canvas id="chart-flood"></canvas>
     </div>
   </div>
@@ -938,6 +938,7 @@ def _build_charts_html(all_metrics):
       options: {{
         indexAxis: 'y',
         responsive: true,
+        maintainAspectRatio: false,
         plugins: {{
           title: {{ display: true, text: title, font: {{ size: 13 }} }},
           legend: {{ display: false }}
