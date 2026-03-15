@@ -1275,7 +1275,6 @@ METRIC_DOT_SPECS = [
     ("median_hh_income", "Median Household Income", "YlGn", "$", "", ",.0f"),
     ("pct_below_185_poverty", "% Below 185% Poverty (Free/Reduced Lunch Proxy)", "YlOrRd", "", "%", ".0f"),
     ("pct_minority", "% Minority (Non-White NH)", "PuBuGn", "", "%", ".0f"),
-    ("pct_renter", "% Renter-Occupied Housing", "OrRd", "", "%", ".0f"),
     ("pct_zero_vehicle", "% Households with No Vehicle", "Reds", "", "%", ".0f"),
     ("pct_elementary_age", "% Population Aged 5-9", "BuPu", "", "%", ".1f"),
     ("pct_young_children", "% Population Aged 0-4", "PuRd", "", "%", ".1f"),
@@ -1327,7 +1326,8 @@ def _make_choropleth_style(gdf: gpd.GeoDataFrame, column: str,
 
 
 def _build_legend_html(title: str, cmap_name: str, vmin: float, vmax: float,
-                       fmt: str = ".0f", prefix: str = "", suffix: str = "") -> str:
+                       fmt: str = ".0f", prefix: str = "", suffix: str = "",
+                       wide: bool = False) -> str:
     """Build an HTML gradient legend bar."""
     import matplotlib.colors as mcolors
 
@@ -1348,14 +1348,16 @@ def _build_legend_html(title: str, cmap_name: str, vmin: float, vmax: float,
         val = vmin + frac * (vmax - vmin)
         labels.append(f"{prefix}{val:{fmt}}{suffix}")
 
+    label_font = "13px" if wide else "12px"
     labels_html = "".join(
-        f'<span style="flex:1; text-align:center; font-size:12px;">{lbl}</span>'
+        f'<span style="flex:1; text-align:center; font-size:{label_font};">{lbl}</span>'
         for lbl in labels
     )
 
+    max_w = "420px" if wide else "320px"
     return f"""
     <div style="padding: 10px 14px; background: white; border-radius: 5px;
-                box-shadow: 0 2px 6px rgba(0,0,0,0.3); max-width: 320px;">
+                box-shadow: 0 2px 6px rgba(0,0,0,0.3); max-width: {max_w};">
         <div style="font-weight: bold; font-size: 13px; margin-bottom: 6px;">{title}</div>
         <div style="height: 16px; background: {gradient_css}; border-radius: 3px;"></div>
         <div style="display: flex; justify-content: space-between; margin-top: 4px;">
@@ -1410,7 +1412,6 @@ def create_socioeconomic_map(
         ("Median Income (Block Group)", "median_hh_income", "YlGn", "$", "", ",.0f"),
         ("% Below 185% Poverty (Block Group)", "pct_below_185_poverty", "YlOrRd", "", "%", ".0f"),
         ("% Minority (Block Group)", "pct_minority", "PuBuGn", "", "%", ".0f"),
-        ("% Renter-Occupied (Block Group)", "pct_renter", "OrRd", "", "%", ".0f"),
         ("% Zero-Vehicle HH (Block Group)", "pct_zero_vehicle", "Reds", "", "%", ".0f"),
         ("% Elementary Age 5-9 (Block Group)", "pct_elementary_age", "BuPu", "", "%", ".1f"),
         ("% Young Children 0-4 (Block Group)", "pct_young_children", "PuRd", "", "%", ".1f"),
@@ -1470,7 +1471,6 @@ def create_socioeconomic_map(
             ("Median Income (Block est.)", "median_hh_income", "YlGn", "$", "", ",.0f", True),
             ("% Below 185% Poverty (Block est.)", "pct_below_185_poverty", "YlOrRd", "", "%", ".0f", True),
             ("% Minority (Block)", "pct_minority", "PuBuGn", "", "%", ".0f", False),
-            ("% Renter-Occupied (Block est.)", "pct_renter", "OrRd", "", "%", ".0f", True),
             ("% Zero-Vehicle HH (Block est.)", "pct_zero_vehicle", "Reds", "", "%", ".0f", True),
             ("% Elementary Age (Block est.)", "pct_elementary_age", "BuPu", "", "%", ".1f", True),
             ("% Young Children (Block est.)", "pct_young_children", "PuRd", "", "%", ".1f", True),
@@ -1941,6 +1941,14 @@ FAQ
             So the "nearest school by driving" depends on which roads are available, not just how close things appear.</div>
         </div>
         <div class="faq-item">
+            <div class="faq-q">Why are there gaps or "donut holes" in the nearest walk/bike/drive zones?</div>
+            <div class="faq-a">The travel-time zones are built from a 100-meter grid. Each grid pixel is &ldquo;snapped&rdquo; to the nearest road or path in the OpenStreetMap network. Pixels that are more than 200 meters from any road (e.g., in parks, forests, or large undeveloped areas) cannot be assigned a travel time, so they appear as gaps. These holes do not mean nobody lives there &mdash; they simply reflect areas where our road-network model has no nearby edge to connect to.</div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-q">Why do some population dots appear outside the CHCCS district boundary?</div>
+            <div class="faq-a">Population dots are placed within Census block boundaries, and some Census blocks extend beyond the CHCCS district perimeter. When a block only partially overlaps the district, its entire population is still represented with dots scattered across the full block geometry. This means a few dots may fall just outside the dashed district boundary line.</div>
+        </div>
+        <div class="faq-item">
             <div class="faq-q">Where can I learn more about the methodology?</div>
             <div class="faq-a">See the <a href="socioeconomic_methodology.html" target="_blank" style="color:#2166ac;">Socioeconomic Methodology</a> page for detailed documentation of data sources, processing steps, and limitations.</div>
         </div>
@@ -2009,6 +2017,7 @@ FAQ
                 metric_legends[display_name] = _build_legend_html(
                     display_name, cmap_name, vmin, vmax,
                     fmt=fmt, prefix=prefix, suffix=suffix,
+                    wide=(prefix == "$"),
                 )
 
             _progress(f"  Pre-computed colors for {len(METRIC_DOT_SPECS)} metrics × {n_blocks} blocks")
@@ -2372,7 +2381,7 @@ FAQ
                 display: block;
             }}
             #dot-legend-box {{
-                position: fixed; bottom: 10px; right: 10px; z-index: 1002;
+                position: fixed; top: 50%; left: 10px; transform: translateY(-50%); z-index: 1002;
             }}
             .barplot-title {{
                 font-weight: bold; font-size: 12px; text-align: center;
@@ -3107,7 +3116,6 @@ def create_comparison_charts(zone_demographics: pd.DataFrame):
         ("pct_below_185_poverty", "% Below 185% Poverty (Free/Reduced Lunch Proxy)", "%"),
         ("pct_minority", "% Minority", "%"),
         ("median_hh_income", "Median Household Income", "$"),
-        ("pct_renter", "% Renter-Occupied", "%"),
         ("pct_zero_vehicle", "% Zero-Vehicle Households", "%"),
         ("pct_single_parent", "% Single-Parent Families", "%"),
     ]

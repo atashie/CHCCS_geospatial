@@ -150,9 +150,9 @@ Three sub-steps:
 ### Step 8: Map, Charts, and Documentation
 **Functions:** `create_socioeconomic_map()` (line 1087), `create_comparison_charts()` (line 1329), `generate_methodology_doc()` (line 1461)
 
-1. **Interactive Folium map** (`assets/maps/school_socioeconomic_map.html`): CartoDB Positron tiles, 7 choropleth layers (block level): median income, % below 185% poverty, % minority, % renter, % zero-vehicle, % elementary age 5-9, % young children 0-4. Dot-density race layer. Five zone type overlays switchable via radio buttons: School Zones (10 attendance zones), Walk Zones (7 CHCCS walk zones), Nearest Walk (11 Voronoi-like zones from travel-time grid), Nearest Bike (11), Nearest Drive (11) — each with demographic popups and per-zone barplots/histograms. School markers (uniform style). Canvas renderer enabled via `prefer_canvas=True`.
+1. **Interactive Folium map** (`assets/maps/school_socioeconomic_map.html`): CartoDB Positron tiles, 6 choropleth layers (block level): median income, % below 185% poverty, % minority, % zero-vehicle, % elementary age 5-9, % young children 0-4. Dot-density race layer. Five zone type overlays switchable via radio buttons: School Zones (10 attendance zones), Walk Zones (7 CHCCS walk zones), Nearest Walk (11 Voronoi-like zones from travel-time grid), Nearest Bike (11), Nearest Drive (11) — each with demographic popups and per-zone barplots/histograms. School markers (uniform style). Canvas renderer enabled via `prefer_canvas=True`.
 
-2. **Static charts** (`assets/charts/socioeconomic_*.png`): 7 horizontal bar charts (poverty, minority %, income, renter %, zero-vehicle %, single-parent %, young children 0-4) with per-school comparison, plus a district-wide income distribution chart across 16 income brackets.
+2. **Static charts** (`assets/charts/socioeconomic_*.png`): 6 horizontal bar charts (poverty, minority %, income, zero-vehicle %, single-parent %, young children 0-4) with per-school comparison, plus a district-wide income distribution chart across 16 income brackets.
 
 3. **Auto-generated documentation** (`docs/socioeconomic/SOCIOECONOMIC_ANALYSIS.md`): Methodology summary, variable definitions, results table, and limitations.
 

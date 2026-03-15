@@ -111,7 +111,7 @@ Census-based demographic analysis of CHCCS elementary school attendance zones us
 
 ### Key Features
 
-- **7 choropleth layers** (block level): median income, % below 185% poverty, % minority, % renter, % zero-vehicle, % elementary age 5-9, % young children 0-4
+- **6 choropleth layers** (block level): median income, % below 185% poverty, % minority, % zero-vehicle, % elementary age 5-9, % young children 0-4
 - **1:1 dot-density race layer** (~95,764 dots) with dasymetric placement constrained to residential parcels
 - **3 marker layers** under HOUSING category: affordable housing (AMI-colored), MLS home sales (price-colored), planned developments (blue-yellow-red by unit count, fixed radius with dark grey border)
 - **5 zone types** with radio-button switching: School Zones (10 attendance zones), Walk Zones (7 CHCCS walk zones), Nearest Walk (11 Voronoi-like zones), Nearest Bike (11), Nearest Drive (11)

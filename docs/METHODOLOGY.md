@@ -39,7 +39,7 @@ Each map section follows the same pattern: what you see on the map, where the da
 
 This map displays demographic characteristics of the neighborhoods around each of the 11 CHCCS elementary schools. It includes:
 
-- **Seven choropleth layers** showing different demographic measures (income, poverty, minority percentage, renter-occupied housing, zero-vehicle households, elementary-age children, and young children) at both block group and estimated block level
+- **Six choropleth layers** showing different demographic measures (income, poverty, minority percentage, zero-vehicle households, elementary-age children, and young children) at both block group and estimated block level
 - **A dot-density layer** showing the racial/ethnic composition of each area, with each dot representing a group of residents
 - **Attendance zone boundaries** showing which neighborhoods are assigned to which school
 - **School markers** for all 11 elementary schools
@@ -125,7 +125,6 @@ All weights are clipped to [0.0, 1.0] to prevent over-allocation.
 | Median Income | Estimated median household income | Yellow → Green (higher = greener) |
 | % Below 185% Poverty | Share of population below 185% of the federal poverty level (the FRL eligibility threshold) | Yellow → Red (higher = redder) |
 | % Minority | Share of population that is not White Non-Hispanic | Purple → Blue → Green |
-| % Renter-Occupied | Share of housing units that are renter-occupied | Orange → Red |
 | % Zero-Vehicle HH | Share of households with no vehicle available | Light Red → Dark Red |
 | % Elementary Age (5–9) | Share of total population aged 5–9 | Blue → Purple |
 | % Young Children (0–4) | Share of total population aged 0–4 | Purple → Red |

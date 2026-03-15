@@ -170,6 +170,14 @@ In the Traffic tab of the School Closure Map:
 
 Comparing these modes reveals how attendance zone assignments affect traffic patterns.
 
+### Why are there gaps or "donut holes" in the nearest walk/bike/drive zones?
+
+The travel-time zones are built from a 100-meter grid. Each grid pixel is "snapped" to the nearest road or path in the OpenStreetMap network. Pixels that are more than 200 meters from any road (e.g., in parks, forests, or large undeveloped areas) cannot be assigned a travel time, so they appear as gaps. These holes do not mean nobody lives there — they simply reflect areas where the road-network model has no nearby edge to connect to.
+
+### Why do some population dots appear outside the CHCCS district boundary?
+
+Population dots are placed within Census block boundaries, and some Census blocks extend beyond the CHCCS district perimeter. When a block only partially overlaps the district, its entire population is still represented with dots scattered across the full block geometry. This means a few dots may fall just outside the dashed district boundary line.
+
 ---
 
 ## Known TODOs
