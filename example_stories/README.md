@@ -139,17 +139,19 @@ Same two-column scrollytelling pattern as `src/socioeconomic_story.py`:
 
 Third and final editorial story. Examines student movement under closure scenarios — traffic redistribution, transportation costs, and the school desert risk of closing eastern schools.
 
-Eight scrollytelling steps:
+Eleven scrollytelling steps (slide numbers 1, 2, 3, 3b, 4, 4b, 5, 5b, 6, 7, 8):
 
-1. **Introduction** — From demographics to movement; methodology overview
-2. **Capacity Overview** — District-wide enrollment vs. capacity with per-school map labels (projected 2030 enrollment, capacity, % occupied)
-3. **Seawell Closure: Traffic** — Traffic delta visualization with LEAP program context (5-9 and 0-4 sub-slides)
-4. **Ephesus Closure: Traffic** — More road segments affected; 0-4 age disparity (5-9 and 0-4 sub-slides)
+1. **Introduction** — Transportation costs as a closure criterion; maps visualize current enrollment and capacity for absorption under closure scenarios
+2. **Capacity Overview** — District-wide 2030 projected enrollment vs. capacity with per-school map labels; rationale for 2030 figures, Seawell fewest displaced students, LEAP controlled-enrollment context
+3. **Seawell Closure: Traffic (5–9)** — Traffic delta visualization for current students
+3b. **Seawell Closure: Traffic (0–4)** — Same for pre-K children
+4. **Ephesus Closure: Traffic (5–9)** — More road segments affected
+4b. **Ephesus Closure: Traffic (0–4)** — 0-4 age disparity
 5. **Young Children Bar Chart** — Children under 5 by nearest-drive school
-6. **Enrollment Projections** — Projected 2030 utilization bar chart (PMR2 Forecast)
-7. **Where the Children Live** — Block group choropleth of children 5-9
-8. **School Desert Scenario** — Close both Ephesus + Glenwood; school desert in densest area
-9. **Summary** — Four key findings with links to other stories
+5b. **Enrollment Projections** — Projected 2030 utilization bar chart (PMR2 Forecast)
+6. **Where the Children Live** — Block group choropleth of children 5-9
+7. **School Desert Scenario** — Close both Ephesus + Glenwood; school desert in densest area
+8. **Summary** — Four key findings with links to other stories
 
 ### Color Scheme
 
@@ -187,7 +189,7 @@ Same two-column scrollytelling pattern as the other editorial stories:
 - Scrollama 3.2.0 + Leaflet 1.9.3 with CARTO light basemap
 - Full road network colored by traffic delta (diverging red/blue scale)
 - Block group choropleth for children density
-- DivIcon capacity labels with per-school directional offsets showing enrollment/capacity/% occupied
+- DivIcon capacity labels with per-school directional offsets showing enrollment/capacity/% occupied; center-aligned text; highlighted schools use `SCHOOL_COLORS`, others use utilization-based coloring
 - Dashed-circle markers for closed schools
 - Pure HTML/CSS bar charts for school comparisons (children 0-4, enrollment utilization)
 - All data embedded as JS variables in a single self-contained HTML file

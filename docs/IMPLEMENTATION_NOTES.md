@@ -355,13 +355,13 @@ Editorial scrollytelling page (`example_stories/closure_scenarios.html`) examini
 
 ### Architecture
 
-Same two-column layout as other editorial stories (45% narrative / 55% Leaflet map) with Scrollama-driven step transitions. 11 steps (data-step 0–10) covering introduction, capacity overview, Seawell/Ephesus closure traffic (5-9 and 0-4 age groups), children bar chart, enrollment projections, choropleth, school desert scenario, and summary.
+Same two-column layout as other editorial stories (45% narrative / 55% Leaflet map) with Scrollama-driven step transitions. 11 steps (data-step 0–10), numbered 1, 2, 3, 3b, 4, 4b, 5, 5b, 6, 7, 8 — covering introduction (transportation costs framing), capacity overview (with 2030 enrollment rationale), Seawell/Ephesus closure traffic (5-9 and 0-4 age groups), children bar chart, enrollment projections, choropleth, school desert scenario, and summary.
 
 ### Key Implementation Details
 
 - **Traffic data extracted from working map** — Reads `school_closure_analysis.html` to extract road GeoJSON and base64-encoded Float32Array traffic arrays, avoiding recomputation
 - **`find_road_deltas()` with `max_roads` parameter** — Reports most-positive delta (traffic increase) for specified roads instead of max-absolute; used for North Fordham Boulevard where the largest absolute delta is a large negative (traffic reduction near closed school) but the meaningful value is the max increase on receiving roads
-- **Capacity overview slide (step 1)** — DivIcon markers with per-school directional offsets (`capLabelOffsets` JS object) showing projected enrollment, capacity, and % occupied as bold text with white text-shadow halo. Offsets tuned to prevent label overlap at district zoom level.
+- **Capacity overview slide (step 1, slide 2)** — DivIcon markers with per-school directional offsets (`capLabelOffsets` JS object) showing projected enrollment, capacity, and % occupied as center-aligned bold text with white text-shadow halo. Highlighted schools use `SCHOOL_COLORS` for the utilization percentage color; non-highlighted schools use utilization-based coloring (red >100%, amber ≥90%, gray otherwise). Narrative explains 2030 enrollment rationale, Seawell as fewest displaced students, and LEAP controlled-enrollment context. Offsets tuned to prevent label overlap at district zoom level.
 - **Enrollment projections from PMR2 Forecast** — `ENROLLMENT_PROJECTIONS` constant with pre-Woolpert capacity figures; total spare capacity and below-capacity school count computed at generation time and embedded in narrative
 - **11 handleStep cases** — Each Scrollama step triggers layer add/remove, traffic diff rendering, chart display, or choropleth display
 

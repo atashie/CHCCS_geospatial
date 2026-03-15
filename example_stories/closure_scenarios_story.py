@@ -587,13 +587,16 @@ a {{ color: #1565C0; }}
     <div class="step-number">1</div>
     <h2>From Demographics to Movement</h2>
     <p>The <a href="chccs_demographics.html">previous story</a>
-    examined <em>who lives where</em> &mdash; population distributions,
-    demographics, and age patterns across the district. This story examines
-    <strong>what happens when children must move</strong>.</p>
-    <p>School closure redirects hundreds of students onto new routes,
-    increasing travel times and road congestion. Studying transportation
-    costs and inconvenience matters because <strong>traffic impacts are
-    being considered</strong> in closure decisions.</p>
+    examined <em>who lives where</em> across the district. This story
+    examines <strong>what happens when schools close and children must
+    relocate</strong>.</p>
+    <p>Transportation costs are a specific
+    <a href="https://www.chccs.org/Page/20737">school closure criterion</a>.
+    We analyze those costs by examining <strong>traffic burden</strong>
+    and the <strong>conversion of walkers to car or bus riders</strong>.
+    The maps that follow visualize where students are currently enrolled
+    and which schools have capacity to absorb them under closure
+    scenarios.</p>
 
     <details>
       <summary>How we measure impact</summary>
@@ -613,7 +616,7 @@ a {{ color: #1565C0; }}
 
   <!-- Step 1: Capacity Overview -->
   <div class="step" data-step="1">
-    <div class="step-number">1b</div>
+    <div class="step-number">2</div>
     <h2>District Capacity at a Glance</h2>
     <p>Before modeling closures, the map shows each school&rsquo;s projected
     2030 enrollment against current building capacity. Labels above each
@@ -637,6 +640,18 @@ a {{ color: #1565C0; }}
       live in the eastern district.
     </div>
 
+    <p>We use <strong>2030 projected enrollment</strong> because the
+    district&rsquo;s transition period begins in 2028, making 2030
+    estimates closer to the reality families will experience than
+    current-year figures.</p>
+    <p><span class="seawell-label">Seawell</span> may have the fewest
+    students affected by closure, indicating the fewest displaced
+    students. <span style="color:#FF8F00;font-weight:bold;">LEAP</span>
+    (at Frank Porter Graham) is a controlled-enrollment program
+    &mdash; for many of its students the school location is already
+    an intentional and desired relocation, and LEAP enrollment only
+    affects 4th and 5th graders.</p>
+
     <div class="limitation">
       <strong>Limitation:</strong> Enrollment figures are PMR2 Forecast
       projections (UNC Carolina Demography); capacity figures are pre-Woolpert.
@@ -646,7 +661,7 @@ a {{ color: #1565C0; }}
 
   <!-- Step 2: Seawell Closure — Children 5-9 -->
   <div class="step" data-step="2">
-    <div class="step-number">2</div>
+    <div class="step-number">3</div>
     <h2>Seawell Closure: Current Students (Ages 5&ndash;9)</h2>
     <p>When <span class="seawell-label">Seawell</span> closes, its
     elementary-age students (5&ndash;9) redistribute to nearby schools.
@@ -678,7 +693,7 @@ a {{ color: #1565C0; }}
 
   <!-- Step 3: Seawell Closure — Children 0-4 -->
   <div class="step" data-step="3">
-    <div class="step-number">2b</div>
+    <div class="step-number">3b</div>
     <h2>Seawell Closure: Future Students (Ages 0&ndash;4)</h2>
     <p>Now the same scenario viewed through the lens of children under 5
     &mdash; future kindergarteners who will need school capacity in
@@ -691,7 +706,7 @@ a {{ color: #1565C0; }}
 
   <!-- Step 4: Ephesus Closure — Children 5-9 -->
   <div class="step" data-step="4">
-    <div class="step-number">3</div>
+    <div class="step-number">4</div>
     <h2>Ephesus Closure: Current Students (Ages 5&ndash;9)</h2>
     <p>When <span class="ephesus-label">Ephesus</span> closes, the
     traffic redistribution is substantially wider. The map shows changes
@@ -713,7 +728,7 @@ a {{ color: #1565C0; }}
 
   <!-- Step 5: Ephesus Closure — Children 0-4 -->
   <div class="step" data-step="5">
-    <div class="step-number">3b</div>
+    <div class="step-number">4b</div>
     <h2>Ephesus Closure: Future Students (Ages 0&ndash;4)</h2>
     <p>For children under 5, the Ephesus closure creates even larger
     per-road impacts than the 5&ndash;9 analysis. Ephesus serves
@@ -727,7 +742,7 @@ a {{ color: #1565C0; }}
 
   <!-- Step 6: Young Children Bar Chart -->
   <div class="step" data-step="6">
-    <div class="step-number">4</div>
+    <div class="step-number">5</div>
     <h2>Young Children by Nearest School</h2>
     <p>The chart shows children under 5 by nearest-drive school.
     <span class="ephesus-label">Ephesus</span>&rsquo;s bar dominates
@@ -745,7 +760,7 @@ a {{ color: #1565C0; }}
 
   <!-- Step 7: Enrollment Projections vs Capacity -->
   <div class="step" data-step="7">
-    <div class="step-number">4b</div>
+    <div class="step-number">5b</div>
     <h2>Projected Enrollment vs. Capacity (2030)</h2>
     <p>UNC Carolina Demography projections (PMR2 Forecast) estimate 2030
     enrollment against current (pre-Woolpert) building capacities. The chart
@@ -781,7 +796,7 @@ a {{ color: #1565C0; }}
 
   <!-- Step 8: Where the Children Live (Choropleth) -->
   <div class="step" data-step="8">
-    <div class="step-number">5</div>
+    <div class="step-number">6</div>
     <h2>Where the Children Live</h2>
     <p>The choropleth shows the concentration of elementary-age children
     (ages 5&ndash;9) by Census block group. The eastern part of the district
@@ -793,7 +808,7 @@ a {{ color: #1565C0; }}
 
   <!-- Step 9: The School Desert Scenario -->
   <div class="step" data-step="9">
-    <div class="step-number">6</div>
+    <div class="step-number">7</div>
     <h2>The School Desert Scenario</h2>
     <p>Now imagine closing <strong>both</strong>
     <span class="ephesus-label">Ephesus</span> and
@@ -818,7 +833,7 @@ a {{ color: #1565C0; }}
 
   <!-- Step 10: Summary — What the Data Shows -->
   <div class="step" data-step="10">
-    <div class="step-number">7</div>
+    <div class="step-number">8</div>
     <h2>What the Data Shows</h2>
     <p>Four key findings from the closure analysis:</p>
     <ol style="margin:8px 0 12px 20px;line-height:1.8;">
@@ -1210,9 +1225,11 @@ SCHOOLS.features.forEach(function(f) {{
   if (!enr) return;
   var c = f.geometry.coordinates;
   var label = name.replace(" Elementary", "").replace(" Bilingue", "");
-  var utilColor = enr.util_2030 > 100 ? "#C62828" : enr.util_2030 >= 90 ? "#F9A825" : "#555";
+  var utilColor = SCHOOL_COLORS[name]
+    ? SCHOOL_COLORS[name]
+    : (enr.util_2030 > 100 ? "#C62828" : enr.util_2030 >= 90 ? "#F9A825" : "#555");
   var anchor = capLabelOffsets[name] || [-10, 25];
-  var html = '<div style="font-size:11.5px;line-height:1.4;white-space:nowrap;font-weight:bold;'
+  var html = '<div style="font-size:11.5px;line-height:1.4;white-space:nowrap;font-weight:bold;text-align:center;'
     + 'color:#333;text-shadow:1px 1px 2px #fff, -1px -1px 2px #fff, 1px -1px 2px #fff, -1px 1px 2px #fff, 0 0 4px #fff;">'
     + '<div style="font-size:12px;margin-bottom:1px;">' + label + '</div>'
     + '<div>' + enr.enroll_2030 + ' out of ' + enr.capacity + '</div>'
