@@ -37,7 +37,7 @@ from pathlib import Path
 import geopandas as gpd
 import numpy as np
 import pandas as pd
-from shapely.geometry import Point, mapping
+from shapely.geometry import Point, box, mapping
 
 # ---------------------------------------------------------------------------
 # Path setup — import from src/
@@ -64,6 +64,7 @@ PIXEL_CHILDREN_CSV = DATA_CACHE / "closure_analysis" / "pixel_children.csv"
 NETWORK_GRAPHML = DATA_CACHE / "network_drive.graphml"
 BLOCKGROUPS_GPKG = DATA_CACHE / "tiger_blockgroups_orange.gpkg"
 CHILDREN_BG_CSV = DATA_CACHE / "closure_analysis" / "children_blockgroups.csv"
+GRID_CSV = DATA_PROCESSED / "school_desert_grid.csv"
 
 # ---------------------------------------------------------------------------
 # Domain constants
@@ -81,6 +82,21 @@ SCHOOL_COLORS = {
     "New FPG Location": "#FF8F00",
 }
 DEFAULT_COLOR = "#888888"
+
+# 11-school color map for walk-zone fills
+ZONE_COLORS = {
+    "Carrboro Elementary": "#e41a1c",
+    "Ephesus Elementary": "#C62828",
+    "Estes Hills Elementary": "#377eb8",
+    "Frank Porter Graham Bilingue": "#FF8F00",
+    "Glenwood Elementary": "#2E7D32",
+    "McDougle Elementary": "#984ea3",
+    "Morris Grove Elementary": "#ff7f00",
+    "Northside Elementary": "#a65628",
+    "Rashkis Elementary": "#f781bf",
+    "Scroggs Elementary": "#66c2a5",
+    "Seawell Elementary": "#1565C0",
+}
 
 # UNC Carolina Demography / Carolina Population Center (PMR2 Forecast)
 # Pre-Woolpert capacity figures
@@ -290,6 +306,46 @@ def load_block_groups() -> gpd.GeoDataFrame:
     return bg
 
 
+def build_nearest_walk_zones(district: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    """Build dissolved nearest-walk-time zone polygons from school_desert_grid.csv.
+
+    Replicates the _build_nearest_zones pattern from
+    school_socioeconomic_analysis.py: reads baseline/walk rows, buffers each
+    grid point by 55 m squares, dissolves by nearest_school, clips to the
+    district boundary, and adds a color property from ZONE_COLORS.
+    """
+    if not GRID_CSV.exists():
+        raise FileNotFoundError(
+            f"Grid CSV not found: {GRID_CSV}\n"
+            "Run: python src/school_desert.py"
+        )
+    df = pd.read_csv(GRID_CSV)
+    df = df[(df["scenario"] == "baseline") & (df["mode"] == "walk")].copy()
+    df = df.dropna(subset=["nearest_school"])
+    if df.empty:
+        raise RuntimeError("No baseline/walk rows with nearest_school in grid CSV")
+
+    pts = gpd.GeoDataFrame(
+        df, geometry=gpd.points_from_xy(df["lon"], df["lat"]), crs=CRS_WGS84,
+    ).to_crs(CRS_UTM17N)
+
+    half = 55
+    pts["geometry"] = [box(g.x - half, g.y - half, g.x + half, g.y + half)
+                       for g in pts.geometry]
+    dissolved = pts.dissolve(by="nearest_school").reset_index()
+    dissolved = dissolved.rename(columns={"nearest_school": "school"})
+
+    dist_utm = district.to_crs(CRS_UTM17N)
+    dissolved = gpd.clip(dissolved, dist_utm)
+    mask = dissolved.geometry.geom_type.isin(["Polygon", "MultiPolygon"])
+    dissolved = dissolved[mask].copy()
+
+    dissolved = dissolved[["school", "geometry"]].to_crs(CRS_WGS84)
+    dissolved["color"] = dissolved["school"].map(ZONE_COLORS).fillna("#888")
+    _progress(f"Built {len(dissolved)} nearest-walk zones")
+    return dissolved
+
+
 # ---------------------------------------------------------------------------
 # Traffic metrics (computed from extracted base64 arrays)
 # ---------------------------------------------------------------------------
@@ -390,10 +446,10 @@ def build_html(data: dict) -> str:
             return ""
         items = []
         for r in roads:
-            sign = "+" if r["delta"] > 0 else ""
+            direction = "increase" if r["delta"] > 0 else "decrease"
             items.append(
                 f'<li><strong>{r["name"]}</strong>: '
-                f'{sign}{int(r["delta"])} children</li>'
+                f'{direction} in student traffic</li>'
             )
         return (
             '<p style="margin-bottom:4px;">Roads with the largest traffic change:</p>'
@@ -700,8 +756,13 @@ a {{ color: #1565C0; }}
     coming years.</p>
     {seawell_roads_04}
     <p>The pattern is similar to the 5&ndash;9 analysis but at lower
-    magnitude &mdash; Seawell&rsquo;s zone has relatively few young
-    ({seawell_kids["children_0_4"]}) young children aged 0&ndash;4.</p>
+    magnitude. Once again, Seawell&rsquo;s zone is not expected to have as
+    high an enrollment of elementary-age students per ACS Census data
+    &mdash; fewer young children live near Seawell compared to schools in
+    the eastern district.</p>
+    <p>For a deeper look at the demographic patterns behind these numbers,
+    see the <a href="chccs_demographics.html">Socioeconomic Demographics
+    story</a>.</p>
   </div>
 
   <!-- Step 4: Ephesus Closure — Children 5-9 -->
@@ -722,8 +783,29 @@ a {{ color: #1565C0; }}
       </div>
     </div>
     {ephesus_roads_59}
-    <p>The wider spread of affected roads reflects Ephesus&rsquo;s
-    position in the most population-dense area of the district.</p>
+    <p>The wider spread of affected roads reflects Ephesus&rsquo;s position
+    in the most population-dense area of the district.</p>
+
+    <p>Notice that the routing algorithm redirects most of the southern
+    Ephesus attendance zone toward
+    <span class="glenwood-label">Glenwood</span> rather than Rashkis, even
+    though Rashkis is geographically closer. This is because Glenwood is
+    more readily accessible via the road network, while Rashkis is nestled
+    at the back of a subdivision with limited through-routes.</p>
+
+    <p>This has a compounding implication: closing
+    <span class="glenwood-label">Glenwood</span> <em>in addition to</em>
+    <span class="ephesus-label">Ephesus</span> would push some of the most
+    population-dense areas of young children even further away &mdash; all
+    the way to Rashkis.</p>
+
+    <div class="limitation">
+      <strong>Attendance zone overlap:</strong> A significant portion of
+      Rashkis&rsquo;s current attendance zone is &ldquo;borrowed&rdquo;
+      from the Ephesus drive zone &mdash; meaning students in those areas
+      already share the same traffic corridors. Closing Ephesus would
+      concentrate even more student traffic onto those already-shared roads.
+    </div>
   </div>
 
   <!-- Step 5: Ephesus Closure — Children 0-4 -->
@@ -731,13 +813,23 @@ a {{ color: #1565C0; }}
     <div class="step-number">4b</div>
     <h2>Ephesus Closure: Future Students (Ages 0&ndash;4)</h2>
     <p>For children under 5, the Ephesus closure creates even larger
-    per-road impacts than the 5&ndash;9 analysis. Ephesus serves
-    ~{int(kids_ratio)}x more children under 5 than Seawell
-    ({ephesus_kids["children_0_4"]} vs {seawell_kids["children_0_4"]}).</p>
+    per-road impacts than the 5&ndash;9 analysis. As rising kindergarteners
+    enter elementary school, the traffic burden from an Ephesus closure would
+    be expected to grow worse over time &mdash; not better.</p>
     {ephesus_roads_04}
     <p>These are future kindergarteners &mdash; removing capacity in
     Ephesus&rsquo;s zone means removing it where future demand is
     greatest.</p>
+    <div class="insight">
+      <strong>Comparing closure scenarios:</strong> Across both age groups,
+      closing <span class="ephesus-label">Ephesus</span> produces a wider
+      spread of affected roads, higher per-road traffic increases, and
+      concentrates the burden on already-busy corridors. Closing
+      <span class="seawell-label">Seawell</span> redistributes fewer
+      students across a smaller, less congested portion of the network.
+      The traffic evidence reinforces the transportation cost gap identified
+      by the walkability analysis.
+    </div>
   </div>
 
   <!-- Step 6: Young Children Bar Chart -->
@@ -794,9 +886,264 @@ a {{ color: #1565C0; }}
     </div>
   </div>
 
-  <!-- Step 8: Where the Children Live (Choropleth) -->
+  <!-- Step 8: Transportation — Who Can Walk? -->
   <div class="step" data-step="8">
+    <div class="step-number">5c</div>
+    <h2>Transportation: Who Can Walk?</h2>
+    <p>Transportation costs are a specific
+    <a href="https://www.chccs.org/Page/20737">school closure criterion</a>.
+    Enrollment numbers help understand current and future transportation costs:
+    closing a school means 100% of its students need a new way to get to a
+    new school.</p>
+    <p><span class="seawell-label">Seawell</span> has the fewest students to
+    relocate. But another way to examine this is <strong>net change in students
+    needing buses</strong>.</p>
+    <p>The map shows <strong>nearest walk-time zones</strong> &mdash;
+    each point is colored by which school is closest on foot.
+    The 2025 Chapel Hill Safe Routes to School Action Plan measured
+    how many students live within 0.5 miles of each school:</p>
+    <ul style="margin:8px 0 12px 20px;line-height:1.8;">
+      <li><span class="ephesus-label">Ephesus</span>: <strong>24.7%</strong>
+        within 0.5 mi (99 students), 20% walk/bike rate</li>
+      <li><span class="seawell-label">Seawell</span>: <strong>0%</strong>
+        within 0.5 mi (0 students), 11% walk/bike rate</li>
+    </ul>
+
+    <div class="insight">
+      <strong>Net bus riders matter more than raw enrollment.</strong>
+      Closing a walkable school converts walkers to bus riders. Ephesus has
+      99 students within 0.5 miles who currently walk or could walk &mdash;
+      closing Ephesus converts all of them to car or bus riders. Seawell has
+      0 students within 0.5 miles, so closing it adds zero new bus riders
+      from the walk-eligible pool.
+    </div>
+
+    <div class="source">
+      <strong>Source:</strong> Chapel Hill Safe Routes to School Action Plan
+      (adopted June 11, 2025; funded by NCDOT SRTS grant)
+    </div>
+  </div>
+
+  <!-- Step 9: Walk proximity — who loses walkability? -->
+  <div class="step" data-step="9">
+    <div class="step-number">5d</div>
+    <h2>Walk Proximity: Students Within 0.5 Miles</h2>
+    <p><span class="ephesus-label">Ephesus</span> has the highest density of
+    students living in close proximity to the school. Closing Ephesus would
+    be a nearly direct conversion of walking students to bus students &mdash;
+    an immediate net negative in transportation costs.</p>
+
+    <div style="margin:16px 0;">
+      <div style="font-size:0.82em;color:#777;margin-bottom:8px;font-weight:bold;">
+        Students within 0.5 miles of school</div>
+      <div style="display:flex;align-items:center;margin:6px 0;">
+        <div style="width:110px;font-size:0.85em;font-weight:bold;color:#C62828;">Ephesus</div>
+        <div style="flex:1;background:#eee;border-radius:3px;height:22px;position:relative;">
+          <div style="width:100%;background:#C62828;height:100%;border-radius:3px;"></div>
+          <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#fff;font-weight:bold;">99 (24.7%)</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;margin:6px 0;">
+        <div style="width:110px;font-size:0.85em;color:#333;">Scroggs</div>
+        <div style="flex:1;background:#eee;border-radius:3px;height:22px;position:relative;">
+          <div style="width:95%;background:#66c2a5;height:100%;border-radius:3px;"></div>
+          <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#333;font-weight:bold;">94 (23.2%)</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;margin:6px 0;">
+        <div style="width:110px;font-size:0.85em;color:#333;">Rashkis</div>
+        <div style="flex:1;background:#eee;border-radius:3px;height:22px;position:relative;">
+          <div style="width:66%;background:#f781bf;height:100%;border-radius:3px;"></div>
+          <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#333;font-weight:bold;">65 (14.9%)</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;margin:6px 0;">
+        <div style="width:110px;font-size:0.85em;color:#333;">Northside</div>
+        <div style="flex:1;background:#eee;border-radius:3px;height:22px;position:relative;">
+          <div style="width:65%;background:#a65628;height:100%;border-radius:3px;"></div>
+          <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#333;font-weight:bold;">64 (16.0%)</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;margin:6px 0;">
+        <div style="width:110px;font-size:0.85em;color:#333;">FPG</div>
+        <div style="flex:1;background:#eee;border-radius:3px;height:22px;position:relative;">
+          <div style="width:35%;background:#FF8F00;height:100%;border-radius:3px;"></div>
+          <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#333;font-weight:bold;">35 (6.6%)</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;margin:6px 0;">
+        <div style="width:110px;font-size:0.85em;color:#333;">Estes Hills</div>
+        <div style="flex:1;background:#eee;border-radius:3px;height:22px;position:relative;">
+          <div style="width:33%;background:#377eb8;height:100%;border-radius:3px;"></div>
+          <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#333;font-weight:bold;">33 (9.3%)</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;margin:6px 0;">
+        <div style="width:110px;font-size:0.85em;color:#333;">Glenwood</div>
+        <div style="flex:1;background:#eee;border-radius:3px;height:22px;position:relative;">
+          <div style="width:6%;background:#2E7D32;height:100%;border-radius:3px;min-width:4px;"></div>
+          <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#333;font-weight:bold;">6 (1.5%)</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;margin:6px 0;">
+        <div style="width:110px;font-size:0.85em;font-weight:bold;color:#1565C0;">Seawell</div>
+        <div style="flex:1;background:#eee;border-radius:3px;height:22px;position:relative;">
+          <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#333;font-weight:bold;">0 (0%)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="insight">
+      <strong>Closure cost asymmetry:</strong> Closing
+      <span class="ephesus-label">Ephesus</span> converts 99 current walkers
+      into bus or car riders. Closing
+      <span class="seawell-label">Seawell</span> converts zero &mdash;
+      no students live within walking distance.
+    </div>
+
+    <div class="source">
+      <strong>Source:</strong> Chapel Hill Safe Routes to School Action Plan
+      (adopted June 11, 2025) &mdash; Town of Chapel Hill GIS analysis
+      (February 2025), CHCCS enrollment data (2024&ndash;2025)
+    </div>
+  </div>
+
+  <!-- Step 10: Seawell distance profile — no walkers -->
+  <div class="step" data-step="10">
+    <div class="step-number">5e</div>
+    <h2>Seawell: Distance Means Most Already Bus</h2>
+    <p>In comparison, <span class="seawell-label">Seawell</span> has
+    <strong>zero students</strong> recorded living within 0.5 miles of the
+    school. The Safe Routes to School Action Plan&rsquo;s distance analysis
+    shows the majority of Seawell students live 1&ndash;1.5 miles away.</p>
+
+    <div style="margin:16px 0;">
+      <div style="font-size:0.82em;color:#777;margin-bottom:8px;font-weight:bold;">
+        Seawell student distance from school</div>
+      <div style="display:flex;align-items:center;margin:6px 0;">
+        <div style="width:100px;font-size:0.85em;color:#333;">0&ndash;0.5 mi</div>
+        <div style="flex:1;background:#eee;border-radius:3px;height:22px;position:relative;">
+          <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#333;font-weight:bold;">0 students (0%)</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;margin:6px 0;">
+        <div style="width:100px;font-size:0.85em;color:#333;">0.5&ndash;1 mi</div>
+        <div style="flex:1;background:#eee;border-radius:3px;height:22px;position:relative;">
+          <div style="width:22%;background:#90CAF9;height:100%;border-radius:3px;"></div>
+          <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#333;font-weight:bold;">~100 students</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;margin:6px 0;">
+        <div style="width:100px;font-size:0.85em;font-weight:bold;color:#1565C0;">1&ndash;1.5 mi</div>
+        <div style="flex:1;background:#eee;border-radius:3px;height:22px;position:relative;">
+          <div style="width:65%;background:#1565C0;height:100%;border-radius:3px;"></div>
+          <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#fff;font-weight:bold;">~295 students</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;margin:6px 0;">
+        <div style="width:100px;font-size:0.85em;color:#333;">1.5+ mi</div>
+        <div style="flex:1;background:#eee;border-radius:3px;height:22px;position:relative;">
+          <div style="width:13%;background:#0D47A1;height:100%;border-radius:3px;"></div>
+          <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#333;font-weight:bold;">~61 students</span>
+        </div>
+      </div>
+    </div>
+
+    <p>Longer distances from school typically indicate that most students
+    already rely on car or bus transportation. A random sampling of arrival
+    and dismissal tallies from the Safe Routes report confirmed this
+    assumption: despite an 11% walk/bike rate in the tally, the overwhelming
+    majority of Seawell students arrive by car or bus.</p>
+
+    <div class="insight">
+      <strong>Transportation cost conclusion:</strong> A significantly higher
+      net change in transportation costs would come from closing
+      <span class="ephesus-label">Ephesus</span> than
+      <span class="seawell-label">Seawell</span>. Ephesus converts more
+      walkers to bus riders (99 vs. 0 within 0.5 mi), and in general more
+      students would need to be redistricted &mdash; Ephesus is projected to
+      enroll 375 students by 2030 compared to Seawell&rsquo;s 325.
+    </div>
+
+    <div class="source">
+      <strong>Source:</strong> Chapel Hill Safe Routes to School Action Plan
+      (adopted June 11, 2025) &mdash; distance analysis and arrival/dismissal
+      tally counts (Fall 2024)
+    </div>
+  </div>
+
+  <!-- Step 11: Transition — how we model traffic impact -->
+  <div class="step" data-step="11">
     <div class="step-number">6</div>
+    <h2>From Walkers to Roads: How We Model Traffic</h2>
+    <p>Now that we know who may need to switch from walking to riding a car
+    or bus, the next question is: <strong>how does that change traffic
+    patterns across Chapel Hill?</strong></p>
+
+    <p>Enrollment projections alone tell you <em>how many</em> students move,
+    but not <em>where on the road network</em> the impact lands. A school
+    with 325 displaced students might spread them across many lightly-used
+    roads, while a school with 375 might funnel them onto a few already-busy
+    corridors. To see the difference, we need to simulate the actual
+    routes.</p>
+
+    <h3>How the model works</h3>
+    <ol style="margin:8px 0 16px 20px;line-height:1.9;">
+      <li><strong>Map every child to a location.</strong> Census data tells
+        us how many children aged 0&ndash;4 and 5&ndash;9 live in each
+        neighborhood. We spread those counts across a grid of points covering
+        the district.</li>
+      <li><strong>Find the shortest driving route.</strong> For each grid
+        point, a shortest-path algorithm (Dijkstra&rsquo;s) computes the
+        fastest drive to every school using the real OpenStreetMap road
+        network &mdash; including speed limits and one-way streets.</li>
+      <li><strong>Close a school and reroute.</strong> When a school is
+        removed, every child who used that school is reassigned to the
+        next-closest school. Their new driving route is traced along the road
+        network.</li>
+      <li><strong>Count children per road segment.</strong> For each road, we
+        add up how many children travel along it under the baseline (all
+        schools open) and under the closure scenario. The difference tells
+        us which roads gain or lose traffic.</li>
+    </ol>
+
+    <h3>Reading the traffic maps</h3>
+    <p>The maps on the following slides color each road by how much its
+    student traffic changes when a school closes:</p>
+    <div class="traffic-legend" style="flex-direction:column;gap:8px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="width:80px;height:6px;border-radius:3px;background:linear-gradient(to right, rgb(255,255,204), rgb(254,178,76), rgb(240,59,32), rgb(189,0,38));"></div>
+        <span style="font-size:0.85em;"><strong>Red/orange</strong> &mdash;
+          more children on this road after closure</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="width:80px;height:6px;border-radius:3px;background:rgb(49,130,189);"></div>
+        <span style="font-size:0.85em;"><strong>Blue</strong> &mdash;
+          fewer children (traffic that used to go to the closed school
+          disappears from its access roads)</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="width:80px;height:2px;background:transparent;"></div>
+        <span style="font-size:0.85em;">Thicker lines = larger change.
+          Thin, faint lines = small change.</span>
+      </div>
+    </div>
+
+    <p>This approach shows not just <em>how many</em> students relocate,
+    but <em>which specific roads</em> absorb the burden &mdash; and whether
+    those roads are already congested corridors or quiet residential
+    streets.</p>
+
+    <div class="source">
+      <strong>Full methodology:</strong>
+      <a href="../assets/maps/closure_methodology.html">School Closure Methodology</a>
+      &bull; Data: NCES EDGE 2023-24, ACS 5-Year, OpenStreetMap
+    </div>
+  </div>
+
+  <!-- Step 12: Where the Children Live (Choropleth) -->
+  <div class="step" data-step="12">
+    <div class="step-number">7</div>
     <h2>Where the Children Live</h2>
     <p>The choropleth shows the concentration of elementary-age children
     (ages 5&ndash;9) by Census block group. The eastern part of the district
@@ -806,8 +1153,8 @@ a {{ color: #1565C0; }}
     <p>This is where elementary capacity is needed most.</p>
   </div>
 
-  <!-- Step 9: The School Desert Scenario -->
-  <div class="step" data-step="9">
+  <!-- Step 13: The School Desert Scenario -->
+  <div class="step" data-step="13">
     <div class="step-number">7</div>
     <h2>The School Desert Scenario</h2>
     <p>Now imagine closing <strong>both</strong>
@@ -831,8 +1178,8 @@ a {{ color: #1565C0; }}
     farthest.</p>
   </div>
 
-  <!-- Step 10: Summary — What the Data Shows -->
-  <div class="step" data-step="10">
+  <!-- Step 14: Summary — What the Data Shows -->
+  <div class="step" data-step="14">
     <div class="step-number">8</div>
     <h2>What the Data Shows</h2>
     <p>Four key findings from the closure analysis:</p>
@@ -897,6 +1244,7 @@ var ROAD_GEOJSON = {data["road_geojson"]};
 var BLOCK_GROUPS = {data["blockgroups_json"]};
 var CHILDREN_DATA = {data["children_chart_data"]};
 var ENROLLMENT_DATA = {data["enrollment_json"]};
+var WALK_ZONES = {data["walk_zones_json"]};
 
 // Traffic base64 arrays — extracted directly from school_closure_analysis.html
 var TRAFFIC_B64 = {json.dumps(data["traffic_b64"])};
@@ -1278,6 +1626,22 @@ layers.blockGroups = L.geoJSON(BLOCK_GROUPS, {{
   }}
 }});
 
+// Walk zones — nearest walk-time polygons
+layers.walkZones = L.geoJSON(WALK_ZONES, {{
+  style: function(f) {{
+    return {{
+      fillColor: f.properties.color || "#888",
+      fillOpacity: 0.25,
+      color: f.properties.color || "#888",
+      weight: 2,
+      opacity: 0.7
+    }};
+  }},
+  onEachFeature: function(f, layer) {{
+    layer.bindTooltip(f.properties.school, {{sticky: true}});
+  }}
+}});
+
 // Closed-school X markers
 var seawellSchool = findSchool("Seawell");
 var ephesusSchool = findSchool("Ephesus");
@@ -1382,14 +1746,42 @@ function handleStep(idx) {{
       showEnrollmentChart();
       break;
 
-    case 8: // Block Group Choropleth
+    case 8: // Walk zones — nearest walk-time polygons
+      layers.district.addTo(map);
+      layers.walkZones.addTo(map);
+      layers.schoolsLabeled.addTo(map);
+      districtView();
+      break;
+
+    case 9: // Walk proximity bar chart — same map as step 8
+      layers.district.addTo(map);
+      layers.walkZones.addTo(map);
+      layers.schoolsLabeled.addTo(map);
+      districtView();
+      break;
+
+    case 10: // Seawell distance profile — same map as step 8/9
+      layers.district.addTo(map);
+      layers.walkZones.addTo(map);
+      layers.schoolsLabeled.addTo(map);
+      districtView();
+      break;
+
+    case 11: // Transition — methodology intro with dim overlay
+      layers.district.addTo(map);
+      layers.schools.addTo(map);
+      dimOverlay.style.display = "block";
+      districtView();
+      break;
+
+    case 12: // Block Group Choropleth
       layers.district.addTo(map);
       layers.blockGroups.addTo(map);
       layers.schoolsLabeled.addTo(map);
       districtView();
       break;
 
-    case 9: // School Desert — choropleth + closed markers
+    case 13: // School Desert — choropleth + closed markers
       layers.blockGroups.addTo(map);
       layers.schoolsLabeled.addTo(map);
       if (layers.closedXEphesus) layers.closedXEphesus.addTo(map);
@@ -1397,7 +1789,7 @@ function handleStep(idx) {{
       zoomToEast();
       break;
 
-    case 10: // Summary
+    case 14: // Summary
       layers.district.addTo(map);
       layers.schools.addTo(map);
       dimOverlay.style.display = "block";
@@ -1455,8 +1847,8 @@ def main():
     print("School Closure Scenarios: Editorial Story Generator")
     print("=" * 60)
 
-    # [1/9] Load schools
-    print("\n[1/9] Loading school locations ...")
+    # [1/10] Load schools
+    print("\n[1/10] Loading school locations ...")
     schools = load_schools()
     schools_gdf = gpd.GeoDataFrame(
         schools,
@@ -1466,13 +1858,13 @@ def main():
     schools_json = gdf_to_geojson_str(schools_gdf, properties=["school"])
     _progress(f"Loaded {len(schools)} schools")
 
-    # [2/9] District boundary
-    print("[2/9] Loading district boundary ...")
+    # [2/10] District boundary
+    print("[2/10] Loading district boundary ...")
     district = load_district_boundary()
     district_json = gdf_to_geojson_str(district, simplify_m=50)
 
-    # [3/9] Extract road network + traffic arrays from working map
-    print("[3/9] Extracting from working school_closure_analysis.html ...")
+    # [3/10] Extract road network + traffic arrays from working map
+    print("[3/10] Extracting from working school_closure_analysis.html ...")
     working = extract_from_working_map()
     road_geojson_str = working["road_geojson_str"]
     traffic_b64 = working["traffic_b64"]
@@ -1481,8 +1873,8 @@ def main():
               f"N_EDGES: {n_edges}")
     _progress(f"Traffic arrays extracted: {list(traffic_b64.keys())}")
 
-    # [4/9] Compute diff metrics from the extracted arrays
-    print("[4/9] Computing traffic metrics ...")
+    # [4/10] Compute diff metrics from the extracted arrays
+    print("[4/10] Computing traffic metrics ...")
 
     def _decode_b64(key):
         raw = base64.b64decode(traffic_b64[key])
@@ -1528,8 +1920,8 @@ def main():
     seawell_edges = count_significant_edges(diff_seawell_04, threshold=3.0)
     ephesus_edges = count_significant_edges(diff_ephesus_04, threshold=3.0)
 
-    # [5/9] Children by nearest school
-    print("[5/9] Computing children by nearest school ...")
+    # [5/10] Children by nearest school
+    print("[5/10] Computing children by nearest school ...")
     assignments = load_assignments()
     pixels = load_pixel_children()
     children_by_school = compute_children_by_school(pixels, assignments)
@@ -1537,8 +1929,8 @@ def main():
     for rec in children_by_school:
         _progress(f"  {rec['school']}: {rec['children_0_4']} (0-4), {rec['children_5_9']} (5-9)")
 
-    # [6/9] Enrollment projections
-    print("[6/9] Preparing enrollment projections ...")
+    # [6/10] Enrollment projections
+    print("[6/10] Preparing enrollment projections ...")
     enrollment_sorted = sorted(
         ENROLLMENT_PROJECTIONS, key=lambda d: d["util_2030"], reverse=True
     )
@@ -1549,8 +1941,15 @@ def main():
     _progress(f"Enrollment projections: {len(enrollment_sorted)} schools, "
               f"{len(below_cap)} below capacity, {total_spare} total spare seats")
 
-    # [7/9] Block groups for choropleth
-    print("[7/9] Loading block groups ...")
+    # [7/10] Nearest walk-time zones
+    print("[7/10] Building nearest walk-time zones ...")
+    walk_zones_gdf = build_nearest_walk_zones(district)
+    walk_zones_json = gdf_to_geojson_str(
+        walk_zones_gdf, properties=["school", "color"], simplify_m=30
+    )
+
+    # [8/10] Block groups for choropleth
+    print("[8/10] Loading block groups ...")
     bg = load_block_groups()
     dist_union = (district.to_crs(CRS_UTM17N).buffer(500)
                   .to_crs(CRS_WGS84))
@@ -1565,8 +1964,8 @@ def main():
     )
     _progress(f"Block groups: {len(bg_clip)} features")
 
-    # [8/9] Build HTML
-    print("[8/9] Building HTML ...")
+    # [9/10] Build HTML
+    print("[9/10] Building HTML ...")
     data = {
         "schools_json": schools_json,
         "district_json": district_json,
@@ -1584,6 +1983,7 @@ def main():
         "enrollment_json": enrollment_json,
         "total_spare": total_spare,
         "below_cap_count": len(below_cap),
+        "walk_zones_json": walk_zones_json,
     }
     html = build_html(data)
 
