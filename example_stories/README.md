@@ -63,10 +63,10 @@ python example_stories/environmental_conditions_story.py --cache-only
 
 A data-driven comparison of Ephesus Elementary and Seawell Elementary across five dimensions:
 
-1. **Socioeconomic Status** — poverty counts, affordable housing, drive-time vs. attendance-zone demographics
+1. **Socioeconomic Status** — poverty counts, affordable housing, median household income (drive-time vs. attendance-zone)
 2. **Race/Ethnicity** — dot-density mapping, minority counts, Hispanic population
-3. **Age Distribution** — young children (0–4), elementary age (5–9), future enrollment demand
-4. **Real Estate Trends** — MLS home sales counts, median prices by zone (2023–2025)
+3. **Age Distribution** — young children (0–4) choropleth and bar charts, future enrollment demand
+4. **Real Estate** — MLS home sales counts, median prices by zone (2023–2025)
 5. **Planned Growth** — planned residential developments by nearest-drive zone, Ephesus vs. Seawell concentration
 
 ### Color Scheme
@@ -86,7 +86,7 @@ All comparisons lead with **counts over percentages** — real human impact matt
 
 ### Key Analytical Insight
 
-Seawell's attendance zone appears economically vulnerable, but drive-time analysis reveals much of that vulnerable population is actually closer to other schools. Meanwhile, Ephesus serves a larger, more diverse population with more young children and nearly 3x the affordable housing units.
+Seawell's attendance zone appears economically vulnerable, but drive-time analysis reveals much of that vulnerable population is actually closer to other schools. Meanwhile, Ephesus serves a larger, more diverse population with more young children and more affordable housing units. The SES summary slide shows median household income for both drive-zone and attendance-zone definitions, highlighting how boundary choice affects which block groups are captured.
 
 ### Usage
 

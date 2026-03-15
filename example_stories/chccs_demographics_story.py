@@ -441,7 +441,7 @@ def _random_points_fallback(geom, n: int, rng) -> list:
 # HTML builder
 # ---------------------------------------------------------------------------
 def build_html(data: dict) -> str:
-    """Build the 17-step editorial scrollytelling HTML."""
+    """Build the editorial scrollytelling HTML (17 slides, data-step 0-16)."""
 
     race_colors_js = json.dumps(
         [v[0] for v in RACE_CATEGORIES.values()], separators=(",", ":")
@@ -741,12 +741,11 @@ details[open] summary {{ margin-bottom: 8px; }}
     <ul style="margin-left:1.2em;padding-left:0;">
       <li>Inconvenience or Hardship</li>
       <li>Anticipated Enrollment</li>
-      <li>Real Estate Trends</li>
     </ul>
     <p>Census data reflects the demographics of the <em>community surrounding</em>
     each school, which may differ from current enrollment demographics.
     This distinction matters: Seawell&rsquo;s current student body incorporates
-    substantial recruitment of LEAP (Launching Equity through Achievement and
+    recruitment of LEAP (Launching Equity through Achievement and
     Potential) students who may present a very different demographic makeup from
     the surrounding community. Census data captures who <em>lives</em> near the
     school, regardless of enrollment programs.</p>
@@ -888,20 +887,9 @@ details[open] summary {{ margin-bottom: 8px; }}
     </div>
   </div>
 
-  <!-- Step 12: Elementary age choropleth -->
+  <!-- Step 12: Young children count bars -->
   <div class="step" data-step="12">
     <div class="step-number">13</div>
-    <h2>Where Are Elementary-Age Children?</h2>
-    <p>Now showing <strong>% children ages 5&ndash;9</strong> (elementary
-    age). This represents the current demand for elementary school seats.</p>
-    <p>Compare the spatial patterns: areas with high concentrations of
-    young children (0&ndash;4) today will generate enrollment demand in
-    the near future.</p>
-  </div>
-
-  <!-- Step 13: Young children count bars -->
-  <div class="step" data-step="13">
-    <div class="step-number">14</div>
     <h2>Young Children: All 11 Schools</h2>
     <p>The bar charts show <strong>young children (ages 0&ndash;4)</strong>
     by school zone &mdash; drive-time zones on the left, attendance zones on
@@ -916,11 +904,11 @@ details[open] summary {{ margin-bottom: 8px; }}
     </div>
   </div>
 
-  <!-- ========== REAL ESTATE (Steps 14-15) ========== -->
+  <!-- ========== REAL ESTATE (Steps 13-14) ========== -->
 
-  <!-- Step 14: Home Sales -->
-  <div class="step" data-step="14">
-    <div class="step-number">15</div>
+  <!-- Step 13: Home Sales -->
+  <div class="step" data-step="13">
+    <div class="step-number">14</div>
     <h2>Where Are Homes Selling?</h2>
     <p>School enrollment depends on where families move. <strong>MLS home
     sales data</strong> (2023&ndash;2025) reveals which zones attract the
@@ -933,9 +921,9 @@ details[open] summary {{ margin-bottom: 8px; }}
     </div>
   </div>
 
-  <!-- Step 15: Median Prices -->
-  <div class="step" data-step="15">
-    <div class="step-number">16</div>
+  <!-- Step 14: Median Prices -->
+  <div class="step" data-step="14">
+    <div class="step-number">15</div>
     <h2>Can Young Families Afford to Move In?</h2>
     <p>Declining CHCCS enrollment is partly driven by housing costs. When
     median home prices exceed what young families can afford, zones lose
@@ -950,9 +938,9 @@ details[open] summary {{ margin-bottom: 8px; }}
     </div>
   </div>
 
-  <!-- Step 16: Planned Developments -->
-  <div class="step" data-step="16">
-    <div class="step-number">17</div>
+  <!-- Step 15: Planned Developments -->
+  <div class="step" data-step="15">
+    <div class="step-number">16</div>
     <h2>Where Is Growth Headed?</h2>
     <p>Chapel Hill has <strong>29 planned residential developments</strong>
     within the CHCCS district, representing thousands of new housing units.
@@ -985,11 +973,11 @@ details[open] summary {{ margin-bottom: 8px; }}
     </div>
   </div>
 
-  <!-- ========== CONCLUSION (Step 17) ========== -->
+  <!-- ========== CONCLUSION (Step 16) ========== -->
 
-  <!-- Step 17: Summary -->
-  <div class="step" data-step="17">
-    <div class="step-number">18</div>
+  <!-- Step 16: Summary -->
+  <div class="step" data-step="16">
+    <div class="step-number">17</div>
     <h2>Summary</h2>
 
     <div id="final-summary-text">
@@ -1252,10 +1240,8 @@ function populateMetrics() {{
   var el = document.getElementById("seawell-ses-metrics");
   if (el) {{
     var seaZPov = seaZ.below_185_pov || 0;
-    var seaZPovPct = seaZ.pct_below_185_poverty || 0;
     var seaZAH = seaZ.ah_total_units || 0;
     var seaDPov = sea.below_185_pov || 0;
-    var seaDPovPct = sea.pct_below_185_poverty || 0;
     var seaDAH = sea.ah_total_units || 0;
     el.innerHTML = '<table style="width:100%;border-collapse:collapse;margin:8px 0;font-size:0.9em;">'
       + '<thead><tr>'
@@ -1265,12 +1251,12 @@ function populateMetrics() {{
       + '</tr></thead><tbody>'
       + '<tr style="background:#f5f5f5;">'
       + '<td style="padding:6px 8px;font-weight:bold;color:#555;">Drive Zone</td>'
-      + '<td style="text-align:center;padding:6px 8px;font-size:1.2em;font-weight:bold;color:{SEAWELL_COLOR};">' + fmt(seaDPov) + ' <span style="font-size:0.7em;color:#888;">(' + seaDPovPct.toFixed(1) + '%)</span></td>'
+      + '<td style="text-align:center;padding:6px 8px;font-size:1.2em;font-weight:bold;color:{SEAWELL_COLOR};">' + fmt(seaDPov) + '</td>'
       + '<td style="text-align:center;padding:6px 8px;font-size:1.2em;font-weight:bold;color:{SEAWELL_COLOR};">' + fmt(seaDAH) + '</td>'
       + '</tr>'
       + '<tr>'
       + '<td style="padding:6px 8px;font-weight:bold;color:#555;">Attendance Zone</td>'
-      + '<td style="text-align:center;padding:6px 8px;font-size:1.2em;font-weight:bold;color:{SEAWELL_COLOR};">' + fmt(seaZPov) + ' <span style="font-size:0.7em;color:#888;">(' + seaZPovPct.toFixed(1) + '%)</span></td>'
+      + '<td style="text-align:center;padding:6px 8px;font-size:1.2em;font-weight:bold;color:{SEAWELL_COLOR};">' + fmt(seaZPov) + '</td>'
       + '<td style="text-align:center;padding:6px 8px;font-size:1.2em;font-weight:bold;color:{SEAWELL_COLOR};">' + fmt(seaZAH) + '</td>'
       + '</tr>'
       + '</tbody></table>';
@@ -1280,10 +1266,8 @@ function populateMetrics() {{
   el = document.getElementById("ephesus-ses-metrics");
   if (el) {{
     var ephZPov = ephZ.below_185_pov || 0;
-    var ephZPovPct = ephZ.pct_below_185_poverty || 0;
     var ephZAH = ephZ.ah_total_units || 0;
     var ephDPov = eph.below_185_pov || 0;
-    var ephDPovPct = eph.pct_below_185_poverty || 0;
     var ephDAH = eph.ah_total_units || 0;
     el.innerHTML = '<table style="width:100%;border-collapse:collapse;margin:8px 0;font-size:0.9em;">'
       + '<thead><tr>'
@@ -1293,12 +1277,12 @@ function populateMetrics() {{
       + '</tr></thead><tbody>'
       + '<tr style="background:#f5f5f5;">'
       + '<td style="padding:6px 8px;font-weight:bold;color:#555;">Drive Zone</td>'
-      + '<td style="text-align:center;padding:6px 8px;font-size:1.2em;font-weight:bold;color:{EPHESUS_COLOR};">' + fmt(ephDPov) + ' <span style="font-size:0.7em;color:#888;">(' + ephDPovPct.toFixed(1) + '%)</span></td>'
+      + '<td style="text-align:center;padding:6px 8px;font-size:1.2em;font-weight:bold;color:{EPHESUS_COLOR};">' + fmt(ephDPov) + '</td>'
       + '<td style="text-align:center;padding:6px 8px;font-size:1.2em;font-weight:bold;color:{EPHESUS_COLOR};">' + fmt(ephDAH) + '</td>'
       + '</tr>'
       + '<tr>'
       + '<td style="padding:6px 8px;font-weight:bold;color:#555;">Attendance Zone</td>'
-      + '<td style="text-align:center;padding:6px 8px;font-size:1.2em;font-weight:bold;color:{EPHESUS_COLOR};">' + fmt(ephZPov) + ' <span style="font-size:0.7em;color:#888;">(' + ephZPovPct.toFixed(1) + '%)</span></td>'
+      + '<td style="text-align:center;padding:6px 8px;font-size:1.2em;font-weight:bold;color:{EPHESUS_COLOR};">' + fmt(ephZPov) + '</td>'
       + '<td style="text-align:center;padding:6px 8px;font-size:1.2em;font-weight:bold;color:{EPHESUS_COLOR};">' + fmt(ephZAH) + '</td>'
       + '</tr>'
       + '</tbody></table>';
@@ -1317,15 +1301,35 @@ function populateMetrics() {{
     var ephZAH2 = ephZ.ah_total_units || 0;
     var seaDAH2 = sea.ah_total_units || 0;
     var seaZAH2 = seaZ.ah_total_units || 0;
+    var ephZInc = ephZ.median_hh_income || 0;
+    var seaZInc = seaZ.median_hh_income || 0;
     el.innerHTML = '<ul style="margin:8px 0 8px 20px;line-height:1.8;">'
-      + '<li><span class="ephesus-label">Ephesus</span> is more accessible to a larger total population (' + fmt(ephPop2) + ' vs. ' + fmt(seaPop2) + ')</li>'
-      + '<li><span class="ephesus-label">Ephesus</span> serves more people in poverty (' + fmt(ephPov2) + ' vs. ' + fmt(seaPov2) + ')</li>'
-      + '<li><span class="ephesus-label">Ephesus</span> has nearly 3&times; more affordable housing units (' + fmt(ephDAH2 || ephZAH2) + ' vs. ' + fmt(seaDAH2 || seaZAH2) + ')</li>'
+      + '<li><span class="ephesus-label">Ephesus</span> is more accessible to a larger total population</li>'
+      + '<li><span class="ephesus-label">Ephesus</span> serves more people in poverty</li>'
+      + '<li><span class="ephesus-label">Ephesus</span> has more affordable housing units</li>'
       + '</ul>'
-      + '<p style="margin-top:8px;">Median household income in the Ephesus drive zone is <strong>$' + fmt(ephInc) + '</strong> vs. <strong>$' + fmt(seaInc) + '</strong> for Seawell &mdash; confirming the lower-income profile of the Ephesus community.</p>';
+      + '<table style="width:100%;border-collapse:collapse;margin:12px 0;font-size:0.9em;">'
+      + '<thead><tr>'
+      + '<th style="text-align:left;padding:4px 8px;color:#555;font-size:0.85em;width:40%;">Median HH Income</th>'
+      + '<th style="text-align:center;padding:4px 8px;color:{EPHESUS_COLOR};font-weight:bold;">Ephesus</th>'
+      + '<th style="text-align:center;padding:4px 8px;color:{SEAWELL_COLOR};font-weight:bold;">Seawell</th>'
+      + '</tr></thead><tbody>'
+      + '<tr style="background:#f5f5f5;">'
+      + '<td style="padding:6px 8px;font-weight:bold;color:#555;">Drive Zone</td>'
+      + '<td style="text-align:center;padding:6px 8px;font-size:1.1em;font-weight:bold;color:{EPHESUS_COLOR};">$' + fmt(ephInc) + '</td>'
+      + '<td style="text-align:center;padding:6px 8px;font-size:1.1em;font-weight:bold;color:{SEAWELL_COLOR};">$' + fmt(seaInc) + '</td>'
+      + '</tr>'
+      + '<tr>'
+      + '<td style="padding:6px 8px;font-weight:bold;color:#555;">Attendance Zone</td>'
+      + '<td style="text-align:center;padding:6px 8px;font-size:1.1em;font-weight:bold;color:{EPHESUS_COLOR};">$' + fmt(ephZInc) + '</td>'
+      + '<td style="text-align:center;padding:6px 8px;font-size:1.1em;font-weight:bold;color:{SEAWELL_COLOR};">$' + fmt(seaZInc) + '</td>'
+      + '</tr>'
+      + '</tbody></table>'
+      + '<p style="margin-top:8px;font-size:0.85em;color:#666;">The difference between zone types reflects how boundary definitions affect which block groups are captured. Drive zones measure geographic accessibility; attendance zones reflect CHCCS-drawn boundaries.</p>'
+      + '<p style="margin-top:8px;">Seawell&rsquo;s attendance zone may continue to be intentionally delineated by CHCCS to capture a different demographic, as is already evident in these maps. This analysis chose to objectively review the data to answer: <em>which school is most accessible to which population?</em></p>';
   }}
 
-  // Age comparison metrics (step 13)
+  // Age comparison metrics (step 12)
   el = document.getElementById("age-comparison-metrics");
   if (el) {{
     var ephYoung = (eph.male_under_5 || ephZ.male_under_5 || 0) + (eph.female_under_5 || ephZ.female_under_5 || 0);
@@ -1338,25 +1342,25 @@ function populateMetrics() {{
       + '<div class="metric-label">Seawell: Children Under 5</div></div>';
   }}
 
-  // Sales comparison metrics (step 14) — two-row table
+  // Sales comparison metrics (step 13) — two-row table
   el = document.getElementById("sales-comparison-metrics");
   if (el) {{
     el.innerHTML = buildTwoRowMetricTable("mls_total_sales", "Homes Sold", "count");
   }}
 
-  // Price comparison metrics (step 15) — two-row table
+  // Price comparison metrics (step 14) — two-row table
   el = document.getElementById("price-comparison-metrics");
   if (el) {{
     el.innerHTML = buildTwoRowMetricTable("mls_median_price", "Median Price", "dollar");
   }}
 
-  // Planned dev metrics (step 16)
+  // Planned dev metrics (step 15)
   el = document.getElementById("dev-comparison-metrics");
   if (el) {{
     el.innerHTML = buildTwoRowMetricTable("dev_total_units", "Expected Units", "count");
   }}
 
-  // Final summary (step 17)
+  // Final summary (step 16)
   el = document.getElementById("final-summary-text");
   if (el) {{
     el.innerHTML = '<p>This is a direct analysis of two community schools whose purpose '
@@ -1378,7 +1382,8 @@ function populateMetrics() {{
       + '<li><strong>Planned developments</strong> near Ephesus represent '
       + '~8&times; more housing units than near Seawell, signaling future enrollment growth '
       + 'in the Ephesus area</li>'
-      + '</ul>';
+      + '</ul>'
+      + '<p style="margin-top:12px;">Next, we examine school closure scenarios and their broader impact on the school district and greater Chapel Hill community.</p>';
   }}
 }}
 
@@ -1571,7 +1576,7 @@ layers.affordableHousing = L.geoJSON(AH, {{
   }}
 }});
 
-// MLS home sales — dots for location density (step 14)
+// MLS home sales — dots for location density (step 13)
 layers.mlsSales = L.geoJSON(MLS, {{
   pointToLayer: function(f, ll) {{
     return L.circleMarker(ll, {{
@@ -1588,7 +1593,7 @@ layers.mlsSales = L.geoJSON(MLS, {{
   }}
 }});
 
-// MLS home prices — dots colored by price (step 15)
+// MLS home prices — dots colored by price (step 14)
 function priceColor(price) {{
   // Green (affordable) → Yellow → Red (expensive)
   // $200k = green, $600k = yellow, $1M+ = red
@@ -1836,40 +1841,32 @@ function handleStep(idx) {{
       districtView();
       break;
 
-    case 12: // Elementary age choropleth
-      layers.bgElementaryAge.addTo(map);
-      layers.ephesusZoneFaint.addTo(map);
-      layers.seawellZoneFaint.addTo(map);
-      layers.schools.addTo(map);
-      districtView();
-      break;
-
-    case 13: // Young children count bars
+    case 12: // Young children count bars
       showAgeCharts();
       break;
 
-    case 14: // Home sales — drive zones + MLS dots
+    case 13: // Home sales — drive zones + MLS dots
       layers.driveZones.addTo(map);
       layers.mlsSales.addTo(map);
       layers.schools.addTo(map);
       districtView();
       break;
 
-    case 15: // Median prices — drive zones + price-colored dots
+    case 14: // Median prices — drive zones + price-colored dots
       layers.driveZones.addTo(map);
       layers.mlsPrices.addTo(map);
       layers.schools.addTo(map);
       districtView();
       break;
 
-    case 16: // Planned dev — drive zones + dev markers
+    case 15: // Planned dev — drive zones + dev markers
       layers.driveZones.addTo(map);
       layers.devMarkers.addTo(map);
       layers.schools.addTo(map);
       districtView();
       break;
 
-    case 17: // Final summary
+    case 16: // Final summary
       ensureDotsLoaded();
       layers.dots.addTo(map);
       layers.bothDriveZones.addTo(map);
