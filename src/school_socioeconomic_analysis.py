@@ -60,6 +60,7 @@ PARCEL_POLYS = DATA_RAW / "properties" / "combined_data_polys.gpkg"
 
 MLS_CACHE = DATA_CACHE / "mls_home_sales.gpkg"
 DEV_CACHE = DATA_CACHE / "planned_developments.gpkg"
+SAPFOTAC_CSV = DATA_RAW / "properties" / "planned" / "SAPFOTAC_2025_future_residential.csv"
 
 ACS_CACHE = DATA_CACHE / "census_acs_blockgroups.gpkg"
 DECENNIAL_CACHE = DATA_CACHE / "census_decennial_blocks.gpkg"
@@ -1280,7 +1281,8 @@ METRIC_DOT_SPECS = [
     ("pct_young_children", "% Population Aged 0-4", "PuRd", "", "%", ".1f"),
     ("ah_units", "Affordable Housing Units", "Blues", "", " units", ",.0f"),
     ("mls_housing", "Housing Market (2023–2025)", "YlGnBu", "", "", ""),
-    ("planned_dev", "Planned Developments", "YlGnBu", "", " units", ",.0f"),
+    ("planned_dev", "Planned Developments (CH Active Dev)", "YlGnBu", "", " units", ",.0f"),
+    ("sapfotac_dev", "Planned Developments (SAPFOTAC)", "YlGnBu", "", " units", ",.0f"),
 ]
 
 
@@ -1383,6 +1385,7 @@ def create_socioeconomic_map(
     affordable_housing: gpd.GeoDataFrame | None = None,
     mls_data: gpd.GeoDataFrame | None = None,
     planned_dev: gpd.GeoDataFrame | None = None,
+    sapfotac_dev: gpd.GeoDataFrame | None = None,
 ) -> folium.Map:
     """Create interactive map with choropleth, dot-density, and zone overlays."""
     _progress("Creating interactive socioeconomic map ...")
@@ -1786,7 +1789,7 @@ def create_socioeconomic_map(
     if planned_dev is not None and len(planned_dev) > 0:
         import math
         import matplotlib.colors as mcolors
-        dev_fg = folium.FeatureGroup(name="Planned Developments", show=False)
+        dev_fg = folium.FeatureGroup(name="Planned Developments (CH Active Dev)", show=False)
 
         # Color scale by unit count: light blue (few) → yellow → red (many)
         # Same palette as Affordable Housing AMI colors
@@ -1838,6 +1841,71 @@ def create_socioeconomic_map(
         _progress(f"Added {len(planned_dev)} planned development markers")
     else:
         dev_fg = None
+
+    # -- SAPFOTAC planned developments layer --
+    if sapfotac_dev is not None and len(sapfotac_dev) > 0:
+        import math
+        import matplotlib.colors as mcolors
+        sap_fg = folium.FeatureGroup(name="Planned Developments (SAPFOTAC)", show=False)
+
+        sap_unit_vals = sapfotac_dev["total_units_remaining"].dropna()
+        sap_max_units = float(sap_unit_vals.max()) if len(sap_unit_vals) > 0 else 1
+        if sap_max_units <= 0:
+            sap_max_units = 1
+        sap_color_stops = [
+            (0.0, "#91bfdb"),
+            (0.33, "#fee090"),
+            (0.66, "#fc8d59"),
+            (1.0, "#d73027"),
+        ]
+        sap_cmap = mcolors.LinearSegmentedColormap.from_list(
+            "sap_units", [(s, c) for s, c in sap_color_stops]
+        )
+
+        for _, row in sapfotac_dev.iterrows():
+            name = row.get("project", "Unknown")
+            addr = row.get("address", "Unknown")
+            units = row.get("total_units_remaining", 0)
+            elem = row.get("students_elementary", 0)
+            mid = row.get("students_middle", 0)
+            high = row.get("students_high", 0)
+            if pd.isna(units):
+                units = 0
+            units = int(units)
+            if pd.isna(elem):
+                elem = 0
+            if pd.isna(mid):
+                mid = 0
+            if pd.isna(high):
+                high = 0
+
+            frac = min(units / sap_max_units, 1.0)
+            color = mcolors.rgb2hex(sap_cmap(frac))
+
+            popup_html = f"""
+            <b>{name}</b><br>
+            {addr}<br>
+            Units remaining: {units:,}<br>
+            Students — Elem: {int(elem)}, Mid: {int(mid)}, High: {int(high)}
+            """
+
+            tooltip_html = f"{name} &bull; {units:,} units"
+
+            folium.CircleMarker(
+                location=[row.geometry.y, row.geometry.x],
+                radius=10,
+                color="#555",
+                weight=1.5,
+                fillColor=color,
+                fillOpacity=0.85,
+                popup=folium.Popup(popup_html, max_width=220),
+                tooltip=folium.Tooltip(tooltip_html),
+            ).add_to(sap_fg)
+
+        sap_fg.add_to(m)
+        _progress(f"Added {len(sapfotac_dev)} SAPFOTAC planned development markers")
+    else:
+        sap_fg = None
 
     # -- Custom control panel replaces Folium LayerControl --
 
@@ -1947,6 +2015,23 @@ FAQ
         <div class="faq-item">
             <div class="faq-q">Why do some population dots appear outside the CHCCS district boundary?</div>
             <div class="faq-a">Population dots are placed within Census block boundaries, and some Census blocks extend beyond the CHCCS district perimeter. When a block only partially overlaps the district, its entire population is still represented with dots scattered across the full block geometry. This means a few dots may fall just outside the dashed district boundary line.</div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-q">What is "Planned Developments (SAPFOTAC)"?</div>
+            <div class="faq-a">Data from the <b>SAPFOTAC 2025 Annual Report</b> (School Adequate Public Facilities
+            Ordinance Technical Advisory Committee), certified June 3, 2025. It lists 21 future residential projects
+            with projected <b>student yields</b> &mdash; the estimated number of elementary, middle, and high school
+            students each development will generate, based on the district&rsquo;s student generation rates.<br><br>
+            The bar charts show three breakdowns per zone: total projects, total housing units remaining, and projected
+            elementary students. Click a marker to see per-project detail including all three student-yield figures.<br><br>
+            <b>Why does it differ from CH Active Dev?</b> The two datasets come from different sources collected at
+            different times. <b>CH Active Dev</b> is hand-transcribed from the Town of Chapel Hill
+            <a href="https://www.chapelhillnc.gov/Business-and-Development/Active-Development" target="_blank"
+            style="color:#2166ac;">Active Development</a> page (March 2026) and covers Chapel Hill only; it has unit
+            counts but no student yield estimates. <b>SAPFOTAC</b> is published by the school district&rsquo;s advisory
+            committee and covers the full CHCCS boundary (Chapel Hill + Carrboro); it adds student yield projections
+            but may reflect an earlier point in time. Some projects appear in both sources; the datasets are not
+            deduplicated.</div>
         </div>
         <div class="faq-item">
             <div class="faq-q">Where can I learn more about the methodology?</div>
@@ -2133,11 +2218,11 @@ FAQ
         for mls_metric_name in ["Homes Sold (2023\u20132025)", "Median Home Price (2023\u20132025)"]:
             all_legends[mls_metric_name] = mls_legend_html
 
-        # Override Planned Developments legend with unit-count legend
+        # Override Planned Developments (CH Active Dev) legend with unit-count legend
         dev_legend_html = """
         <div style="padding: 10px 14px; background: white; border-radius: 5px;
                     box-shadow: 0 2px 6px rgba(0,0,0,0.3); max-width: 320px; font-size: 13px;">
-            <div style="font-weight: bold; margin-bottom: 8px;">Planned Developments by Expected Unit Count</div>
+            <div style="font-weight: bold; margin-bottom: 8px;">Planned Developments (CH Active Dev) by Expected Unit Count</div>
             <div style="display: flex; align-items: center; margin: 4px 0;">
                 <span style="display:inline-block; width:14px; height:14px; background:#d73027;
                       border-radius:50%; margin-right:8px;"></span>400+ units
@@ -2159,7 +2244,35 @@ FAQ
             </div>
         </div>
         """
-        all_legends["Planned Developments"] = dev_legend_html
+        all_legends["Planned Developments (CH Active Dev)"] = dev_legend_html
+
+        # SAPFOTAC Planned Developments legend
+        sap_legend_html = """
+        <div style="padding: 10px 14px; background: white; border-radius: 5px;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.3); max-width: 320px; font-size: 13px;">
+            <div style="font-weight: bold; margin-bottom: 8px;">Planned Developments (SAPFOTAC) by Unit Count</div>
+            <div style="display: flex; align-items: center; margin: 4px 0;">
+                <span style="display:inline-block; width:14px; height:14px; background:#d73027;
+                      border-radius:50%; margin-right:8px;"></span>400+ units
+            </div>
+            <div style="display: flex; align-items: center; margin: 4px 0;">
+                <span style="display:inline-block; width:14px; height:14px; background:#fc8d59;
+                      border-radius:50%; margin-right:8px;"></span>150–400 units
+            </div>
+            <div style="display: flex; align-items: center; margin: 4px 0;">
+                <span style="display:inline-block; width:14px; height:14px; background:#fee090;
+                      border-radius:50%; margin-right:8px;"></span>50–150 units
+            </div>
+            <div style="display: flex; align-items: center; margin: 4px 0;">
+                <span style="display:inline-block; width:14px; height:14px; background:#91bfdb;
+                      border-radius:50%; margin-right:8px;"></span>&lt;50 units
+            </div>
+            <div style="margin-top: 6px; font-size: 11px; color: #666;">
+                Source: SAPFOTAC 2025 Annual Report (certified June 3, 2025)
+            </div>
+        </div>
+        """
+        all_legends["Planned Developments (SAPFOTAC)"] = sap_legend_html
 
         # ── JS data serialization ──
         dot_fg_name = dot_fg.get_name()
@@ -2167,6 +2280,7 @@ FAQ
         ah_fg_name = ah_fg.get_name() if ah_fg is not None else "null"
         mls_fg_name = mls_fg.get_name() if mls_fg is not None else "null"
         dev_fg_name = dev_fg.get_name() if dev_fg is not None else "null"
+        sap_fg_name = sap_fg.get_name() if sap_fg is not None else "null"
         school_fg_name = school_fg.get_name()
 
         race_colors_list = [color for color, label in RACE_CATEGORIES.values()]
@@ -2325,6 +2439,48 @@ FAQ
         dev_units_by_zone_js = _json.dumps(all_dev_units, separators=(",", ":"))
         dev_counts_by_zone_js = _json.dumps(all_dev_counts, separators=(",", ":"))
 
+        # Zone-level SAPFOTAC aggregates — per zone type
+        def _sapfotac_by_zone_type(sap_gdf, zone_gdf, school_names):
+            """Spatial-join SAPFOTAC dev points to zone polygons, return (units, counts, elementary)."""
+            n = len(school_names)
+            if sap_gdf is None or zone_gdf is None or len(sap_gdf) == 0 or len(zone_gdf) == 0:
+                return [0] * n, [0] * n, [0] * n
+            sap_wgs = sap_gdf.to_crs(CRS_WGS84)
+            zones_wgs = zone_gdf.to_crs(CRS_WGS84)
+            joined = gpd.sjoin(sap_wgs, zones_wgs[["school", "geometry"]],
+                               how="left", predicate="within")
+            valid = joined.dropna(subset=["school"])
+            agg = valid.groupby("school").agg(
+                total_units=("total_units_remaining", "sum"),
+                sap_count=("total_units_remaining", "size"),
+                elem_students=("students_elementary", "sum"),
+            ).reset_index()
+            agg_dict = agg.set_index("school")
+            units = [int(agg_dict.loc[s, "total_units"]) if s in agg_dict.index else 0
+                     for s in school_names]
+            counts = [int(agg_dict.loc[s, "sap_count"]) if s in agg_dict.index else 0
+                      for s in school_names]
+            elementary = [int(agg_dict.loc[s, "elem_students"]) if s in agg_dict.index else 0
+                          for s in school_names]
+            return units, counts, elementary
+
+        all_sapfotac_units = []
+        all_sapfotac_counts = []
+        all_sapfotac_elem = []
+        for zt_gdf in active_zone_gdfs:
+            units, counts, elementary = _sapfotac_by_zone_type(sapfotac_dev, zt_gdf, master_school_names)
+            all_sapfotac_units.append(units)
+            all_sapfotac_counts.append(counts)
+            all_sapfotac_elem.append(elementary)
+        if not all_sapfotac_units:
+            n = len(master_school_names)
+            all_sapfotac_units = [[0] * n]
+            all_sapfotac_counts = [[0] * n]
+            all_sapfotac_elem = [[0] * n]
+        sapfotac_units_by_zone_js = _json.dumps(all_sapfotac_units, separators=(",", ":"))
+        sapfotac_counts_by_zone_js = _json.dumps(all_sapfotac_counts, separators=(",", ":"))
+        sapfotac_elem_by_zone_js = _json.dumps(all_sapfotac_elem, separators=(",", ":"))
+
         # BG / Block layer JS refs
         bg_layers_js = "[" + ",".join(bg_fg_names) + "]"
         blk_layers_js = "[" + ",".join(blk_fg_names) + "]"
@@ -2436,6 +2592,7 @@ FAQ
             var ahFg = {ah_fg_name};
             var mlsFg = {mls_fg_name};
             var devFg = {dev_fg_name};
+            var sapFg = {sap_fg_name};
             var schoolFg = {school_fg_name};
             var dots = {data_js};
             var allDotZones = {all_dot_zones_js};
@@ -2448,6 +2605,9 @@ FAQ
             var mlsBedroomsByZone = {mls_bedrooms_by_zone_js};
             var devUnitsByZone = {dev_units_by_zone_js};
             var devCountsByZone = {dev_counts_by_zone_js};
+            var sapfotacUnitsByZone = {sapfotac_units_by_zone_js};
+            var sapfotacCountsByZone = {sapfotac_counts_by_zone_js};
+            var sapfotacElemByZone = {sapfotac_elem_by_zone_js};
             var blockColors = {block_colors_js};
             var blockValues = {block_values_js};
             var raceColors = {race_colors_js};
@@ -2491,10 +2651,13 @@ FAQ
                 return n && n.indexOf('Housing Market') === 0;
             }}
             function isDevMetric(idx) {{
-                return metricNames[idx] === 'Planned Developments';
+                return metricNames[idx] === 'Planned Developments (CH Active Dev)';
+            }}
+            function isSapfotacMetric(idx) {{
+                return metricNames[idx] === 'Planned Developments (SAPFOTAC)';
             }}
             function isCountOrZoneMetric(idx) {{
-                return isHousingMetric(idx) || isMlsMetric(idx) || isDevMetric(idx);
+                return isHousingMetric(idx) || isMlsMetric(idx) || isDevMetric(idx) || isSapfotacMetric(idx);
             }}
 
             function rebuildZoneCards() {{
@@ -2503,8 +2666,9 @@ FAQ
                 var isHousing = isHousingMetric(currentMetric);
                 var isMls = isMlsMetric(currentMetric);
                 var isDev = isDevMetric(currentMetric);
-                var isIncome = (!isRace && !isHousing && !isMls && !isDev && metricPrefixes[currentMetric] === '$');
-                var isPct = (!isRace && !isIncome && !isHousing && !isMls && !isDev);
+                var isSapfotac = isSapfotacMetric(currentMetric);
+                var isIncome = (!isRace && !isHousing && !isMls && !isDev && !isSapfotac && metricPrefixes[currentMetric] === '$');
+                var isPct = (!isRace && !isIncome && !isHousing && !isMls && !isDev && !isSapfotac);
 
                 if (isRace) {{
                     currentLayout = 'race';
@@ -2512,6 +2676,18 @@ FAQ
                     card.className = 'zone-card';
                     card.innerHTML = '<div class="zone-card-avg" style="padding:10px;">Select a metric to see zone distributions</div>';
                     zoneStrip.appendChild(card);
+                }} else if (isSapfotac) {{
+                    currentLayout = 'sapfotac';
+                    zoneStrip.innerHTML =
+                        '<div id="sap-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:960px;margin:0 auto;padding:8px;">' +
+                        '  <div><div class="barplot-title">Total Projects by Zone</div>' +
+                        '    <canvas id="bar-sap-count" width="440" height="320"></canvas></div>' +
+                        '  <div><div class="barplot-title">Total Units by Zone</div>' +
+                        '    <canvas id="bar-sap-units" width="440" height="320"></canvas></div>' +
+                        '  <div><div class="barplot-title">Elementary Students by Zone</div>' +
+                        '    <canvas id="bar-sap-elem" width="440" height="320"></canvas></div>' +
+                        '  <div></div>' +
+                        '</div>';
                 }} else if (isDev) {{
                     currentLayout = 'dev';
                     zoneStrip.innerHTML =
@@ -2903,7 +3079,8 @@ FAQ
                 var isHousing = isHousingMetric(currentMetric);
                 var isMls = isMlsMetric(currentMetric);
                 var isDev = isDevMetric(currentMetric);
-                var isIncome = (!isHousing && !isMls && !isDev && pfx === '$');
+                var isSapfotac = isSapfotacMetric(currentMetric);
+                var isIncome = (!isHousing && !isMls && !isDev && !isSapfotac && pfx === '$');
                 var nSchools = masterSchools.length;
                 var zoneNames = allZoneNames[currentZoneType];
                 var nZones = zoneNames.length;
@@ -2943,6 +3120,14 @@ FAQ
                 if (isDev) {{
                     drawBarplot('bar-dev-units', masterSchools, devUnitsByZone[currentZoneType], 'count');
                     drawBarplot('bar-dev-count', masterSchools, devCountsByZone[currentZoneType], 'count');
+                    return;
+                }}
+
+                // Special case: SAPFOTAC Planned Developments — draw 3 charts
+                if (isSapfotac) {{
+                    drawBarplot('bar-sap-count', masterSchools, sapfotacCountsByZone[currentZoneType], 'count');
+                    drawBarplot('bar-sap-units', masterSchools, sapfotacUnitsByZone[currentZoneType], 'count');
+                    drawBarplot('bar-sap-elem', masterSchools, sapfotacElemByZone[currentZoneType], 'count');
                     return;
                 }}
 
@@ -3031,16 +3216,17 @@ FAQ
                 var isHousing = isHousingMetric(idx);
                 var isMls = isMlsMetric(idx);
                 var isDev = isDevMetric(idx);
-                var isIncome = (!isRace && !isHousing && !isMls && !isDev && metricPrefixes[idx] === '$');
-                var needLayout = isRace ? 'race' : (isDev ? 'dev' : (isHousing ? 'housing' : (isMls ? 'mls' : (isIncome ? 'histogram' : 'barplot'))));
+                var isSapfotac = isSapfotacMetric(idx);
+                var isIncome = (!isRace && !isHousing && !isMls && !isDev && !isSapfotac && metricPrefixes[idx] === '$');
+                var needLayout = isRace ? 'race' : (isSapfotac ? 'sapfotac' : (isDev ? 'dev' : (isHousing ? 'housing' : (isMls ? 'mls' : (isIncome ? 'histogram' : 'barplot')))));
                 if (needLayout !== prevLayout) {{
                     rebuildZoneCards();
                 }}
 
-                // Hide Layers section for Race/Ethnicity, AH, MLS, and Dev metrics
+                // Hide Layers section for Race/Ethnicity, AH, MLS, Dev, and SAPFOTAC metrics
                 var layersSection = document.getElementById('layers-section');
                 if (layersSection) {{
-                    layersSection.style.display = (isRace || isHousing || isMls || isDev) ? 'none' : 'block';
+                    layersSection.style.display = (isRace || isHousing || isMls || isDev || isSapfotac) ? 'none' : 'block';
                 }}
 
                 // Affordable Housing markers only visible in AH mode
@@ -3062,6 +3248,13 @@ FAQ
                     if (!map.hasLayer(devFg)) devFg.addTo(map);
                 }} else if (devFg) {{
                     if (map.hasLayer(devFg)) map.removeLayer(devFg);
+                }}
+
+                // SAPFOTAC markers visible in SAPFOTAC mode
+                if (isSapfotac && sapFg) {{
+                    if (!map.hasLayer(sapFg)) sapFg.addTo(map);
+                }} else if (sapFg) {{
+                    if (map.hasLayer(sapFg)) map.removeLayer(sapFg);
                 }}
 
                 recolorDots();
@@ -3496,6 +3689,18 @@ def main():
     else:
         _progress("Note: planned_developments.gpkg not found (run planned_dev_geocode.py to create)")
 
+    # ── 5d. Load SAPFOTAC planned developments data ────────────────────
+    sapfotac_dev = None
+    if SAPFOTAC_CSV.exists():
+        df = pd.read_csv(SAPFOTAC_CSV)
+        df = df.dropna(subset=["lat", "lon"])
+        sapfotac_dev = gpd.GeoDataFrame(
+            df, geometry=gpd.points_from_xy(df["lon"], df["lat"]), crs=CRS_WGS84,
+        )
+        _progress(f"Loaded {len(sapfotac_dev)} SAPFOTAC planned developments")
+    else:
+        _progress("Note: SAPFOTAC CSV not found (data/raw/properties/planned/SAPFOTAC_2025_future_residential.csv)")
+
     # ── 5. Spatial analysis ───────────────────────────────────────────
     print("\n[6/8] Performing spatial analysis ...")
 
@@ -3607,6 +3812,32 @@ def main():
             zone_demographics["dev_count"] = zone_demographics["dev_count"].fillna(0).astype(int)
             _progress(f"Added planned development data to {len(dev_zone_agg)} zones")
 
+        # Add SAPFOTAC planned development aggregates per zone
+        if sapfotac_dev is not None and len(sapfotac_dev) > 0:
+            sap_wgs = sapfotac_dev.to_crs(CRS_WGS84)
+            zones_wgs = zones.to_crs(CRS_WGS84)
+
+            sap_with_zones = gpd.sjoin(
+                sap_wgs,
+                zones_wgs[["school", "geometry"]],
+                how="left",
+                predicate="within"
+            )
+
+            sap_zone_agg = sap_with_zones.dropna(subset=["school"]).groupby("school").agg(
+                sapfotac_total_units=("total_units_remaining", "sum"),
+                sapfotac_count=("total_units_remaining", "size"),
+                sapfotac_elem_students=("students_elementary", "sum"),
+            ).reset_index()
+
+            zone_demographics = zone_demographics.merge(
+                sap_zone_agg, on="school", how="left"
+            )
+            zone_demographics["sapfotac_total_units"] = zone_demographics["sapfotac_total_units"].fillna(0).astype(int)
+            zone_demographics["sapfotac_count"] = zone_demographics["sapfotac_count"].fillna(0).astype(int)
+            zone_demographics["sapfotac_elem_students"] = zone_demographics["sapfotac_elem_students"].fillna(0).astype(int)
+            _progress(f"Added SAPFOTAC development data to {len(sap_zone_agg)} zones")
+
         # Save per-school demographics
         zone_demographics.to_csv(OUTPUT_SCHOOL_CSV, index=False)
         _progress(f"Saved per-school demographics to {OUTPUT_SCHOOL_CSV}")
@@ -3702,6 +3933,7 @@ def main():
             affordable_housing=affordable_housing,
             mls_data=mls_data,
             planned_dev=planned_dev,
+            sapfotac_dev=sapfotac_dev,
         )
         fmap.save(str(OUTPUT_MAP))
         _progress(f"Saved {OUTPUT_MAP}")

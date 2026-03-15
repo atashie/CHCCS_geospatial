@@ -178,19 +178,23 @@ The socioeconomic map also incorporates MLS (Multiple Listing Service) home sale
 
 ### 1.9 Planned Developments Data
 
-The socioeconomic map includes a "Planned Developments" layer showing approved and proposed residential development projects within the district.
+The socioeconomic map includes two planned development layers, each from a different source, displayed as separate metrics under the HOUSING radio-button group.
 
-**Data:** 36 planned development projects hand-transcribed from the Town of Chapel Hill [Active Development](https://www.chapelhillnc.gov/Business-and-Development/Active-Development) page on March 12, 2026, saved to `data/raw/properties/planned/CH_Development-3_26.csv`. Each record includes the project name, address, and estimated unit count from planning documents.
+**1. Planned Developments (CH Active Dev):** 36 projects hand-transcribed from the Town of Chapel Hill [Active Development](https://www.chapelhillnc.gov/Business-and-Development/Active-Development) page on March 12, 2026 (`data/raw/properties/planned/CH_Development-3_26.csv`). Each record includes the project name, address, and estimated unit count. Covers Chapel Hill only; no student yield estimates. Bar charts show total expected units and number of developments per zone.
 
-**Geocoding:** Project addresses are geocoded using the same two-stage pipeline as MLS data: U.S. Census Bureau batch geocoding API (primary) with OpenStreetMap Nominatim as a fallback for unmatched records. Successfully geocoded projects are stored as a GeoPackage (`data/cache/planned_developments.gpkg`) with point geometry in WGS84 (EPSG:4326).
+**2. Planned Developments (SAPFOTAC):** 21 future residential projects from the CHCCS Student Attendance Projections and Facility Optimization Technical Advisory Committee (SAPFOTAC) 2025 Annual Report (certified June 3, 2025; `data/raw/properties/planned/SAPFOTAC_2025_future_residential.csv`). Covers both Chapel Hill and Carrboro. Includes projected student yields (elementary, middle, high) based on district student generation rates. Bar charts show total projects, total units, and projected elementary students per zone.
 
-**What you see:** Planned development markers are displayed on the socioeconomic map as a toggleable layer under the HOUSING metric category. Each marker shows the project name, status, and estimated unit count on hover.
+**Geocoding:** Both datasets are geocoded using the same two-stage pipeline as MLS data: U.S. Census Bureau batch geocoding API (primary) with OpenStreetMap Nominatim fallback. CH Active Dev projects are stored as a GeoPackage (`data/cache/planned_developments.gpkg`); SAPFOTAC coordinates are stored directly in the CSV.
+
+**What you see:** Each dataset appears as its own metric with color-coded circle markers (blue → yellow → orange → red by unit count). Click a marker for project details; SAPFOTAC popups include student yield breakdowns. Projects are spatially joined to the selected zone type for bar-chart aggregation.
 
 **Key limitations:**
 - **Projects may not all proceed:** Planned and approved developments are not guaranteed to be built. Market conditions, financing, or regulatory changes may alter or cancel projects.
 - **Unit counts are estimates:** The number of housing units comes from planning documents and may change during construction or final approval.
 - **Geocoding is approximate:** Points represent interpolated road-segment positions from the Census geocoder, not exact project boundaries or parcel centroids.
-- **Single data snapshot:** The project list reflects a point-in-time extract from the Town of Chapel Hill and may not include recently submitted or withdrawn applications.
+- **Single data snapshots:** Each dataset reflects a point-in-time extract — CH Active Dev from March 2026, SAPFOTAC from June 2025 — and does not automatically update.
+- **Datasets overlap but are not deduplicated:** Some projects appear in both sources. The two layers are independent; selecting one does not affect the other.
+- **SAPFOTAC student yields are model estimates:** Projected student counts are based on student generation rates applied to planned unit counts, not actual enrollment. Actual yields will vary with household composition and market absorption.
 
 ---
 

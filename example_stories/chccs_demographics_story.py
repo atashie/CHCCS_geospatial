@@ -69,6 +69,7 @@ DECENNIAL_CACHE = DATA_CACHE / "census_decennial_blocks.gpkg"
 AH_CACHE = DATA_CACHE / "affordable_housing.gpkg"
 MLS_CACHE = DATA_CACHE / "mls_home_sales.gpkg"
 DEV_CACHE = DATA_CACHE / "planned_developments.gpkg"
+SAPFOTAC_CSV = DATA_RAW / "properties" / "planned" / "SAPFOTAC_2025_future_residential.csv"
 ZONE_DEMOGRAPHICS_CSV = DATA_PROCESSED / "census_school_demographics.csv"
 GRID_CSV = DATA_PROCESSED / "school_desert_grid.csv"
 
@@ -441,7 +442,7 @@ def _random_points_fallback(geom, n: int, rng) -> list:
 # HTML builder
 # ---------------------------------------------------------------------------
 def build_html(data: dict) -> str:
-    """Build the editorial scrollytelling HTML (17 slides, data-step 0-16)."""
+    """Build the editorial scrollytelling HTML (18 slides, data-step 0-17)."""
 
     race_colors_js = json.dumps(
         [v[0] for v in RACE_CATEGORIES.values()], separators=(",", ":")
@@ -938,13 +939,16 @@ details[open] summary {{ margin-bottom: 8px; }}
     </div>
   </div>
 
-  <!-- Step 15: Planned Developments -->
+  <!-- Step 15: Planned Developments (CH Active Dev) -->
   <div class="step" data-step="15">
-    <div class="step-number">16</div>
+    <div class="step-number">16a</div>
     <h2>Where Is Growth Headed?</h2>
-    <p>Chapel Hill has <strong>29 planned residential developments</strong>
-    within the CHCCS district, representing thousands of new housing units.
-    Each circle is colored by expected unit count:</p>
+    <p>The Town of Chapel Hill&rsquo;s
+    <a href="https://www.chapelhillnc.gov/Business-and-Development/Active-Development"
+    target="_blank" style="color:#1565C0;">Active Development</a> page lists
+    <strong>29 planned residential developments</strong> within the CHCCS
+    district, representing thousands of new housing units. Each circle is
+    colored by expected unit count:</p>
     <div class="dot-legend">
       <div class="dot-legend-item">
         <span class="dot-legend-swatch" style="background:#d73027;"></span> 400+ units
@@ -961,23 +965,54 @@ details[open] summary {{ margin-bottom: 8px; }}
     </div>
     <div id="dev-comparison-metrics">
     </div>
-    <p>New planned development is <strong>heavily concentrated</strong> around
-    communities for whom <strong style="color:{EPHESUS_COLOR};">Ephesus</strong>
-    would be the most convenient school by driving distance. Closing Ephesus
-    would force these future residents to drive farther to reach their assigned
-    school.</p>
+    <div class="limitation">
+      <strong>Note:</strong> This dataset covers Chapel Hill only and shows
+      expected housing units &mdash; it does not estimate how many
+      <em>students</em> those units will generate.
+    </div>
     <div class="source">
       <strong>Data:</strong> Town of Chapel Hill
-      <a href="https://www.townofchapelhill.org/government/departments-services/planning/development-activity/under-review-approved" target="_blank">Active Development</a> page,
+      <a href="https://www.chapelhillnc.gov/Business-and-Development/Active-Development" target="_blank">Active Development</a> page,
       hand-transcribed March 12, 2026
     </div>
   </div>
 
-  <!-- ========== CONCLUSION (Step 16) ========== -->
-
-  <!-- Step 16: Summary -->
+  <!-- Step 16: Planned Developments (SAPFOTAC) -->
   <div class="step" data-step="16">
-    <div class="step-number">17</div>
+    <div class="step-number">16b</div>
+    <h2>Student Impact of Growth</h2>
+    <p>The <strong>SAPFOTAC 2025 Annual Report</strong> (certified June 3, 2025)
+    provides a complementary view: 21 future residential projects with
+    <strong>projected student yields</strong> &mdash; how many elementary,
+    middle, and high school students each development is expected to
+    generate.</p>
+    <div id="sapfotac-comparison-metrics">
+    </div>
+    <div class="limitation">
+      <strong>Why do the two slides differ?</strong> The datasets come from
+      different sources collected at different times. <strong>16a</strong>
+      (CH Active Dev) is hand-transcribed from the Town of Chapel Hill
+      active development website
+      (<a href="https://www.chapelhillnc.gov/Business-and-Development/Active-Development"
+      target="_blank" style="color:#1565C0;">chapelhillnc.gov</a>,
+      March 2026). <strong>16b</strong>
+      (SAPFOTAC) is published by the school district&rsquo;s advisory
+      committee (June 2025) and covers Chapel Hill + Carrboro. Some
+      projects appear in both datasets. Student yield estimates are
+      model-based (using district generation rates), not actual
+      enrollment.
+    </div>
+    <div class="source">
+      <strong>Data:</strong> SAPFOTAC 2025 Annual Report,
+      certified June 3, 2025
+    </div>
+  </div>
+
+  <!-- ========== CONCLUSION (Step 17) ========== -->
+
+  <!-- Step 17: Summary -->
+  <div class="step" data-step="17">
+    <div class="step-number">18</div>
     <h2>Summary</h2>
 
     <div id="final-summary-text">
@@ -1020,6 +1055,7 @@ var DOT_DATA = {data["dot_data"]};
 var AH = {data["ah_json"]};
 var MLS = {data["mls_json"]};
 var DEV = {data["dev_json"]};
+var SAPFOTAC = {data["sapfotac_json"]};
 var ZONE_STATS = {zone_stats};
 var DRIVE_STATS = {drive_stats};
 var DRIVE_ZONES = {data.get("drive_zones_json", '{{"type":"FeatureCollection","features":[]}}')};
@@ -1176,10 +1212,20 @@ function showAgeCharts() {{
 
 function showDevCharts() {{
   dualPanelChart(
-    "Planned Developments by School Zone",
+    "Planned Developments by School Zone (CH Active Dev)",
     "Total expected housing units from planned developments",
-    "More planned units means more future families \u2014 and more future students.",
+    "Source: Town of Chapel Hill Active Development page (March 2026). Chapel Hill projects only.",
     "dev_total_units",
+    {{ mode: "count" }}
+  );
+}}
+
+function showSapfotacCharts() {{
+  dualPanelChart(
+    "Projected Elementary Students by School Zone (SAPFOTAC)",
+    "Estimated new elementary students from planned developments",
+    "Source: SAPFOTAC 2025 Annual Report. Student yields based on district generation rates, not actual enrollment.",
+    "sapfotac_elem_students",
     {{ mode: "count" }}
   );
 }}
@@ -1360,7 +1406,12 @@ function populateMetrics() {{
     el.innerHTML = buildTwoRowMetricTable("dev_total_units", "Expected Units", "count");
   }}
 
-  // Final summary (step 16)
+  el = document.getElementById("sapfotac-comparison-metrics");
+  if (el) {{
+    el.innerHTML = buildTwoRowMetricTable("sapfotac_elem_students", "Projected Elem. Students", "count");
+  }}
+
+  // Final summary (step 17)
   el = document.getElementById("final-summary-text");
   if (el) {{
     el.innerHTML = '<p>This is a direct analysis of two community schools whose purpose '
@@ -1679,6 +1730,59 @@ layers.devMarkers = L.geoJSON(DEV, {{
   }}
 }});
 
+// SAPFOTAC planned developments — same color scheme, keyed by total_units_remaining
+var SAP_MAX_UNITS = 1;
+if (SAPFOTAC && SAPFOTAC.features) {{
+  SAPFOTAC.features.forEach(function(f) {{
+    var u = f.properties.total_units_remaining || 0;
+    if (u > SAP_MAX_UNITS) SAP_MAX_UNITS = u;
+  }});
+}}
+function sapColor(units) {{
+  var frac = Math.min(units / SAP_MAX_UNITS, 1.0);
+  var stops = [
+    [0.0,  0x91, 0xbf, 0xdb],
+    [0.33, 0xfe, 0xe0, 0x90],
+    [0.66, 0xfc, 0x8d, 0x59],
+    [1.0,  0xd7, 0x30, 0x27]
+  ];
+  var i = 0;
+  for (var s = 1; s < stops.length; s++) {{
+    if (frac <= stops[s][0]) {{ i = s - 1; break; }}
+    i = s - 1;
+  }}
+  var t = (frac - stops[i][0]) / (stops[i+1][0] - stops[i][0]);
+  var r = Math.round(stops[i][1] + t * (stops[i+1][1] - stops[i][1]));
+  var g = Math.round(stops[i][2] + t * (stops[i+1][2] - stops[i][2]));
+  var b = Math.round(stops[i][3] + t * (stops[i+1][3] - stops[i][3]));
+  return "rgb(" + r + "," + g + "," + b + ")";
+}}
+layers.sapfotacMarkers = L.geoJSON(SAPFOTAC, {{
+  pointToLayer: function(f, ll) {{
+    var units = f.properties.total_units_remaining || 0;
+    var color = sapColor(units);
+    return L.circleMarker(ll, {{
+      radius: 10,
+      fillColor: color,
+      color: "#555",
+      weight: 1.5,
+      fillOpacity: 0.85,
+    }});
+  }},
+  onEachFeature: function(f, layer) {{
+    var p = f.properties;
+    var units = p.total_units_remaining || 0;
+    var elem = p.students_elementary || 0;
+    var mid = p.students_middle || 0;
+    var high = p.students_high || 0;
+    layer.bindTooltip(
+      "<b>" + (p.project || "Development") + "</b><br>" +
+      units.toLocaleString() + " units<br>" +
+      "Students \u2014 Elem: " + elem + ", Mid: " + mid + ", High: " + high
+    );
+  }}
+}});
+
 // Block groups choropleth (for age steps)
 function bgChoropleth(metric, colorFn) {{
   return L.geoJSON(BG, {{
@@ -1859,14 +1963,23 @@ function handleStep(idx) {{
       districtView();
       break;
 
-    case 15: // Planned dev — drive zones + dev markers
+    case 15: // Planned dev (CH Active Dev) — drive zones + dev markers
       layers.driveZones.addTo(map);
       layers.devMarkers.addTo(map);
       layers.schools.addTo(map);
       districtView();
+      showDevCharts();
       break;
 
-    case 16: // Final summary
+    case 16: // Planned dev (SAPFOTAC) — drive zones + SAPFOTAC markers
+      layers.driveZones.addTo(map);
+      layers.sapfotacMarkers.addTo(map);
+      layers.schools.addTo(map);
+      districtView();
+      showSapfotacCharts();
+      break;
+
+    case 17: // Final summary
       ensureDotsLoaded();
       layers.dots.addTo(map);
       layers.bothDriveZones.addTo(map);
@@ -2003,6 +2116,27 @@ def main():
     ) if len(dev_data) > 0 else '{"type":"FeatureCollection","features":[]}'
     _progress(f"Serialized {len(dev_data)} planned dev points for map")
 
+    # [7f/12] Load SAPFOTAC planned developments
+    print("[7f/12] Loading SAPFOTAC planned developments ...")
+    sapfotac_json = '{"type":"FeatureCollection","features":[]}'
+    sapfotac_data = gpd.GeoDataFrame()
+    if SAPFOTAC_CSV.exists():
+        sap_df = pd.read_csv(SAPFOTAC_CSV)
+        sap_df = sap_df.dropna(subset=["lat", "lon"])
+        sapfotac_data = gpd.GeoDataFrame(
+            sap_df,
+            geometry=gpd.points_from_xy(sap_df["lon"], sap_df["lat"]),
+            crs=CRS_WGS84,
+        )
+        sapfotac_json = gdf_to_geojson_str(
+            sapfotac_data,
+            properties=["project", "address", "total_units_remaining",
+                         "students_elementary", "students_middle", "students_high"],
+        )
+        _progress(f"Loaded {len(sapfotac_data)} SAPFOTAC planned developments")
+    else:
+        _progress("SAPFOTAC CSV not found, skipping")
+
     # [8/12] Affordable housing
     print("[8/12] Loading affordable housing ...")
     ah = load_affordable_housing()
@@ -2026,6 +2160,7 @@ def main():
         "ah_total_units",
         "mls_total_sales", "mls_median_price",
         "dev_total_units", "dev_count",
+        "sapfotac_total_units", "sapfotac_count", "sapfotac_elem_students",
         # Percentages (secondary)
         "pct_below_185_poverty", "pct_minority", "pct_black",
         "pct_hispanic", "pct_renter", "pct_zero_vehicle",
@@ -2097,6 +2232,22 @@ def main():
                 drive_demo["dev_total_units"] = drive_demo["dev_total_units"].fillna(0).astype(int)
                 drive_demo["dev_count"] = drive_demo["dev_count"].fillna(0).astype(int)
                 _progress(f"Added planned dev data to {len(dev_agg)} drive zones")
+            # Add SAPFOTAC spatial join to drive zones
+            if len(sapfotac_data) > 0 and len(drive_demo) > 0:
+                sap_wgs = sapfotac_data.to_crs(CRS_WGS84)
+                dz_wgs4 = drive_zones.to_crs(CRS_WGS84)
+                sap_joined = gpd.sjoin(sap_wgs, dz_wgs4[["school", "geometry"]],
+                                       how="left", predicate="within")
+                sap_agg = (sap_joined.dropna(subset=["school"]).groupby("school")
+                           .agg(sapfotac_total_units=("total_units_remaining", "sum"),
+                                sapfotac_count=("total_units_remaining", "size"),
+                                sapfotac_elem_students=("students_elementary", "sum"))
+                           .reset_index())
+                drive_demo = drive_demo.merge(sap_agg, on="school", how="left")
+                drive_demo["sapfotac_total_units"] = drive_demo["sapfotac_total_units"].fillna(0).astype(int)
+                drive_demo["sapfotac_count"] = drive_demo["sapfotac_count"].fillna(0).astype(int)
+                drive_demo["sapfotac_elem_students"] = drive_demo["sapfotac_elem_students"].fillna(0).astype(int)
+                _progress(f"Added SAPFOTAC data to {len(sap_agg)} drive zones")
             if len(drive_demo) > 0:
                 avail_drive = [c for c in stat_cols if c in drive_demo.columns]
                 drive_recs = drive_demo[avail_drive].to_dict("records")
@@ -2130,6 +2281,7 @@ def main():
         "ah_json": ah_json,
         "mls_json": mls_json,
         "dev_json": dev_json,
+        "sapfotac_json": sapfotac_json,
         "zone_stats": zone_stats_json,
         "drive_stats": drive_stats_json,
         "drive_zones_json": drive_zones_json,

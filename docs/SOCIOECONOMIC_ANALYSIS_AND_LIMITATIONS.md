@@ -633,7 +633,7 @@ To protect homeowner privacy, **addresses are not displayed** on the map. Hover 
 
 ---
 
-## 9c. Planned Developments Data
+## 9c. Planned Developments Data (CH Active Dev)
 
 ### Data Source
 
@@ -650,7 +650,7 @@ Successfully geocoded records are stored as a GeoPackage (`data/cache/planned_de
 
 ### Integration
 
-Planned developments are displayed on the socioeconomic map as a toggleable marker layer under the HOUSING metric category. Each marker shows the project name, status, and estimated unit count on hover. Projects are spatially joined to attendance zones to show planned development activity per zone.
+CH Active Dev planned developments are displayed on the socioeconomic map as "Planned Developments (CH Active Dev)" under the HOUSING metric category. Each marker shows the project name, address, and estimated unit count on hover. Projects are spatially joined to the selected zone type, with bar charts showing total expected units and number of developments per zone. A separate "Planned Developments (SAPFOTAC)" metric displays the supplementary SAPFOTAC dataset (see §9d).
 
 ### Limitations
 
@@ -663,6 +663,32 @@ Planned developments are displayed on the socioeconomic map as a toggleable mark
 4. **Single point-in-time snapshot.** The project list reflects a point-in-time extract from the Town of Chapel Hill and does not automatically update. Recently submitted, withdrawn, or completed projects may not be reflected.
 
 5. **Chapel Hill only.** The dataset covers Town of Chapel Hill planned developments only. Planned developments in Carrboro or unincorporated Orange County within the CHCCS district boundary are not included.
+
+## 9d. SAPFOTAC 2025 Planned Developments
+
+### Data Source
+
+The SAPFOTAC (School Adequate Public Facilities Ordinance Technical Advisory Committee) 2025 Annual Report (certified June 3, 2025) provides a supplementary list of 21 future residential projects within the CHCCS district. Unlike the CH Active Dev dataset, SAPFOTAC includes projected student yields — the number of elementary, middle, and high school students each development is expected to generate — based on the district's student generation rates.
+
+Raw data: `data/raw/properties/planned/SAPFOTAC_2025_future_residential.csv`
+
+### Geocoding
+
+Addresses are geocoded using the same two-stage Census + Nominatim pipeline as other datasets (see `src/sapfotac_geocode.py`). Coordinates are stored directly in the CSV (lat/lon columns).
+
+### Integration
+
+SAPFOTAC developments appear as a separate metric ("Planned Developments (SAPFOTAC)") on the socioeconomic map, with the same color scheme as the CH Active Dev layer. Three bar charts display total projects, total units, and elementary students per zone. The map FAQ explains the provenance of both planned development datasets.
+
+### Limitations
+
+1. **Overlap with CH Active Dev.** Some projects appear in both the SAPFOTAC and CH Active Dev datasets. The two layers are independent and do not deduplicate overlapping projects.
+
+2. **Student yield projections are model estimates.** Projected elementary, middle, and high school students are based on student generation rates applied to planned unit counts, not actual enrollment data. Actual student yields will vary based on household composition, school choice, and market absorption rates.
+
+3. **Report vintage.** The SAPFOTAC 2025 Annual Report reflects data available as of its certification date (June 3, 2025). Projects may have changed scope, been cancelled, or progressed since then.
+
+4. **Geocoding is approximate.** Same limitations as CH Active Dev — addresses are geocoded to interpolated road segments, not exact project boundaries.
 
 ---
 

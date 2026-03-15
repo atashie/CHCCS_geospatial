@@ -55,6 +55,7 @@ ACS_CACHE = DATA_CACHE / "census_acs_blockgroups.gpkg"
 DECENNIAL_CACHE = DATA_CACHE / "census_decennial_blocks.gpkg"
 AH_CACHE = DATA_CACHE / "affordable_housing.gpkg"
 DEV_CACHE = DATA_CACHE / "planned_developments.gpkg"
+SAPFOTAC_CSV = DATA_RAW / "properties" / "planned" / "SAPFOTAC_2025_future_residential.csv"
 ZONE_DEMOGRAPHICS_CSV = DATA_PROCESSED / "census_school_demographics.csv"
 GRID_CSV = DATA_PROCESSED / "school_desert_grid.csv"
 
@@ -557,7 +558,7 @@ def _random_points_fallback(geom, n: int, rng) -> list:
 # HTML builder
 # ---------------------------------------------------------------------------
 def build_html(data: dict) -> str:
-    """Build the scrollytelling HTML page with 19 steps (incl. bar chart comparison)."""
+    """Build the scrollytelling HTML page with 21 steps (incl. SAPFOTAC + bar chart)."""
 
     race_colors_js = json.dumps(
         [v[0] for v in RACE_CATEGORIES.values()], separators=(",", ":")
@@ -1139,38 +1140,36 @@ details[open] summary {{ margin-bottom: 8px; }}
     </div>
   </div>
 
-  <!-- Step 14: MLS Home Sales — Ephesus & Seawell -->
+  <!-- Step 14: MLS Home Sales -->
   <div class="step" data-step="14">
     <div class="step-number">15</div>
     <h2>MLS Home Sales</h2>
     <p>The map shows <strong>MLS home sale records</strong> (2023&ndash;2025)
-    for all schools, color-coded by price quartile. Each dot is a closed sale.</p>
-    <h3>Ephesus &amp; Seawell: Zone Comparison</h3>
-    <p>The same homes fall into different school zones depending on how you
-    define the boundary. Compare <strong>Attendance Zones</strong> (official
-    CHCCS assignment) with <strong>Drive Zones</strong> (nearest school by
-    Dijkstra shortest-path driving distance):</p>
-    <div id="mls-comparison"></div>
+    across the district, color-coded by price quartile. Each dot is a closed
+    sale.</p>
+    <p>Home sale data adds a market-level perspective to Census demographics.
+    The production map lets users switch between zone definitions and see
+    how sale counts, median prices, and price-per-square-foot shift when
+    boundaries are redrawn by proximity rather than official assignment.</p>
     <div class="source">
       <strong>Data:</strong> Triangle MLS, closed sales 2023&ndash;2025
       within CHCCS district
     </div>
   </div>
 
-  <!-- Step 15: Housing Costs — Ephesus & Seawell -->
+  <!-- Step 15: Affordable Housing -->
   <div class="step" data-step="15">
     <div class="step-number">16</div>
-    <h2>Housing Costs</h2>
-    <p>The map shows <strong>affordable housing locations</strong> for all
-    schools, color-coded by AMI band. Each dot is a subsidized unit.</p>
-    <h3>Ephesus &amp; Seawell: Zone Comparison</h3>
-    <p>Compare <strong>Attendance Zones</strong> (official CHCCS assignment)
-    with <strong>Drive Zones</strong> (nearest school by Dijkstra
-    shortest-path driving distance):</p>
-    <div id="housing-comparison"></div>
+    <h2>Affordable Housing</h2>
+    <p>The map shows <strong>affordable housing locations</strong> across
+    the district, color-coded by AMI (Area Median Income) band. Each dot
+    is a subsidized unit.</p>
+    <p>Affordable housing is unevenly distributed across the district.
+    The production map aggregates unit counts per zone, allowing
+    comparison of how many subsidized units fall within each school&rsquo;s
+    catchment area under different zone definitions.</p>
     <div class="source">
-      <strong>Data:</strong> Town of Chapel Hill ArcGIS (2025);
-      U.S. Census ACS 5-Year
+      <strong>Data:</strong> Town of Chapel Hill ArcGIS (2025)
     </div>
   </div>
 
@@ -1219,10 +1218,10 @@ details[open] summary {{ margin-bottom: 8px; }}
     </div>
   </div>
 
-  <!-- Step 17: Planned Developments -->
+  <!-- Step 17: Planned Developments (CH Active Dev) -->
   <div class="step" data-step="17">
     <div class="step-number">18</div>
-    <h2>Planned Developments</h2>
+    <h2>Planned Developments (CH Active Dev)</h2>
     <p>The map can overlay <strong>planned residential developments</strong>
     from the Town of Chapel Hill&rsquo;s
     <a href="https://www.chapelhillnc.gov/Business-and-Development/Active-Development"
@@ -1254,14 +1253,14 @@ details[open] summary {{ margin-bottom: 8px; }}
     </ul>
     <h3>Limitations</h3>
     <ul style="margin: 4px 0 12px 20px; line-height: 1.7; font-size: 0.93em;">
+      <li>Covers <strong>Chapel Hill only</strong> &mdash; no Carrboro or
+      unincorporated Orange County projects.</li>
       <li>Projects at various approval stages &mdash; some may not proceed
       or may change scope.</li>
       <li>Unit counts are estimates from planning documents, not final
       construction figures.</li>
       <li>Geocoding is approximate (road-segment interpolation, not exact
       site boundaries).</li>
-      <li>Single data snapshot; new projects are added and existing ones
-      modified regularly.</li>
     </ul>
     <div class="source">
       <strong>Data:</strong> Town of Chapel Hill Active Development page,
@@ -1269,9 +1268,47 @@ details[open] summary {{ margin-bottom: 8px; }}
     </div>
   </div>
 
-  <!-- Step 18: Complete Map — Bar Chart Comparison -->
+  <!-- Step 18: Planned Developments (SAPFOTAC) -->
   <div class="step" data-step="18">
     <div class="step-number">19</div>
+    <h2>Planned Developments (SAPFOTAC)</h2>
+    <p>A supplementary dataset from the <strong>SAPFOTAC 2025 Annual Report</strong>
+    (Student Attendance Projections and Facility Optimization Technical Advisory
+    Committee, certified June&nbsp;3, 2025) provides 21 future residential projects
+    with <strong>projected student yields</strong> &mdash; estimates of elementary,
+    middle, and high school students each development will generate.</p>
+    <p>The same blue&ndash;to&ndash;red color scheme applies, scaled by
+    remaining housing units. Click a marker for per-project detail including
+    student yield breakdowns.</p>
+    <h3>How it differs from CH Active Dev</h3>
+    <ul style="margin: 4px 0 12px 20px; line-height: 1.7; font-size: 0.93em;">
+      <li><strong>Adds student yield projections</strong> (elementary, middle,
+      high) &mdash; not available in CH Active Dev.</li>
+      <li><strong>Covers Chapel Hill + Carrboro</strong> (e.g., Jade Creek,
+      Newbury).</li>
+      <li><strong>Different vintage</strong> &mdash; certified June 2025
+      vs. March 2026 for CH Active Dev.</li>
+      <li><strong>Some overlap</strong> &mdash; projects like Gateway,
+      South Creek, and Aura Chapel Hill appear in both sources.
+      The datasets are <em>not</em> deduplicated.</li>
+    </ul>
+    <h3>Limitations</h3>
+    <ul style="margin: 4px 0 12px 20px; line-height: 1.7; font-size: 0.93em;">
+      <li>Student yields are <strong>model estimates</strong> based on
+      generation rates, not actual enrollment.</li>
+      <li>Geocoding is approximate (same Census + Nominatim pipeline).</li>
+      <li>Some projects fall outside the CHCCS district boundary and are
+      not assigned to any zone in bar-chart aggregation.</li>
+    </ul>
+    <div class="source">
+      <strong>Data:</strong> SAPFOTAC 2025 Annual Report, certified
+      June 3, 2025
+    </div>
+  </div>
+
+  <!-- Step 19: Complete Map — Bar Chart Comparison -->
+  <div class="step" data-step="19">
+    <div class="step-number">20</div>
     <h2>Zone Definitions Matter</h2>
     <p>The bar charts show <strong>% below 185% poverty</strong> for each
     school under two different zone definitions &mdash; computed from the
@@ -1289,9 +1326,9 @@ details[open] summary {{ margin-bottom: 8px; }}
     that update in real time.</p>
   </div>
 
-  <!-- Step 19: Limitations -->
-  <div class="step" data-step="19">
-    <div class="step-number">20</div>
+  <!-- Step 20: Limitations -->
+  <div class="step" data-step="20">
+    <div class="step-number">21</div>
     <h2>Limitations &amp; Caveats</h2>
     <p>The socioeconomic analysis has 26 documented limitations. Key ones:</p>
     <h3>Data Quality</h3>
@@ -1382,6 +1419,7 @@ var DOT_DATA = {data["dot_data"]};
 var AH = {data["ah_json"]};
 var MLS_SALES = {data["mls_json"]};
 var PLANNED_DEV = {data["dev_json"]};
+var SAPFOTAC_DEV = {data["sapfotac_json"]};
 var ZONE_STATS = {zone_stats};
 var DRIVE_STATS = {drive_stats};
 var WALK_ZONES = {data["walk_zones_json"]};
@@ -1458,70 +1496,6 @@ var districtBounds = L.geoJSON(DISTRICT).getBounds();
 function districtView() {{
   map.fitBounds(districtBounds.pad(0.05));
 }}
-
-// === Ephesus & Seawell comparison tables ===
-(function() {{
-  var focus = ["Ephesus Elementary", "Seawell Elementary"];
-  var zLookup = {{}}, dLookup = {{}};
-  ZONE_STATS.forEach(function(s) {{ zLookup[s.school] = s; }});
-  DRIVE_STATS.forEach(function(s) {{ dLookup[s.school] = s; }});
-
-  function fmt(v, type) {{
-    if (v === undefined || v === null || isNaN(v)) return "&mdash;";
-    if (type === "dollar") return "$" + Math.round(v).toLocaleString();
-    if (type === "pct") return v.toFixed(1) + "%";
-    if (type === "int") return Math.round(v).toLocaleString();
-    return String(v);
-  }}
-
-  function buildTable(containerId, metrics) {{
-    var el = document.getElementById(containerId);
-    if (!el) return;
-    var html = "";
-    focus.forEach(function(name) {{
-      var z = zLookup[name] || {{}};
-      var d = dLookup[name] || {{}};
-      var short = name.replace(" Elementary", "");
-      html += '<div style="margin:0 0 14px 0;">'
-        + '<div style="font-weight:700;font-size:0.95em;margin:0 0 4px;">' + short + '</div>'
-        + '<table style="width:100%;border-collapse:collapse;font-size:0.82em;">'
-        + '<tr style="background:#f0f0f0;"><th style="text-align:left;padding:3px 6px;">Metric</th>'
-        + '<th style="text-align:right;padding:3px 6px;">Attendance</th>'
-        + '<th style="text-align:right;padding:3px 6px;">Drive</th></tr>';
-      metrics.forEach(function(m, i) {{
-        var bg = i % 2 === 0 ? "#fff" : "#f8f8f8";
-        html += '<tr style="background:' + bg + ';">'
-          + '<td style="padding:3px 6px;">' + m.label + '</td>'
-          + '<td style="text-align:right;padding:3px 6px;">' + fmt(z[m.key], m.type) + '</td>'
-          + '<td style="text-align:right;padding:3px 6px;">' + fmt(d[m.key], m.type) + '</td>'
-          + '</tr>';
-      }});
-      html += '</table></div>';
-    }});
-    el.innerHTML = html;
-  }}
-
-  // MLS comparison (slide 15)
-  buildTable("mls-comparison", [
-    {{label: "Homes Sold", key: "mls_total_sales", type: "int"}},
-    {{label: "Median Home Price", key: "mls_median_price", type: "dollar"}},
-    {{label: "Median $/SqFt", key: "mls_median_ppsf", type: "dollar"}},
-    {{label: "Population", key: "total_pop", type: "int"}},
-    {{label: "Median Income", key: "median_hh_income", type: "dollar"}},
-    {{label: "Below 185% Poverty", key: "pct_below_185_poverty", type: "pct"}},
-    {{label: "Minority", key: "pct_minority", type: "pct"}}
-  ]);
-
-  // Housing costs comparison (slide 16)
-  buildTable("housing-comparison", [
-    {{label: "Affordable Units", key: "ah_total_units", type: "int"}},
-    {{label: "Population", key: "total_pop", type: "int"}},
-    {{label: "Median Income", key: "median_hh_income", type: "dollar"}},
-    {{label: "Below 185% Poverty", key: "pct_below_185_poverty", type: "pct"}},
-    {{label: "Renter", key: "pct_renter", type: "pct"}},
-    {{label: "Minority", key: "pct_minority", type: "pct"}}
-  ]);
-}})();
 
 // Zone colors (consistent palette)
 var zoneColors = [
@@ -1913,6 +1887,63 @@ if (PLANNED_DEV && PLANNED_DEV.features && PLANNED_DEV.features.length > 0) {{
   layers.plannedDev = null;
 }}
 
+// SAPFOTAC developments — same devColor function, keyed by total_units_remaining
+var SAP_MAX_UNITS = 1;
+if (SAPFOTAC_DEV && SAPFOTAC_DEV.features) {{
+  SAPFOTAC_DEV.features.forEach(function(f) {{
+    var u = f.properties.total_units_remaining || 0;
+    if (u > SAP_MAX_UNITS) SAP_MAX_UNITS = u;
+  }});
+}}
+function sapColor(units) {{
+  var frac = Math.min(units / SAP_MAX_UNITS, 1.0);
+  var stops = [
+    [0.0,  0x91, 0xbf, 0xdb],
+    [0.33, 0xfe, 0xe0, 0x90],
+    [0.66, 0xfc, 0x8d, 0x59],
+    [1.0,  0xd7, 0x30, 0x27]
+  ];
+  var i = 0;
+  for (var s = 1; s < stops.length; s++) {{
+    if (frac <= stops[s][0]) {{ i = s - 1; break; }}
+    i = s - 1;
+  }}
+  var t = (frac - stops[i][0]) / (stops[i+1][0] - stops[i][0]);
+  var r = Math.round(stops[i][1] + t * (stops[i+1][1] - stops[i][1]));
+  var g = Math.round(stops[i][2] + t * (stops[i+1][2] - stops[i][2]));
+  var b = Math.round(stops[i][3] + t * (stops[i+1][3] - stops[i][3]));
+  return "rgb(" + r + "," + g + "," + b + ")";
+}}
+if (SAPFOTAC_DEV && SAPFOTAC_DEV.features && SAPFOTAC_DEV.features.length > 0) {{
+  layers.sapfotacDev = L.geoJSON(SAPFOTAC_DEV, {{
+    pointToLayer: function(f, ll) {{
+      var units = f.properties.total_units_remaining || 0;
+      var color = sapColor(units);
+      return L.circleMarker(ll, {{
+        radius: 10,
+        fillColor: color,
+        color: '#555',
+        weight: 1.5,
+        fillOpacity: 0.85,
+      }});
+    }},
+    onEachFeature: function(f, layer) {{
+      var p = f.properties;
+      var units = p.total_units_remaining || 0;
+      var elem = p.students_elementary || 0;
+      var mid = p.students_middle || 0;
+      var high = p.students_high || 0;
+      layer.bindTooltip(
+        "<b>" + (p.project || "Development") + "</b><br>" +
+        units.toLocaleString() + " units<br>" +
+        "Students — Elem: " + elem + ", Mid: " + mid + ", High: " + high
+      );
+    }}
+  }});
+}} else {{
+  layers.sapfotacDev = null;
+}}
+
 // === Step handler ===
 var currentStep = -1;
 
@@ -2033,14 +2064,14 @@ function handleStep(idx) {{
       districtView();
       break;
 
-    case 14: // MLS home sales — Ephesus & Seawell
+    case 14: // MLS home sales
       if (layers.mlsSales) layers.mlsSales.addTo(map);
       layers.zones.addTo(map);
       layers.schools.addTo(map);
       districtView();
       break;
 
-    case 15: // Housing costs — Ephesus & Seawell
+    case 15: // Affordable housing
       layers.affordableHousing.addTo(map);
       layers.zones.addTo(map);
       layers.schools.addTo(map);
@@ -2054,18 +2085,25 @@ function handleStep(idx) {{
       districtView();
       break;
 
-    case 17: // Planned developments
+    case 17: // Planned developments (CH Active Dev)
       if (layers.plannedDev) layers.plannedDev.addTo(map);
       layers.zones.addTo(map);
       layers.schools.addTo(map);
       districtView();
       break;
 
-    case 18: // Complete map — bar chart comparison
+    case 18: // Planned developments (SAPFOTAC)
+      if (layers.sapfotacDev) layers.sapfotacDev.addTo(map);
+      layers.zones.addTo(map);
+      layers.schools.addTo(map);
+      districtView();
+      break;
+
+    case 19: // Complete map — bar chart comparison
       document.getElementById("chart-panel").style.display = "block";
       break;
 
-    case 19: // Limitations
+    case 20: // Limitations
       ensureDotsLoaded();
       layers.dots.addTo(map);
       layers.zones.addTo(map);
@@ -2257,6 +2295,26 @@ def main():
     else:
         _progress("Planned developments cache not found, skipping")
 
+    # Step 10d: SAPFOTAC planned developments
+    print("[10d/14] Loading SAPFOTAC planned developments ...")
+    sapfotac_json = '{"type":"FeatureCollection","features":[]}'
+    if SAPFOTAC_CSV.exists():
+        sap_df = pd.read_csv(SAPFOTAC_CSV)
+        sap_df = sap_df.dropna(subset=["lat", "lon"])
+        sap_gdf = gpd.GeoDataFrame(
+            sap_df,
+            geometry=gpd.points_from_xy(sap_df["lon"], sap_df["lat"]),
+            crs=CRS_WGS84,
+        )
+        sapfotac_json = gdf_to_geojson_str(
+            sap_gdf,
+            properties=["project", "address", "total_units_remaining",
+                         "students_elementary", "students_middle", "students_high"],
+        )
+        _progress(f"Loaded {len(sap_gdf)} SAPFOTAC planned developments")
+    else:
+        _progress("SAPFOTAC CSV not found, skipping")
+
     # Step 11: Zone demographics
     print("[11/14] Loading zone demographics ...")
     zone_demo = load_zone_demographics()
@@ -2323,6 +2381,7 @@ def main():
         "ah_json": ah_json,
         "mls_json": mls_json,
         "dev_json": dev_json,
+        "sapfotac_json": sapfotac_json,
         "walk_zones_json": walk_zones_json,
         "zone_stats": zone_stats_json,
         "drive_stats": drive_stats_json,

@@ -43,6 +43,7 @@ CHCCS_geospatial/
 │   ├── affordable_housing.py             # Affordable housing data download & assessment
 │   ├── mls_geocode.py                   # MLS home sales geocoding (Census + Nominatim)
 │   ├── planned_dev_geocode.py            # Planned development geocoding (Census + Nominatim)
+│   ├── sapfotac_geocode.py               # SAPFOTAC 2025 planned development geocoding
 │   ├── environmental_map.py              # Consolidated environmental map (TRAP + flood + UHI)
 │   ├── environmental_story.py            # Scrollytelling methodology walkthrough generator
 │   ├── school_closure_analysis.py        # School closure impact (travel + traffic)
@@ -106,9 +107,12 @@ python src/affordable_housing.py --cache-only  # cached data only
 # Geocode MLS home sales data
 python src/mls_geocode.py
 
-# Geocode planned development data
+# Geocode planned development data (primary source)
 python src/planned_dev_geocode.py
 python src/planned_dev_geocode.py --cache-only  # cached data only
+
+# Geocode SAPFOTAC 2025 planned development data (supplementary source)
+python src/sapfotac_geocode.py
 
 # Generate consolidated environmental analysis map (TRAP + flood + UHI)
 python src/environmental_map.py
@@ -151,6 +155,7 @@ python src/socioeconomic_story.py --cache-only  # cached data only
 | Affordable housing | `data/cache/affordable_housing.gpkg` | Town of Chapel Hill ArcGIS (2025) |
 | MLS home sales | `data/cache/mls_home_sales.gpkg` | Triangle MLS (2023-2025), geocoded via Census + Nominatim |
 | Planned developments | `data/cache/planned_developments.gpkg` | Town of Chapel Hill Active Development page (hand-transcribed 2026-03-12), geocoded via Census + Nominatim |
+| SAPFOTAC 2025 planned developments | `data/raw/properties/planned/SAPFOTAC_2025_future_residential.csv`, `data/raw/properties/planned/SAPFOTAC_2025_rezoning_approved.csv` | SAPFOTAC 2025 Annual Report (certified 2025-06-03), geocoded via Census + Nominatim. Displayed on socioeconomic map as "Planned Developments (SAPFOTAC)" metric. |
 | UHI proxy scores | `data/processed/uhi_proxy_scores.csv` | Computed (ESA WorldCover proxy) |
 | TRAP grid cache | `data/cache/trap_grids.npz` | Computed (road_pollution grid) |
 | UHI grid cache | `data/cache/uhi_grid.npz` | Computed (ESA WorldCover proxy) |

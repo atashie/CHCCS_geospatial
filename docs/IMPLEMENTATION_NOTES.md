@@ -113,7 +113,7 @@ Census-based demographic analysis of CHCCS elementary school attendance zones us
 
 - **6 choropleth layers** (block level): median income, % below 185% poverty, % minority, % zero-vehicle, % elementary age 5-9, % young children 0-4
 - **1:1 dot-density race layer** (~95,764 dots) with dasymetric placement constrained to residential parcels
-- **3 marker layers** under HOUSING category: affordable housing (AMI-colored), MLS home sales (price-colored), planned developments (blue-yellow-red by unit count, fixed radius with dark grey border)
+- **4 marker layers** under HOUSING category: affordable housing (AMI-colored), MLS home sales (price-colored), planned developments — CH Active Dev (blue-yellow-red by unit count, 2 bar charts) and SAPFOTAC (same color scheme, 3 bar charts including projected elementary students)
 - **5 zone types** with radio-button switching: School Zones (10 attendance zones), Walk Zones (7 CHCCS walk zones), Nearest Walk (11 Voronoi-like zones), Nearest Bike (11), Nearest Drive (11)
 - **Per-zone barplots and histograms** rendered in a sidebar panel, updating on zone type and school selection
 - **Batch JS rendering** for dot-density (compact array + for-loop, Canvas renderer)
@@ -247,7 +247,7 @@ Mirrors `closure_story.py` exactly: loads all data from existing caches (require
 
 ### Key Implementation Details
 
-- **20-step story arc** covering zones, block groups, the mismatch problem, area vs. dasymetric weighting, derived metrics, block-level data, dot-density generation, zone aggregation, walk zones, affordable housing, MLS home sales, planned developments, and limitations
+- **21-step story arc** covering zones, block groups, the mismatch problem, area vs. dasymetric weighting, derived metrics, block-level data, dot-density generation, zone aggregation, walk zones, affordable housing, MLS home sales, planned developments (CH Active Dev + SAPFOTAC), and limitations
 - **Focus area:** Northside Elementary bbox (~0.02° padding) — generates ~5-10K dots instead of 95K for the full district, keeping file size < 5 MB
 - **Fragment visualization:** Computes zone-BG intersection fragments for Northside with both area and dasymetric weights, showing the contrast visually
 - **Dot-density generation:** Same algorithm as `generate_racial_dots()` in `school_socioeconomic_analysis.py`, spatially filtered to focus area, 1:1 dot-to-person ratio
@@ -307,15 +307,15 @@ Geocodes Triangle MLS closed residential sales (2023-2025) and produces a point 
 - Census geocoding returns Census geography FIPS codes, enabling direct block-level joins without a separate spatial join step for Census-matched records.
 - The pipeline extracts a `bedrooms` column from the "Bedrooms Total" field in the raw MLS CSV. This is carried through geocoding into the GeoPackage output and displayed in map marker tooltips.
 - The socioeconomic map presents MLS data under a consolidated **"Housing Market (2023-2025)"** toggle. The chart panel renders a 2x2 grid: Homes Sold (bar), Median Price (bar), Median Price/SqFt (bar), and Bedroom Distribution (histogram). All four charts update per zone when the zone type or school selection changes.
-- **Bar chart labeling:** All HOUSING metric bar charts (AH, MLS, Planned Dev) use the master school list (all 11 schools) as labels, matching the master-indexed data arrays produced by spatial joins. This ensures correct label-value alignment across all zone types, including those with fewer than 11 zones (e.g., School Zones has 10, Walk Zones has 7). Schools absent from a zone type show zero values.
+- **Bar chart labeling:** All HOUSING metric bar charts (AH, MLS, CH Active Dev, SAPFOTAC) use the master school list (all 11 schools) as labels, matching the master-indexed data arrays produced by spatial joins. This ensures correct label-value alignment across all zone types, including those with fewer than 11 zones (e.g., School Zones has 10, Walk Zones has 7). Schools absent from a zone type show zero values.
 
 ---
 
-## Planned Developments Geocoding
+## Planned Developments Geocoding (CH Active Dev)
 
 ### Overview
 
-Geocodes planned development addresses hand-transcribed from the Town of Chapel Hill [Active Development](https://www.chapelhillnc.gov/Business-and-Development/Active-Development) page (March 12, 2026) and produces a point GeoPackage for spatial analysis with attendance zones.
+Geocodes planned development addresses hand-transcribed from the Town of Chapel Hill [Active Development](https://www.chapelhillnc.gov/Business-and-Development/Active-Development) page (March 12, 2026) and produces a point GeoPackage for spatial analysis with attendance zones. Displayed on the socioeconomic map as the "Planned Developments (CH Active Dev)" metric.
 
 ### Workflow
 
@@ -335,12 +335,52 @@ Geocodes planned development addresses hand-transcribed from the Town of Chapel 
 
 ### Technical Notes
 
-- The socioeconomic map presents planned developments as CircleMarkers under the HOUSING radio group, colored by unit count using the same blue→yellow→red palette as affordable housing (`#91bfdb` → `#fee090` → `#fc8d59` → `#d73027`). A categorical legend shows four unit-count bands (<50, 50–150, 150–400, 400+).
+- The socioeconomic map presents CH Active Dev planned developments as CircleMarkers under the HOUSING radio group ("Planned Developments (CH Active Dev)"), colored by unit count using the same blue→yellow→red palette as affordable housing (`#91bfdb` → `#fee090` → `#fc8d59` → `#d73027`). A categorical legend shows four unit-count bands (<50, 50–150, 150–400, 400+).
 - Markers use a fixed radius of 10 px with a dark grey (`#555`) border (weight 1.5) for visual prominence, matching the Affordable Housing marker style.
 - The chart panel renders a 1×2 grid: Total Expected Units (bar) and Number of Developments (bar), both updating per zone type.
-- The demographics editorial story (`example_stories/chccs_demographics_story.py`) embeds planned development data as a `var DEV` GeoJSON variable and renders CircleMarkers with the same blue→yellow→red color scheme and fixed radius/border styling as the methodology map. The planned dev slide shows drive zone polygons + dev markers on the Leaflet map (matching the MLS slides pattern) with a comparison table showing expected units by drive zone and attendance zone.
+- The demographics editorial story (`example_stories/chccs_demographics_story.py`) embeds both planned development datasets as `var DEV` (CH Active Dev) and `var SAPFOTAC` GeoJSON variables, rendering CircleMarkers with the same blue→yellow→red color scheme and fixed radius/border styling as the methodology map. Slide 16a shows CH Active Dev markers with a dual-panel bar chart of expected units. Slide 16b shows SAPFOTAC markers with a dual-panel bar chart of projected elementary students, plus an explanation of why the two datasets differ.
 - Zone-level aggregation uses spatial join (`gpd.sjoin`) for each zone type, summing expected units and counting projects per zone.
 - Loaded by `school_socioeconomic_analysis.py` as optional data — graceful degradation if cache is missing.
+
+---
+
+## SAPFOTAC 2025 Planned Developments
+
+### Overview
+
+Supplementary planned development data from the CHCCS SAPFOTAC (Student Attendance Projections and Facility Optimization Technical Advisory Committee) 2025 Annual Report, certified June 3, 2025. Provides projected student yields (elementary, middle, high) for 27 residential developments — data not available in the primary CH_Development source. The 21 future residential projects are displayed on the socioeconomic map as the "Planned Developments (SAPFOTAC)" metric with a 2×2 bar-chart grid (total projects, total units, elementary students per zone).
+
+### Data Files
+
+| File | Contents |
+|------|----------|
+| `data/raw/properties/planned/SAPFOTAC_2025_future_residential.csv` | 21 future residential projects with unit counts, projected student yields, and geocoded lat/lon |
+| `data/raw/properties/planned/SAPFOTAC_2025_rezoning_approved.csv` | 6 rezoning-approved projects with expected unit ranges and geocoded lat/lon |
+| `data/raw/properties/planned/2025_SAPFOTAC_Annual_Report-Certified_060325_202506061244509038.pdf` | Source PDF |
+| `src/sapfotac_geocode.py` | Geocoding script (Census batch + Nominatim fallback) |
+
+### Relationship to CH_Development Data
+
+The SAPFOTAC CSVs are a **supplementary** source to the primary `CH_Development-3_26.csv`. Many projects appear in both datasets (e.g., Gateway, South Creek, Hillmont, Aura Chapel Hill). Key differences:
+
+- **SAPFOTAC adds student yield projections** (elementary/middle/high counts per project) — not available in CH_Development.
+- **SAPFOTAC includes Carrboro projects** (Jade Creek, Newbury) not in the Chapel Hill Active Development page.
+- **CH_Development has more projects** (36 vs 27) and includes project status fields.
+- **Both displayed as separate metrics** on the socioeconomic map under the HOUSING radio group. The two datasets are not deduplicated — some projects appear in both layers.
+
+### Address Research
+
+Addresses were not included in the SAPFOTAC report and were researched from:
+- `CH_Development-3_26.csv` (majority of Chapel Hill projects)
+- Town of Chapel Hill official website (Gateway, Homestead Gardens, Tarheel Lodging, Weavers Grove)
+- Town of Carrboro official website (Jade Creek, Newbury)
+- Commercial listing sites (Millennium Chapel Hill — former University Inn site)
+
+### Geocoding Notes
+
+- Census Bureau batch API matched 18/27 addresses; Nominatim matched the remaining 9.
+- `119 Bennett Way` (Park Apartments) is in `_CENSUS_SKIP` — the Census geocoder incorrectly matches it to "Bennett Woods," a different street. Nominatim correctly places it in the Blue Hill District near Fordham Blvd.
+- All coordinates verified within 6.5 km of Chapel Hill center; no outliers.
 
 ---
 
