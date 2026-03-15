@@ -602,6 +602,7 @@ Resulting score is clipped to [0, 100]. A score of 0 means 100% tree cover; a sc
 - **Tree Canopy:** Toggle on/off using a checkbox control
 - **Dynamic legends:** Each raster layer has its own color scale legend that appears when that layer is active
 - **School markers:** Show TRAP, UHI, and canopy scores when clicked
+- **School comparison charts:** A 2×2 grid of horizontal bar charts below the map (built with Chart.js) compares all 11 schools on four metrics: Raw Air Pollution, Net Air Pollution, Urban Heat Island (Index), and Flood Zone %. All values are at the 500 m radius.
 
 ### 3.8 Key Limitations
 

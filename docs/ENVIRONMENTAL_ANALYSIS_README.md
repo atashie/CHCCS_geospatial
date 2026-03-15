@@ -304,7 +304,7 @@ The map is built with Folium using a CartoDB Positron basemap, centered at [35.9
 4. **Raw Air Pollution** (on by default) — raster overlay from TRAP grid, clipped to district boundary
 5. **Tree Canopy** (off by default) — raster overlay from ESA WorldCover, clipped to district boundary
 6. **Net Air Pollution** (off by default) — raster overlay from mitigated TRAP grid, clipped to district boundary
-7. **UHI Proxy** (off by default) — raster overlay from UHI grid, clipped to district boundary
+7. **UHI Proxy** (off by default) — raster overlay from UHI grid, clipped to district boundary; labeled "Urban Heat Island (Index)" in the bar charts section
 8. **Schools** (always on) — fixed-blue CircleMarkers (radius 6, `#2196F3`) matching the socioeconomic map style
 
 Each raster layer also has an associated set of metric-colored school CircleMarkers (radius 6) as a separate toggleable overlay.
@@ -355,6 +355,19 @@ Each school property polygon has a popup that aggregates all available metrics:
 - TRAP net index at 500 m
 - Tree canopy fraction at 500 m
 - UHI proxy score at 500 m with rank
+
+### School Comparison Bar Charts
+
+Below the map, a 2×2 grid of horizontal bar charts (rendered with Chart.js) compares all 11 schools side-by-side across four metrics at the 500 m radius:
+
+| Chart | Metric | Source column |
+|-------|--------|---------------|
+| Raw Air Pollution | TRAP raw index (0–100 normalized) | `road_pollution_scores.csv` |
+| Net Air Pollution | TRAP net index after tree mitigation (0–100 normalized) | `road_pollution_scores.csv` |
+| Urban Heat Island (Index) | UHI proxy score (0–100 normalized) | `uhi_proxy_scores.csv` |
+| Flood Zone % | Percentage of school parcel in a FEMA flood zone | school property popup data |
+
+Schools are sorted by value (highest first) within each chart. Bar colors use the same perceptually-uniform color scales as the map raster layers (YlOrRd for TRAP, RdYlBu_r for UHI, blue for flood). Charts are embedded as static HTML/JS in the output file and require no server — Chart.js is loaded from a CDN.
 
 ### Dynamic Legends
 

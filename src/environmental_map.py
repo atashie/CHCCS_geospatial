@@ -27,6 +27,7 @@ Usage:
 """
 
 import argparse
+import json
 import sys
 import warnings
 from pathlib import Path
@@ -848,7 +849,7 @@ def _build_legend_html_only():
 </div>
 
 <div class="env-legend" id="legend-uhi">
-  <div class="legend-title">Urban Heat Island Index</div>
+  <div class="legend-title">Urban Heat Island (Index)</div>
   <div class="legend-item">
     <span class="legend-bar" style="background: linear-gradient(to right, #4575b4, #ffffbf, #d73027);"></span>
     Cool &rarr; Hot
@@ -863,6 +864,101 @@ def _build_legend_html_only():
 def _build_legend_js():
     """Build JavaScript for dynamic legend switching based on active layers (deprecated)."""
     return _build_legend_html_only()
+
+
+# ---------------------------------------------------------------------------
+# Bar charts (injected below map via post-save)
+# ---------------------------------------------------------------------------
+def _build_charts_html(all_metrics):
+    """Build HTML/JS for 4 horizontal bar charts comparing all schools.
+
+    Uses Chart.js 4.x from CDN.  Returns an HTML string to inject before </body>.
+    """
+    # Serialize school data — short names, sorted alphabetically for consistency
+    chart_data = {}
+    for school, metrics in all_metrics.items():
+        short = (school.replace(" Elementary", "")
+                       .replace(" Bilingüe", "")
+                       .replace(" Bilingual", ""))
+        chart_data[short] = {
+            "raw": round(metrics.get("raw_500m", 0), 2),
+            "net": round(metrics.get("net_500m", 0), 2),
+            "uhi": round(metrics.get("uhi_500m", 0), 1),
+            "flood_pct": round(
+                sum(f["pct"] for f in metrics.get("flood", [])), 1
+            ),
+        }
+
+    data_json = json.dumps(chart_data, indent=2)
+
+    return f"""
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<div id="charts-section" style="max-width:1000px;margin:20px auto;padding:0 16px;">
+  <h2 style="text-align:center;font-size:16px;margin-bottom:12px;color:#333;">
+    School-by-School Comparison
+  </h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+    <div style="background:#fff;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,0.15);padding:12px;">
+      <canvas id="chart-raw"></canvas>
+    </div>
+    <div style="background:#fff;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,0.15);padding:12px;">
+      <canvas id="chart-net"></canvas>
+    </div>
+    <div style="background:#fff;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,0.15);padding:12px;">
+      <canvas id="chart-uhi"></canvas>
+    </div>
+    <div style="background:#fff;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,0.15);padding:12px;">
+      <canvas id="chart-flood"></canvas>
+    </div>
+  </div>
+</div>
+<script>
+(function() {{
+  var DATA = {data_json};
+
+  function makeChart(canvasId, metric, title, xLabel) {{
+    // Sort schools descending by metric value
+    var entries = Object.entries(DATA).map(function(e) {{
+      return {{ name: e[0], value: e[1][metric] }};
+    }});
+    entries.sort(function(a, b) {{ return b.value - a.value; }});
+    var labels = entries.map(function(e) {{ return e.name; }});
+    var values = entries.map(function(e) {{ return e.value; }});
+
+    new Chart(document.getElementById(canvasId), {{
+      type: 'bar',
+      data: {{
+        labels: labels,
+        datasets: [{{
+          data: values,
+          backgroundColor: '#4682b4',
+          borderRadius: 3
+        }}]
+      }},
+      options: {{
+        indexAxis: 'y',
+        responsive: true,
+        plugins: {{
+          title: {{ display: true, text: title, font: {{ size: 13 }} }},
+          legend: {{ display: false }}
+        }},
+        scales: {{
+          x: {{ title: {{ display: true, text: xLabel, font: {{ size: 11 }} }}, beginAtZero: true }},
+          y: {{ ticks: {{ font: {{ size: 10 }} }} }}
+        }}
+      }}
+    }});
+  }}
+
+  window.addEventListener('load', function() {{
+    makeChart('chart-raw',   'raw',       'Raw Air Pollution (500 m)',          'TRAP index');
+    makeChart('chart-net',   'net',       'Net Air Pollution (500 m)',          'TRAP index (net of canopy)');
+    makeChart('chart-uhi',   'uhi',       'Urban Heat Island (Index) (500 m)',    'UHI index');
+    makeChart('chart-flood', 'flood_pct', 'Flood Zone Overlap',                '% of school property');
+  }});
+}})();
+</script>
+"""
 
 
 # ---------------------------------------------------------------------------
@@ -1002,7 +1098,7 @@ def create_environmental_map(
 
     # UHI proxy raster + markers
     uhi_raster_fg, _ = _add_raster_layer(
-        m, uhi_grid, uhi_bounds, "Urban Heat Island Index",
+        m, uhi_grid, uhi_bounds, "Urban Heat Island (Index)",
         colormap="RdYlBu_r", show=False, opacity=0.7,
         district_mask=district_mask, vmin=0, vmax=100, add_to_map=False
     )
@@ -1010,7 +1106,7 @@ def create_environmental_map(
     uhi_color_func = _make_uhi_color_func(uhi_scores["uhi_500m"])
     uhi_markers_fg = _add_school_markers_for_layer(
         m, uhi_scores, "uhi_500m", "uhi_500m",
-        uhi_color_func, "Urban Heat Island Index", show=False, add_to_map=False
+        uhi_color_func, "Urban Heat Island (Index)", show=False, add_to_map=False
     )
     uhi_markers_fg.add_to(m)
 
@@ -1066,7 +1162,7 @@ def create_environmental_map(
     </style>
     <div id="env-banner">
         <div>
-            <h1>CHCCS Environmental Analysis</h1>
+            <h1>Geographic and Environmental Analysis</h1>
             <p class="subtitle">Screening-level indices for air quality, flood risk, and urban heat
                 <button class="faq-btn" onclick="toggleFaqPanel()" title="Click for FAQ">
                     FAQ
@@ -1162,7 +1258,7 @@ def create_environmental_map(
             <label><input type="radio" name="env-layer" value="none"> None</label>
             <label><input type="radio" name="env-layer" value="raw"> Raw Air Pollution</label>
             <label><input type="radio" name="env-layer" value="net" checked> Net Air Pollution</label>
-            <label><input type="radio" name="env-layer" value="uhi"> Urban Heat Island Index</label>
+            <label><input type="radio" name="env-layer" value="uhi"> Urban Heat Island (Index)</label>
         </div>
         <div class="ctrl-section">
             <b>Additional Layers</b>
@@ -1265,8 +1361,22 @@ def create_environmental_map(
     # Dynamic legends (keep for legend divs, but remove old toggle logic)
     m.get_root().html.add_child(folium.Element(_build_legend_html_only()))
 
-    # Save
+    # Save and inject bar charts below the map
     m.save(str(OUTPUT_MAP))
+    html = OUTPUT_MAP.read_text(encoding="utf-8")
+    # Allow page scrolling so charts appear below the map
+    html = html.replace(
+        "height: 100%;\n                margin: 0;",
+        "height: auto;\n                margin: 0;",
+    )
+    # Set map to a fixed viewport height instead of 100%
+    html = html.replace(
+        "height: 100.0%;\n                    left: 0.0%",
+        "height: 85vh;\n                    left: 0.0%",
+    )
+    charts_html = _build_charts_html(all_metrics)
+    html = html.replace("</body>", charts_html + "\n</body>")
+    OUTPUT_MAP.write_text(html, encoding="utf-8")
     _progress(f"Saved {OUTPUT_MAP}")
 
 
@@ -1437,7 +1547,7 @@ def main():
     print(f"  Cache: {UHI_GRID_CACHE}")
 
     # Quick UHI summary
-    print("\nUrban Heat Island Index Summary (500m radius):")
+    print("\nUrban Heat Island (Index) Summary (500m radius):")
     for _, row in uhi_scores.sort_values("rank_uhi_500m").iterrows():
         print(f"  #{int(row['rank_uhi_500m']):2d}  {row['school']:30s}  "
               f"UHI={row['uhi_500m']:5.1f}")

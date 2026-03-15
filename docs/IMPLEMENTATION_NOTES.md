@@ -153,6 +153,7 @@ Consolidated interactive map combining TRAP pollution, flood risk, tree canopy, 
 - Uses matplotlib perceptually-uniform colormaps: `YlOrRd` for TRAP, `RdYlBu_r` for UHI
 - School markers use fixed blue CircleMarkers (`#2196F3`, radius 6) matching the socioeconomic map style
 - Grid caching (`.npz` files) requires manual deletion to regenerate after input data changes
+- Below the map, a 2×2 grid of horizontal bar charts (Chart.js 4.x via CDN) compares all 11 schools on Raw Air Pollution, Net Air Pollution, Urban Heat Island (Index), and Flood Zone %; data is serialized from `all_metrics` and injected via post-save HTML replacement
 
 ---
 
