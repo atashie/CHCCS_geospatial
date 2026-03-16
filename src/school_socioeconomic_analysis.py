@@ -2291,35 +2291,34 @@ FAQ
         metric_prefixes = [""] + [spec[3] for spec in METRIC_DOT_SPECS]
         metric_suffixes = [""] + [spec[4] for spec in METRIC_DOT_SPECS]
 
-        # Build category→metrics mapping for dropdown UI
-        acs_options = ""
-        housing_options = ""
+        # Build category dropdown + radio buttons for sub-metrics
+        acs_radios = ""
+        housing_radios = ""
         for i, name in enumerate(metric_names):
-            opt = f'<option value="{i}">{name}</option>'
+            checked = " checked" if i == 0 else ""
+            radio = (
+                f'<label style="display:block;margin:1px 0;cursor:pointer;">'
+                f'<input type="radio" name="metric" value="{i}"{checked}> '
+                f'{name}</label>'
+            )
             if i <= 6:
-                acs_options += opt
+                acs_radios += radio
             else:
-                housing_options += opt
+                housing_radios += radio
 
         dropdown_html = (
-            '<select id="cat-select" style="width:100%;margin-bottom:4px;'
+            '<select id="cat-select" style="width:100%;margin-bottom:6px;'
             'font-size:11px;padding:3px 2px;">'
             '<option value="acs">ACS Census</option>'
             '<option value="housing">Housing</option>'
             '</select>'
-            '<select id="metric-select" style="width:100%;font-size:11px;'
-            'padding:3px 2px;">'
-            f'{acs_options}'
-            '</select>'
+            f'<div id="acs-radios">{acs_radios}</div>'
+            f'<div id="housing-radios" style="display:none">{housing_radios}</div>'
         )
 
-        # JS arrays for category→metric dropdown rebuild
-        acs_options_js = ",".join(
-            f'[{i},"{name}"]' for i, name in enumerate(metric_names) if i <= 6
-        )
-        housing_options_js = ",".join(
-            f'[{i},"{name}"]' for i, name in enumerate(metric_names) if i > 6
-        )
+        # JS arrays for category→metric mapping
+        acs_options_js = ",".join(str(i) for i in range(7))
+        housing_options_js = ",".join(str(i) for i in range(7, len(metric_names)))
 
         # Zone-type radio button labels
         zone_type_radio_html = ""
@@ -3275,26 +3274,28 @@ FAQ
             }}
 
             // ── Event listeners ──
-            var catMetrics = {{
-                acs: [{acs_options_js}],
-                housing: [{housing_options_js}]
-            }};
+            var catFirstMetric = {{acs: {acs_options_js.split(',')[0]}, housing: {housing_options_js.split(',')[0]}}};
             var catSel = document.getElementById('cat-select');
-            var metSel = document.getElementById('metric-select');
+            var acsDiv = document.getElementById('acs-radios');
+            var housingDiv = document.getElementById('housing-radios');
             catSel.addEventListener('change', function() {{
-                var opts = catMetrics[this.value];
-                metSel.innerHTML = '';
-                for (var i = 0; i < opts.length; i++) {{
-                    var o = document.createElement('option');
-                    o.value = opts[i][0];
-                    o.textContent = opts[i][1];
-                    metSel.appendChild(o);
+                if (this.value === 'acs') {{
+                    acsDiv.style.display = '';
+                    housingDiv.style.display = 'none';
+                }} else {{
+                    acsDiv.style.display = 'none';
+                    housingDiv.style.display = '';
                 }}
-                updateMetric(opts[0][0]);
+                // Select first radio in the shown category
+                var firstRadio = (this.value === 'acs' ? acsDiv : housingDiv).querySelector('input[name="metric"]');
+                if (firstRadio) {{ firstRadio.checked = true; updateMetric(parseInt(firstRadio.value)); }}
             }});
-            metSel.addEventListener('change', function() {{
-                updateMetric(parseInt(this.value));
-            }});
+            var radios = document.querySelectorAll('input[name="metric"]');
+            for (var r = 0; r < radios.length; r++) {{
+                radios[r].addEventListener('change', function() {{
+                    updateMetric(parseInt(this.value));
+                }});
+            }}
 
             var ztRadios = document.querySelectorAll('input[name="zonetype"]');
             for (var r = 0; r < ztRadios.length; r++) {{
