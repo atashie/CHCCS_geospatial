@@ -14,20 +14,20 @@ For a visual, step-by-step walkthrough of the methodology, see the **[Socioecono
 
 | # | Data | Source | Vintage | Geography | Access | Citation |
 |---|------|--------|---------|-----------|--------|----------|
-| 1 | Population, age, race, income, poverty, tenure, vehicles, family type, language | U.S. Census Bureau, American Community Survey 5-Year Estimates | 2018-2022 (released 2023) | Block group | Census API (`api.census.gov/data/2022/acs/acs5`) | U.S. Census Bureau (2023). *2018-2022 ACS 5-Year Estimates Detailed Tables.* |
+| 1 | Population, age, race, income, poverty, tenure, vehicles, family type, language | U.S. Census Bureau, American Community Survey 5-Year Estimates | 2020-2024 (released 2025) | Block group | Census API (`api.census.gov/data/2024/acs/acs5`) | U.S. Census Bureau (2025). *2020-2024 ACS 5-Year Estimates Detailed Tables.* |
 | 2 | Block-level race/ethnicity | U.S. Census Bureau, 2020 Census Redistricting Data (P.L. 94-171) | April 1, 2020 | Block | Census API (`api.census.gov/data/2020/dec/pl`) | U.S. Census Bureau (2021). *2020 Census P.L. 94-171 Redistricting Data Summary Files.* |
-| 3 | Block group polygon geometries | TIGER/Line Shapefiles | 2023 | Block group | Census FTP (`TIGER2023/BG/tl_2023_37_bg.zip`) | U.S. Census Bureau (2023). *TIGER/Line Shapefiles.* |
+| 3 | Block group polygon geometries | TIGER/Line Shapefiles | 2024 | Block group | Census FTP (`TIGER2024/BG/tl_2024_37_bg.zip`) | U.S. Census Bureau (2024). *TIGER/Line Shapefiles.* |
 | 4 | Block polygon geometries | TIGER/Line Shapefiles | 2020 | Block | Census FTP (`TIGER2020PL/STATE/37_NORTH_CAROLINA/37135/`) | U.S. Census Bureau (2021). *2020 Census TIGER/Line Shapefiles.* |
 | 5 | School locations | NCES Education Demographic and Geographic Estimates (EDGE) | 2023-24 | Point | Public download (LEAID `3700720`) | National Center for Education Statistics (2024). *EDGE Public School Locations 2023-24.* |
 | 6 | District boundary | Census TIGER/Line Unified School Districts | 2023 | Polygon | Public download (GEOID `3700720`) | U.S. Census Bureau (2023). *TIGER/Line Shapefiles: School Districts.* |
 | 7 | Attendance zones | CHCCS elementary attendance zone shapefile | Current | Polygon | Local file (`data/raw/properties/CHCCS/CHCCS.shp`) | Chapel Hill-Carrboro City Schools (n.d.). Administrative shapefile. |
 | 8 | Residential parcels | Orange County Tax Assessor parcel data | Current | Polygon | Local file (`data/raw/properties/combined_data_polys.gpkg`) | Orange County, NC (n.d.). Property parcel data. |
 
-**Notes on data #1:** ACS 5-Year estimates pool data collected over 60 months (January 2018 through December 2022). They represent period estimates, not point-in-time snapshots. The Census Bureau recommends caution when comparing 5-year estimates across time periods with fewer than 5 years of separation (U.S. Census Bureau, 2020, *Understanding and Using ACS Data*, pp. 14-16).
+**Notes on data #1:** ACS 5-Year estimates pool data collected over 60 months (January 2020 through December 2024). They represent period estimates, not point-in-time snapshots. The Census Bureau recommends caution when comparing 5-year estimates across time periods with fewer than 5 years of separation (U.S. Census Bureau, 2020, *Understanding and Using ACS Data*, pp. 14-16).
 
 **Notes on data #2:** The 2020 Decennial P.L. 94-171 redistricting data was processed through the Census Bureau's TopDown Algorithm (TDA) for disclosure avoidance, which applies calibrated noise to protect individual responses (Abowd et al., 2022). At the block level — the finest geography published — this noise can meaningfully distort small counts.
 
-**Notes on data #3 vs. #4:** Block group boundaries use 2023-vintage TIGER/Line (matching ACS tabulation geography), while block boundaries use 2020-vintage TIGER/Line (matching Decennial tabulation geography). Block group boundaries were revised between 2020 and 2023; this creates a subtle spatial mismatch between the two Census products.
+**Notes on data #3 vs. #4:** Block group boundaries use 2024-vintage TIGER/Line (matching ACS tabulation geography), while block boundaries use 2020-vintage TIGER/Line (matching Decennial tabulation geography). Block group boundaries were revised between 2020 and 2023; this creates a subtle spatial mismatch between the two Census products.
 
 ---
 
@@ -117,12 +117,12 @@ The raw shapefile contains multiple features per school (walk zone and full zone
 
 ### Step 4: Fetch ACS Block Group Data
 **Function:** `fetch_acs_blockgroup_data()` (line 301)
-**API:** `https://api.census.gov/data/2022/acs/acs5`
+**API:** `https://api.census.gov/data/2024/acs/acs5`
 **Geography:** Block groups in Orange County, NC (state FIPS `37`, county FIPS `135`)
 
 Fetches 50 variables across 9 Census tables. The Census API imposes a limit of ~50 variables per request; the `_census_get()` helper (line 239) chunks variables into groups of 48 (leaving room for `NAME`), issues separate API requests, and merges results on geography columns (`state`, `county`, `tract`, `block group`, `NAME`) via `pd.merge()` with a left join.
 
-The tabular response is joined with TIGER/Line 2023-vintage block group polygon geometries (downloaded from `tl_2023_37_bg.zip`, filtered to Orange County FIPS 135). The merged GeoDataFrame is cached to `data/cache/census_acs_blockgroups.gpkg`.
+The tabular response is joined with TIGER/Line 2024-vintage block group polygon geometries (downloaded from `tl_2024_37_bg.zip`, filtered to Orange County FIPS 135). The merged GeoDataFrame is cached to `data/cache/census_acs_blockgroups.gpkg`.
 
 ### Step 5: Fetch Decennial Block Data
 **Function:** `fetch_decennial_block_data()` (line 346)
@@ -376,7 +376,7 @@ The 2020 Decennial Census applied differential privacy ("disclosure avoidance") 
 
 #### 7. Five-Year Rolling Average Masks Recent Shifts
 
-ACS 2022 5-Year estimates represent data collected from 2018 through 2022. They do not reflect a single point in time. Neighborhoods that experienced rapid demographic change during this period (new affordable housing, gentrification, student housing construction) will have their recent characteristics blended with older data. Zones that have seen significant recent apartment construction may already be underrepresented in the ACS data.
+ACS 2024 5-Year estimates represent data collected from 2020 through 2024. They do not reflect a single point in time. Neighborhoods that experienced rapid demographic change during this period (new affordable housing, gentrification, student housing construction) will have their recent characteristics blended with older data. Zones that have seen significant recent apartment construction may already be underrepresented in the ACS data.
 
 #### 8. Vehicle Data Uses B25044 (Tenure by Vehicles), Not B08201
 
@@ -412,14 +412,14 @@ The analysis combines data from different time periods:
 
 | Data | Vintage |
 |------|---------|
-| ACS 5-Year | 2018-2022 |
+| ACS 5-Year | 2020-2024 |
 | Decennial blocks | April 2020 |
-| TIGER/Line block groups | 2023 boundaries |
+| TIGER/Line block groups | 2024 boundaries |
 | TIGER/Line blocks | 2020 boundaries |
 | Attendance zones | Current (shapefile date) |
 | Residential parcels | Current (download date) |
 
-Block group boundaries changed between 2020 and 2023. The ACS data uses 2023-vintage block group boundaries, while the Decennial data uses 2020-vintage block boundaries. The attendance zones and parcel data have no fixed vintage. These temporal mismatches can cause spatial misalignment where boundaries shifted between vintages.
+Block group boundaries changed between 2020 and 2024. The ACS data uses 2024-vintage block group boundaries, while the Decennial data uses 2020-vintage block boundaries. The attendance zones and parcel data have no fixed vintage. These temporal mismatches can cause spatial misalignment where boundaries shifted between vintages.
 
 #### 13. Block Groups Extend Beyond District Boundary — Clip Edge Distortion
 

@@ -104,7 +104,7 @@ Positive delta = more traffic on that segment due to the closure.
 | Road networks | OpenStreetMap via OSMnx | `data/cache/network_{mode}.graphml` |
 | Children counts | ACS 5-Year B01001 | `data/cache/closure_analysis/children_blockgroups.csv` |
 | Block geometries | TIGER/Line 2020 | `data/cache/tiger_blocks_orange.gpkg` |
-| Block group geometries | TIGER/Line 2023 | `data/cache/tiger_blockgroups_orange.gpkg` |
+| Block group geometries | TIGER/Line 2024 | `data/cache/tiger_blockgroups_orange.gpkg` |
 | Residential parcels | Orange County GIS | `data/raw/properties/combined_data_polys.gpkg` |
 | Walk zones | CHCCS.shp (ESWALK='Y') | `data/raw/properties/CHCCS/CHCCS.shp` |
 | Attendance zones | CHCCS.shp (dissolve by ENAME) | `data/raw/properties/CHCCS/CHCCS.shp` |
