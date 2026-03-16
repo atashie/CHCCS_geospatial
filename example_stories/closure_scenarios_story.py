@@ -670,31 +670,13 @@ a {{ color: #1565C0; }}
     get to a new school. This would mean new transportation or a new
     route to school.</p>
 
-    <div class="metrics-row">
-      <div class="metric">
-        <div class="metric-value">{data["below_cap_count"]}/11</div>
-        <div class="metric-label">schools below capacity</div>
-      </div>
-      <div class="metric">
-        <div class="metric-value">{data["total_spare"]:,}</div>
-        <div class="metric-label">total spare seats</div>
-      </div>
-    </div>
-
-    <div class="insight">
-      <strong>Redistricting implication:</strong> Spare capacity exists
-      ({data["total_spare"]:,} seats) but is concentrated in the west and south
-      &mdash; geographically distant from where most elementary-age children
-      live in the eastern district.
-    </div>
-
     <p>We use <strong>2030 projected enrollment</strong> because the
     district&rsquo;s transition period begins in 2028, making 2030
     estimates closer to the reality families will experience than
     current-year figures.</p>
     <p><span class="seawell-label">Seawell</span> may have the fewest
     students affected by closure, indicating the fewest displaced
-    students. <span style="color:#FF8F00;font-weight:bold;">LEAP</span>
+    students. LEAP
     (at Frank Porter Graham) is a controlled-enrollment program
     &mdash; for many of its students the school location is already
     an intentional and desired relocation, and LEAP enrollment only
@@ -735,66 +717,6 @@ a {{ color: #1565C0; }}
       conversions.
     </div>
 
-    <div style="margin:16px 0;">
-      <div style="font-size:0.82em;color:#777;margin-bottom:8px;font-weight:bold;">
-        Students within 0.5 miles of school</div>
-      <div style="display:flex;align-items:center;margin:6px 0;">
-        <div style="width:110px;font-size:0.85em;font-weight:bold;color:#C62828;">Ephesus</div>
-        <div style="flex:1;background:#eee;border-radius:3px;height:22px;position:relative;">
-          <div style="width:100%;background:#C62828;height:100%;border-radius:3px;"></div>
-          <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#fff;font-weight:bold;">99 (24.7%)</span>
-        </div>
-      </div>
-      <div style="display:flex;align-items:center;margin:6px 0;">
-        <div style="width:110px;font-size:0.85em;color:#333;">Scroggs</div>
-        <div style="flex:1;background:#eee;border-radius:3px;height:22px;position:relative;">
-          <div style="width:95%;background:#66c2a5;height:100%;border-radius:3px;"></div>
-          <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#333;font-weight:bold;">94 (23.2%)</span>
-        </div>
-      </div>
-      <div style="display:flex;align-items:center;margin:6px 0;">
-        <div style="width:110px;font-size:0.85em;color:#333;">Rashkis</div>
-        <div style="flex:1;background:#eee;border-radius:3px;height:22px;position:relative;">
-          <div style="width:66%;background:#f781bf;height:100%;border-radius:3px;"></div>
-          <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#333;font-weight:bold;">65 (14.9%)</span>
-        </div>
-      </div>
-      <div style="display:flex;align-items:center;margin:6px 0;">
-        <div style="width:110px;font-size:0.85em;color:#333;">Northside</div>
-        <div style="flex:1;background:#eee;border-radius:3px;height:22px;position:relative;">
-          <div style="width:65%;background:#a65628;height:100%;border-radius:3px;"></div>
-          <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#333;font-weight:bold;">64 (16.0%)</span>
-        </div>
-      </div>
-      <div style="display:flex;align-items:center;margin:6px 0;">
-        <div style="width:110px;font-size:0.85em;color:#333;">FPG</div>
-        <div style="flex:1;background:#eee;border-radius:3px;height:22px;position:relative;">
-          <div style="width:35%;background:#FF8F00;height:100%;border-radius:3px;"></div>
-          <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#333;font-weight:bold;">35 (6.6%)</span>
-        </div>
-      </div>
-      <div style="display:flex;align-items:center;margin:6px 0;">
-        <div style="width:110px;font-size:0.85em;color:#333;">Estes Hills</div>
-        <div style="flex:1;background:#eee;border-radius:3px;height:22px;position:relative;">
-          <div style="width:33%;background:#377eb8;height:100%;border-radius:3px;"></div>
-          <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#333;font-weight:bold;">33 (9.3%)</span>
-        </div>
-      </div>
-      <div style="display:flex;align-items:center;margin:6px 0;">
-        <div style="width:110px;font-size:0.85em;color:#333;">Glenwood</div>
-        <div style="flex:1;background:#eee;border-radius:3px;height:22px;position:relative;">
-          <div style="width:6%;background:#2E7D32;height:100%;border-radius:3px;min-width:4px;"></div>
-          <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#333;font-weight:bold;">6 (1.5%)</span>
-        </div>
-      </div>
-      <div style="display:flex;align-items:center;margin:6px 0;">
-        <div style="width:110px;font-size:0.85em;font-weight:bold;color:#1565C0;">Seawell</div>
-        <div style="flex:1;background:#eee;border-radius:3px;height:22px;position:relative;">
-          <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#333;font-weight:bold;">0 (0%)</span>
-        </div>
-      </div>
-    </div>
-
     <div class="source">
       <strong>Source:</strong> Chapel Hill Safe Routes to School Action Plan
       (adopted June 11, 2025; funded by NCDOT SRTS grant)
@@ -807,17 +729,9 @@ a {{ color: #1565C0; }}
     <h2>Random Sampling of Travel Mode</h2>
     <p>Proximity to school does not always capture true mode of
     transportation chosen by students. However, even by random sampling,
-    <span class="ephesus-label">Ephesus</span> captures the most walkers
+    <span class="ephesus-label">Ephesus</span> captures the second most walkers
     in any elementary school in the district and
     <span class="seawell-label">Seawell</span> with the fewest.</p>
-
-    <div style="margin:16px 0;text-align:center;">
-      <img src="data:image/png;base64,{data["walk_bike_tally_b64"]}"
-        alt="Walk and Bike tally counts by school"
-        style="max-width:100%;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,0.12);" />
-      <p style="font-size:0.8em;color:#888;margin-top:6px;">
-        Arrival/dismissal random tally &mdash; Walk and Bike counts by school</p>
-    </div>
 
     <div class="source">
       <strong>Source:</strong> Chapel Hill Safe Routes to School Action Plan
@@ -877,6 +791,11 @@ a {{ color: #1565C0; }}
         Fewer children on road
       </div>
     </div>
+    <div class="note" style="background:#f0f4f8;border-left:3px solid #90a4ae;padding:10px 14px;margin:12px 0;font-size:0.88em;color:#546e7a;border-radius:0 4px 4px 0;">
+      <strong>Reading the map:</strong> The faint, thin lines on the map
+      indicate that traffic impacts are light &mdash; the lighter and thinner
+      the line, the smaller the change in student traffic on that road segment.
+    </div>
     {seawell_roads_59}
     <div class="limitation">
       <strong>LEAP program context (editorial):</strong> Seawell currently
@@ -898,6 +817,11 @@ a {{ color: #1565C0; }}
     <p>Now the same scenario viewed through the lens of children under 5
     &mdash; future kindergarteners who will need school capacity in
     coming years.</p>
+    <div class="note" style="background:#f0f4f8;border-left:3px solid #90a4ae;padding:10px 14px;margin:12px 0;font-size:0.88em;color:#546e7a;border-radius:0 4px 4px 0;">
+      <strong>Reading the map:</strong> The faint, thin lines on the map
+      indicate that traffic impacts are light &mdash; the lighter and thinner
+      the line, the smaller the change in student traffic on that road segment.
+    </div>
     {seawell_roads_04}
     <p>The pattern is similar to the 5&ndash;9 analysis but at lower
     magnitude. Once again, Seawell&rsquo;s zone is not expected to have as
@@ -975,34 +899,9 @@ a {{ color: #1565C0; }}
     </div>
   </div>
 
-  <!-- Step 9: The School Desert Scenario -->
-  <div class="step" data-step="9">
-    <div class="step-number">7</div>
-    <h2>The School Desert Scenario</h2>
-    <p>Now imagine closing <strong>both</strong>
-    <span class="ephesus-label">Ephesus</span> and
-    <span class="glenwood-label">Glenwood</span> &mdash; two schools
-    removed from the most population-dense part of the eastern district.</p>
-    <p>The choropleth (shaded by children 5&ndash;9) shows this is the area
-    with the <strong>highest concentration of school-age children</strong>.
-    Remaining nearby schools are significantly further away, creating:</p>
-    <ul style="margin:8px 0 12px 20px;line-height:1.8;">
-      <li><strong>Longer commute distances</strong> for hundreds of families
-        in the densest residential area</li>
-      <li><strong>Overcrowded receiving schools</strong> as students are
-        redistributed to already-full campuses</li>
-      <li>A <strong>school desert</strong> &mdash; an area where
-        elementary-age children lack reasonable access to neighborhood
-        schools</li>
-    </ul>
-    <p>This concentrates enrollment pressure on schools that are already at
-    or near capacity, while forcing the most children to travel the
-    farthest.</p>
-  </div>
-
   <!-- Step 10: Summary — What the Data Shows -->
   <div class="step" data-step="10">
-    <div class="step-number">8</div>
+    <div class="step-number">7</div>
     <h2>What the Data Shows</h2>
     <p>Four key findings from the closure analysis:</p>
     <ol style="margin:8px 0 12px 20px;line-height:1.8;">
@@ -1043,6 +942,83 @@ a {{ color: #1565C0; }}
     </div>
     <div id="chart-bars"></div>
     <p id="chart-footer" style="text-align:center;margin:16px 0 0;font-size:0.8em;color:#999;line-height:1.4;"></p>
+  </div>
+  <div id="walker-panel" style="position:absolute;top:0;left:0;width:100%;height:100%;
+    z-index:500;background:#fff;display:none;overflow-y:auto;padding:40px 28px;">
+    <div style="text-align:center;margin:0 0 16px;">
+      <h3 style="margin:0 0 4px;font-size:1.15em;color:#333;">Students within 0.5 miles of school</h3>
+      <p style="margin:0;font-size:0.82em;color:#777;">Chapel Hill Safe Routes to School Action Plan (2025)</p>
+    </div>
+    <div id="walker-bars" style="max-width:500px;margin:0 auto;">
+      <div style="display:flex;align-items:center;margin:6px 0;">
+        <div style="width:110px;font-size:0.85em;font-weight:bold;color:#C62828;">Ephesus</div>
+        <div style="flex:1;background:#eee;border-radius:3px;height:22px;position:relative;">
+          <div style="width:100%;background:#C62828;height:100%;border-radius:3px;"></div>
+          <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#fff;font-weight:bold;">99 (24.7%)</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;margin:6px 0;">
+        <div style="width:110px;font-size:0.85em;color:#333;">Scroggs</div>
+        <div style="flex:1;background:#eee;border-radius:3px;height:22px;position:relative;">
+          <div style="width:95%;background:#66c2a5;height:100%;border-radius:3px;"></div>
+          <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#333;font-weight:bold;">94 (23.2%)</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;margin:6px 0;">
+        <div style="width:110px;font-size:0.85em;color:#333;">Rashkis</div>
+        <div style="flex:1;background:#eee;border-radius:3px;height:22px;position:relative;">
+          <div style="width:66%;background:#f781bf;height:100%;border-radius:3px;"></div>
+          <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#333;font-weight:bold;">65 (14.9%)</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;margin:6px 0;">
+        <div style="width:110px;font-size:0.85em;color:#333;">Northside</div>
+        <div style="flex:1;background:#eee;border-radius:3px;height:22px;position:relative;">
+          <div style="width:65%;background:#a65628;height:100%;border-radius:3px;"></div>
+          <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#333;font-weight:bold;">64 (16.0%)</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;margin:6px 0;">
+        <div style="width:110px;font-size:0.85em;color:#333;">FPG</div>
+        <div style="flex:1;background:#eee;border-radius:3px;height:22px;position:relative;">
+          <div style="width:35%;background:#FF8F00;height:100%;border-radius:3px;"></div>
+          <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#333;font-weight:bold;">35 (6.6%)</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;margin:6px 0;">
+        <div style="width:110px;font-size:0.85em;color:#333;">Estes Hills</div>
+        <div style="flex:1;background:#eee;border-radius:3px;height:22px;position:relative;">
+          <div style="width:33%;background:#377eb8;height:100%;border-radius:3px;"></div>
+          <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#333;font-weight:bold;">33 (9.3%)</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;margin:6px 0;">
+        <div style="width:110px;font-size:0.85em;color:#333;">Glenwood</div>
+        <div style="flex:1;background:#eee;border-radius:3px;height:22px;position:relative;">
+          <div style="width:6%;background:#2E7D32;height:100%;border-radius:3px;min-width:4px;"></div>
+          <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#333;font-weight:bold;">6 (1.5%)</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;margin:6px 0;">
+        <div style="width:110px;font-size:0.85em;font-weight:bold;color:#1565C0;">Seawell</div>
+        <div style="flex:1;background:#eee;border-radius:3px;height:22px;position:relative;">
+          <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#333;font-weight:bold;">0 (0%)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="tally-panel" style="position:absolute;top:0;left:0;width:100%;height:100%;
+    z-index:500;background:#fff;display:none;overflow-y:auto;padding:40px 28px;
+    display:none;align-items:center;justify-content:center;">
+    <div style="text-align:center;">
+      <h3 style="margin:0 0 8px;font-size:1.15em;color:#333;">Walk &amp; Bike Tally Counts by School</h3>
+      <p style="margin:0 0 16px;font-size:0.82em;color:#777;">Arrival/dismissal random tally (Fall 2024)</p>
+      <img src="data:image/png;base64,{data["walk_bike_tally_b64"]}"
+        alt="Walk and Bike tally counts by school"
+        style="max-width:95%;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,0.12);" />
+      <p style="font-size:0.8em;color:#888;margin-top:8px;">
+        Source: Chapel Hill Safe Routes to School Action Plan (adopted June 11, 2025)</p>
+    </div>
   </div>
 </div>
 
@@ -1391,7 +1367,7 @@ SCHOOLS.features.forEach(function(f) {{
     + 'color:#333;text-shadow:1px 1px 2px #fff, -1px -1px 2px #fff, 1px -1px 2px #fff, -1px 1px 2px #fff, 0 0 4px #fff;">'
     + '<div style="font-size:12px;margin-bottom:1px;">' + label + '</div>'
     + '<div>' + enr.enroll_2030 + ' out of ' + enr.capacity + '</div>'
-    + '<div style="color:' + utilColor + ';font-weight:900;font-size:12.5px;">' + enr.util_2030 + '%</div>'
+    + '<div style="font-weight:900;font-size:12.5px;">' + enr.util_2030 + '%</div>'
     + '</div>';
   var icon = L.divIcon({{
     className: '',
@@ -1498,6 +1474,8 @@ function clearAllLayers() {{
   hideTraffic();
   dimOverlay.style.display = "none";
   document.getElementById("chart-panel").style.display = "none";
+  document.getElementById("walker-panel").style.display = "none";
+  document.getElementById("tally-panel").style.display = "none";
 }}
 
 function handleStep(idx) {{
@@ -1520,18 +1498,12 @@ function handleStep(idx) {{
       districtView();
       break;
 
-    case 2: // Walker Conversion — walk zones + schools
-      layers.district.addTo(map);
-      layers.walkZones.addTo(map);
-      layers.schoolsLabeled.addTo(map);
-      districtView();
+    case 2: // Walker Conversion — barplot panel
+      document.getElementById("walker-panel").style.display = "block";
       break;
 
-    case 3: // Random Sampling — walk zones + schools
-      layers.district.addTo(map);
-      layers.walkZones.addTo(map);
-      layers.schoolsLabeled.addTo(map);
-      districtView();
+    case 3: // Random Sampling — tally image panel
+      document.getElementById("tally-panel").style.display = "flex";
       break;
 
     case 4: // Methodology — district + schools + dim
@@ -1567,14 +1539,6 @@ function handleStep(idx) {{
       layers.schools.addTo(map);
       if (layers.closedXEphesus) layers.closedXEphesus.addTo(map);
       districtView();
-      break;
-
-    case 9: // School Desert — choropleth + closed markers
-      layers.blockGroups.addTo(map);
-      layers.schoolsLabeled.addTo(map);
-      if (layers.closedXEphesus) layers.closedXEphesus.addTo(map);
-      if (layers.closedXGlenwood) layers.closedXGlenwood.addTo(map);
-      zoomToEast();
       break;
 
     case 10: // Summary
