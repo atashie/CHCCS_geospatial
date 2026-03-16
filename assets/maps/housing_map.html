@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_d6894ca497ea5925ea5d2fc17c58f201 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+
+            <style>html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            </style>
+
+            <style>#map {
+                position:absolute;
+                top:0;
+                bottom:0;
+                right:0;
+                left:0;
+                }
+            </style>
+
+            <script>
+                L_NO_TOUCH = false;
+                L_DISABLE_3D = false;
+            </script>
+
+        
+</head>
+<body>
+    
+    
+    <div style="position: fixed; bottom: 50px; left: 50px; z-index: 1000;
+                background-color: white; padding: 10px; border-radius: 5px;
+                box-shadow: 2px 2px 5px rgba(0,0,0,0.3);">
+        <h4 style="margin: 0 0 10px 0;">Housing Near Ephesus</h4>
+        <div><span style="background-color: #2E86AB; width: 15px; height: 15px; display: inline-block; margin-right: 5px;"></span> Ephesus Elementary</div>
+        <div><span style="background-color: #27AE60; width: 15px; height: 15px; display: inline-block; margin-right: 5px;"></span> Completed Housing</div>
+        <div><span style="background-color: #F39C12; width: 15px; height: 15px; display: inline-block; margin-right: 5px;"></span> Under Construction</div>
+        <hr style="margin: 10px 0;">
+        <div><b>Total: 563 new units</b></div>
+    </div>
+    
+    
+    <div style="position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
+                z-index: 1000; background-color: white; padding: 10px 20px;
+                border-radius: 5px; box-shadow: 2px 2px 5px rgba(0,0,0,0.3);">
+        <h3 style="margin: 0;">Affordable Housing Development Near Ephesus</h3>
+        <p style="margin: 5px 0 0 0; font-size: 12px; color: #666;">
+            563+ new housing units in the Ephesus-Fordham District
+        </p>
+    </div>
+    
+    
+            <div class="folium-map" id="map_d6894ca497ea5925ea5d2fc17c58f201" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_d6894ca497ea5925ea5d2fc17c58f201 = L.map(
+                "map_d6894ca497ea5925ea5d2fc17c58f201",
+                {
+                    center: [35.9372, -79.0178],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 15,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_3a2c5f30dea81684928a1c57bda240c2 = L.tileLayer(
+                "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 20,
+  "maxNativeZoom": 20,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors \u0026copy; \u003ca href=\"https://carto.com/attributions\"\u003eCARTO\u003c/a\u003e",
+  "subdomains": "abcd",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_3a2c5f30dea81684928a1c57bda240c2.addTo(map_d6894ca497ea5925ea5d2fc17c58f201);
+        
+    
+            var marker_fe68d6649e30dc043b3d957b15fc90bc = L.marker(
+                [35.9372, -79.0178],
+                {
+}
+            ).addTo(map_d6894ca497ea5925ea5d2fc17c58f201);
+        
+    
+            var icon_c5b01df621a7e2a1b9592d21bf4c372e = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "graduation-cap",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_6780bb046f5a40ac2c3df17114a72502 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_e22039955b7989ea8b913c9e40c6baca = $(`<div id="html_e22039955b7989ea8b913c9e40c6baca" style="width: 100.0%; height: 100.0%;"><b>Ephesus Elementary School</b></div>`)[0];
+                popup_6780bb046f5a40ac2c3df17114a72502.setContent(html_e22039955b7989ea8b913c9e40c6baca);
+            
+        
+
+        marker_fe68d6649e30dc043b3d957b15fc90bc.bindPopup(popup_6780bb046f5a40ac2c3df17114a72502)
+        ;
+
+        
+    
+    
+                marker_fe68d6649e30dc043b3d957b15fc90bc.setIcon(icon_c5b01df621a7e2a1b9592d21bf4c372e);
+            
+    
+            var circle_b0c0d749cdf7cb1c5a85addb07d7c831 = L.circle(
+                [35.9372, -79.0178],
+                {"bubblingMouseEvents": true, "color": "#2E86AB", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#2E86AB", "fillOpacity": 0.1, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 805, "stroke": true, "weight": 2}
+            ).addTo(map_d6894ca497ea5925ea5d2fc17c58f201);
+        
+    
+        var popup_5085a5037b5bb875befa629d8a46ff27 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_4d7df53a359fc89a556d4e9704698da4 = $(`<div id="html_4d7df53a359fc89a556d4e9704698da4" style="width: 100.0%; height: 100.0%;">0.5-mile walkability zone</div>`)[0];
+                popup_5085a5037b5bb875befa629d8a46ff27.setContent(html_4d7df53a359fc89a556d4e9704698da4);
+            
+        
+
+        circle_b0c0d749cdf7cb1c5a85addb07d7c831.bindPopup(popup_5085a5037b5bb875befa629d8a46ff27)
+        ;
+
+        
+    
+    
+            var marker_756c22867a2b6627e1eafdc422f51114 = L.marker(
+                [35.9382, -79.0208],
+                {
+}
+            ).addTo(map_d6894ca497ea5925ea5d2fc17c58f201);
+        
+    
+            var icon_b64e068b4908c082a9e1e9fc0db1c61b = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "green",
+  "iconColor": "white",
+  "icon": "home",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_108181134ccb057fb84ff2a7fd612553 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_4bd69f18d118e6d7cf91b84e2fd5e437 = $(`<div id="html_4bd69f18d118e6d7cf91b84e2fd5e437" style="width: 100.0%; height: 100.0%;">         <b>Greenfield Place (Phase 1)</b><br>         Units: <b>80</b><br>         Type: Working Families<br>         Status: Completed         </div>`)[0];
+                popup_108181134ccb057fb84ff2a7fd612553.setContent(html_4bd69f18d118e6d7cf91b84e2fd5e437);
+            
+        
+
+        marker_756c22867a2b6627e1eafdc422f51114.bindPopup(popup_108181134ccb057fb84ff2a7fd612553)
+        ;
+
+        
+    
+    
+                marker_756c22867a2b6627e1eafdc422f51114.setIcon(icon_b64e068b4908c082a9e1e9fc0db1c61b);
+            
+    
+            var marker_5951574dede40fd3f90769dcf1b85274 = L.marker(
+                [35.9378, -79.0215],
+                {
+}
+            ).addTo(map_d6894ca497ea5925ea5d2fc17c58f201);
+        
+    
+            var icon_8806934f7a99c57fd1da8dfe180bcd66 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "green",
+  "iconColor": "white",
+  "icon": "home",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_c0fdc903a6cf738bff56e30379de315c = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_b2113c07790bc073c1296e262a40a3e2 = $(`<div id="html_b2113c07790bc073c1296e262a40a3e2" style="width: 100.0%; height: 100.0%;">         <b>Greenfield Commons (Phase 2)</b><br>         Units: <b>69</b><br>         Type: Seniors<br>         Status: Completed         </div>`)[0];
+                popup_c0fdc903a6cf738bff56e30379de315c.setContent(html_b2113c07790bc073c1296e262a40a3e2);
+            
+        
+
+        marker_5951574dede40fd3f90769dcf1b85274.bindPopup(popup_c0fdc903a6cf738bff56e30379de315c)
+        ;
+
+        
+    
+    
+                marker_5951574dede40fd3f90769dcf1b85274.setIcon(icon_8806934f7a99c57fd1da8dfe180bcd66);
+            
+    
+            var marker_ec333c514cb36dcd52f7bc75bcab9d37 = L.marker(
+                [35.9405, -79.018],
+                {
+}
+            ).addTo(map_d6894ca497ea5925ea5d2fc17c58f201);
+        
+    
+            var icon_e03b0f96a8335f6df5b29d53cca00e38 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "orange",
+  "iconColor": "white",
+  "icon": "home",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_79566224bc41287f6f42970ad32b337c = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_ad2bea9501d49a99bec810d69a0bb43a = $(`<div id="html_ad2bea9501d49a99bec810d69a0bb43a" style="width: 100.0%; height: 100.0%;">         <b>Park Apartments</b><br>         Units: <b>414</b><br>         Type: Mixed Income<br>         Status: Under Construction         </div>`)[0];
+                popup_79566224bc41287f6f42970ad32b337c.setContent(html_ad2bea9501d49a99bec810d69a0bb43a);
+            
+        
+
+        marker_ec333c514cb36dcd52f7bc75bcab9d37.bindPopup(popup_79566224bc41287f6f42970ad32b337c)
+        ;
+
+        
+    
+    
+                marker_ec333c514cb36dcd52f7bc75bcab9d37.setIcon(icon_e03b0f96a8335f6df5b29d53cca00e38);
+            
+</script>
+</html>

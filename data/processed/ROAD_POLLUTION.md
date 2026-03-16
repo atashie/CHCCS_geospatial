@@ -22,7 +22,7 @@ is a school exposed to based on nearby roads?**
 
 **What the numbers mean in practice:**
 
-- Schools near multiple major roads (e.g., Frank Porter Graham Bilingue at 15.2) score highest
+- Schools near multiple major roads (e.g., Frank Porter Graham Bilingue at 15.1) score highest
 - Schools on busy corridors (e.g., Glenwood Elementary at 15.0) also score high
 - Schools set back from major roads score much lower (e.g., Rashkis Elementary at 1.0)
 - Schools surrounded by neighborhood streets score lowest (e.g., Seawell Elementary at 0.7)
@@ -130,7 +130,7 @@ f_mitigation = 0.56 * canopy_cover  (capped at 80%)
 P_net = P_raw * (1 - f_mitigation)
 ```
 
-- Canopy cover fraction from Impact Observatory 10m Land Use/Land Cover
+- Canopy cover fraction from ESA WorldCover V2 2021 (10m resolution)
 - Alpha = 0.56 derived from: 2.8% PM2.5 reduction per 5% canopy cover increase
 - Based on meta-analyses of urban vegetation air quality effects (Nowak et al., 2014)
 
@@ -141,15 +141,15 @@ P_net = P_raw * (1 - f_mitigation)
 | Rank | School | Raw Index | Canopy % | Mitigation % | Net Index | Net (Normalized) |
 |------|--------|-----------|----------|-------------|-----------|-----------------|
 | 1 | Glenwood Elementary | 15.02 | 61.0% | 34.2% | 9.89 | 100.0 |
-| 2 | Frank Porter Graham Bilingue | 15.16 | 72.4% | 40.6% | 9.01 | 91.1 |
-| 3 | Carrboro Elementary | 6.21 | 76.0% | 42.6% | 3.57 | 36.1 |
+| 2 | Frank Porter Graham Bilingue | 15.15 | 72.4% | 40.6% | 9.00 | 91.1 |
+| 3 | Carrboro Elementary | 6.20 | 76.0% | 42.6% | 3.56 | 36.0 |
 | 4 | Scroggs Elementary | 4.84 | 65.9% | 36.9% | 3.05 | 30.9 |
 | 5 | McDougle Elementary | 3.65 | 72.6% | 40.7% | 2.17 | 21.9 |
 | 6 | Morris Grove Elementary | 3.63 | 91.1% | 51.0% | 1.78 | 18.0 |
-| 7 | Estes Hills Elementary | 3.16 | 93.5% | 52.3% | 1.51 | 15.3 |
+| 7 | Estes Hills Elementary | 3.15 | 93.5% | 52.3% | 1.50 | 15.2 |
 | 8 | Ephesus Elementary | 2.33 | 81.7% | 45.8% | 1.27 | 12.8 |
 | 9 | New FPG Location | 1.50 | 80.9% | 45.3% | 0.82 | 8.3 |
-| 10 | Northside Elementary | 1.43 | 84.3% | 47.2% | 0.75 | 7.6 |
+| 10 | Northside Elementary | 1.42 | 84.3% | 47.2% | 0.75 | 7.6 |
 | 11 | Rashkis Elementary | 1.00 | 71.1% | 39.8% | 0.60 | 6.1 |
 | 12 | Seawell Elementary | 0.71 | 82.1% | 46.0% | 0.38 | 3.9 |
 
@@ -157,17 +157,17 @@ P_net = P_raw * (1 - f_mitigation)
 
 | Rank | School | Raw Index | Canopy % | Mitigation % | Net Index | Net (Normalized) |
 |------|--------|-----------|----------|-------------|-----------|-----------------|
-| 1 | Glenwood Elementary | 20.35 | 69.8% | 39.1% | 12.39 | 100.0 |
-| 2 | Frank Porter Graham Bilingue | 19.98 | 80.2% | 44.9% | 11.00 | 88.8 |
-| 3 | Carrboro Elementary | 11.35 | 75.5% | 42.3% | 6.55 | 52.9 |
-| 4 | Ephesus Elementary | 8.25 | 73.0% | 40.9% | 4.88 | 39.4 |
-| 5 | Northside Elementary | 7.75 | 67.9% | 38.0% | 4.80 | 38.8 |
-| 6 | Scroggs Elementary | 8.96 | 83.2% | 46.6% | 4.79 | 38.6 |
+| 1 | Glenwood Elementary | 20.34 | 69.8% | 39.1% | 12.39 | 100.0 |
+| 2 | Frank Porter Graham Bilingue | 19.96 | 80.2% | 44.9% | 10.99 | 88.7 |
+| 3 | Carrboro Elementary | 11.33 | 75.5% | 42.3% | 6.54 | 52.8 |
+| 4 | Ephesus Elementary | 8.23 | 73.0% | 40.9% | 4.87 | 39.3 |
+| 5 | Northside Elementary | 7.73 | 67.9% | 38.0% | 4.79 | 38.7 |
+| 6 | Scroggs Elementary | 8.96 | 83.2% | 46.6% | 4.79 | 38.7 |
 | 7 | New FPG Location | 8.30 | 84.4% | 47.3% | 4.38 | 35.3 |
-| 8 | McDougle Elementary | 5.01 | 80.4% | 45.0% | 2.75 | 22.2 |
+| 8 | McDougle Elementary | 5.00 | 80.4% | 45.0% | 2.75 | 22.2 |
 | 9 | Morris Grove Elementary | 4.88 | 93.6% | 52.4% | 2.32 | 18.7 |
-| 10 | Estes Hills Elementary | 4.42 | 92.5% | 51.8% | 2.13 | 17.2 |
-| 11 | Rashkis Elementary | 1.79 | 77.2% | 43.2% | 1.01 | 8.2 |
+| 10 | Estes Hills Elementary | 4.37 | 92.5% | 51.8% | 2.11 | 17.0 |
+| 11 | Rashkis Elementary | 1.78 | 77.2% | 43.2% | 1.01 | 8.1 |
 | 12 | Seawell Elementary | 1.89 | 85.3% | 47.8% | 0.99 | 8.0 |
 
 ---
@@ -283,7 +283,7 @@ academic performance; 9 of 10 found a negative association.
   of the Literature on Emissions, Exposure, and Health Effects. HEI Special Report 17.
 - Nowak, D. J., et al. (2014). Tree and forest effects on air quality and human health 
   in the United States. *Environ Pollution*, 193.
-- Impact Observatory / Esri. (2023). 10m Annual Land Use Land Cover.
+- ESA / Copernicus. (2021). ESA WorldCover V2 2021 (10m). Accessed via Microsoft Planetary Computer.
 - OpenStreetMap contributors. Road network data.
 - Boogaard, H., et al. (2019). Concentration decay rates for near-road air pollutants. 
   *Int J Hyg Environ Health*, 222(7). [λ = 0.0026 BC, 0.0027 NOx]

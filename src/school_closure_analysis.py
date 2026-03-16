@@ -30,7 +30,7 @@ Speed model sources:
 Data sources:
 - Road networks: OpenStreetMap via OSMnx
 - School locations: NCES EDGE Public School Locations 2023-24
-- District boundary: Census TIGER/Line Unified School Districts 2023
+- District boundary: Census TIGER/Line Unified School Districts 2024
 - Children counts: ACS 5-Year B01001 (block group level)
 - Block geometries: TIGER/Line 2020 Census blocks
 - Residential parcels: Orange County GIS (combined_data_polys.gpkg)
@@ -192,8 +192,9 @@ _ENAME_TO_SCHOOL = {
 # Note: 063 is Durham County — a common mistake
 STATE_FIPS = "37"
 COUNTY_FIPS = "135"
-ACS_BASE_URL = "https://api.census.gov/data/2022/acs/acs5"
-TIGER_BG_URL = "https://www2.census.gov/geo/tiger/TIGER2023/BG/tl_2023_37_bg.zip"
+ACS_YEAR = 2024
+ACS_BASE_URL = f"https://api.census.gov/data/{ACS_YEAR}/acs/acs5"
+TIGER_BG_URL = "https://www2.census.gov/geo/tiger/TIGER2024/BG/tl_2024_37_bg.zip"
 TIGER_BLOCK_URL = (
     "https://www2.census.gov/geo/tiger/TIGER2020PL/STATE/"
     "37_NORTH_CAROLINA/37135/tl_2020_37135_tabblock20.zip"

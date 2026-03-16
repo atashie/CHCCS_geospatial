@@ -759,7 +759,7 @@ details[open] summary {{ margin-bottom: 8px; }}
     elementary schools.</p>
     <div class="source">
       <strong>Data:</strong> NCES EDGE School Locations 2023-24 (LEAID 3700720)
-      &bull; Census TIGER/Line Unified School Districts 2023
+      &bull; Census TIGER/Line Unified School Districts 2024
     </div>
   </div>
 
@@ -789,15 +789,15 @@ details[open] summary {{ margin-bottom: 8px; }}
     <div class="step-number">3</div>
     <h2>Census Block Groups</h2>
     <p>Demographic data comes from the <strong>American Community Survey
-    (ACS) 5-Year Estimates</strong> (2018&ndash;2022). The Census Bureau
+    (ACS) 5-Year Estimates</strong> (2020&ndash;2024). The Census Bureau
     publishes this data at the <strong>block group</strong> level &mdash;
     neighborhood-sized areas of roughly 600&ndash;3,000 people.</p>
     <p>The map now shows block group boundaries (blue outlines) around the
     Northside Elementary area. Notice how they <em>don&rsquo;t line up</em>
     with school zone boundaries.</p>
     <div class="source">
-      <strong>Data:</strong> U.S. Census Bureau, ACS 5-Year 2018&ndash;2022
-      &bull; TIGER/Line 2023 block group geometries (Orange County, NC)
+      <strong>Data:</strong> U.S. Census Bureau, ACS 5-Year 2020&ndash;2024
+      &bull; TIGER/Line 2024 block group geometries (Orange County, NC)
     </div>
   </div>
 
@@ -951,7 +951,7 @@ details[open] summary {{ margin-bottom: 8px; }}
       (median income)</p>
     </details>
     <div class="source">
-      <strong>Data:</strong> ACS 5-Year 2018&ndash;2022
+      <strong>Data:</strong> ACS 5-Year 2020&ndash;2024
     </div>
   </div>
 
@@ -1346,7 +1346,7 @@ details[open] summary {{ margin-bottom: 8px; }}
       <em>residents</em>, not enrolled students. There is a known gap of
       roughly 10 percentage points between zone poverty estimates and
       actual school FRL rates.</li>
-      <li><strong>Temporal mismatch:</strong> ACS (2018&ndash;2022), Decennial
+      <li><strong>Temporal mismatch:</strong> ACS (2020&ndash;2024), Decennial
       (2020), parcels (current), zones (current) use different vintages.</li>
       <li><strong>Edge distortion:</strong> Block groups at district edges
       extend into neighboring districts; clipping creates slivers with

@@ -86,11 +86,12 @@ STATE_FIPS = "37"
 COUNTY_FIPS = "135"
 
 # Census API base URLs
-ACS_BASE_URL = "https://api.census.gov/data/2022/acs/acs5"
+ACS_YEAR = 2024
+ACS_BASE_URL = f"https://api.census.gov/data/{ACS_YEAR}/acs/acs5"
 DECENNIAL_BASE_URL = "https://api.census.gov/data/2020/dec/pl"
 
 # TIGER/Line geometry URLs
-TIGER_BG_URL = "https://www2.census.gov/geo/tiger/TIGER2023/BG/tl_2023_37_bg.zip"
+TIGER_BG_URL = "https://www2.census.gov/geo/tiger/TIGER2024/BG/tl_2024_37_bg.zip"
 TIGER_BLOCK_URL = (
     "https://www2.census.gov/geo/tiger/TIGER2020PL/STATE/"
     "37_NORTH_CAROLINA/37135/tl_2020_37135_tabblock20.zip"
@@ -1950,7 +1951,7 @@ def create_socioeconomic_map(
     <div id="socio-banner">
         <div>
             <h1>CHCCS Socioeconomic Analysis</h1>
-            <p class="subtitle">Census ACS 2022 5-Year Estimates &mdash; Scroll down for zone comparison charts
+            <p class="subtitle">Census ACS __ACS_YEAR__ 5-Year Estimates &mdash; Scroll down for zone comparison charts
                 <button class="faq-btn" onclick="toggleFaqPanel()" title="Click for FAQ">
 FAQ
                 </button>
@@ -1961,9 +1962,9 @@ FAQ
         <span class="faq-close" onclick="toggleFaqPanel()">&times;</span>
         <h5>Frequently Asked Questions</h5>
         <div class="faq-item">
-            <div class="faq-q">What does "Census ACS 2022 5-Year" mean?</div>
+            <div class="faq-q">What does "Census ACS __ACS_YEAR__ 5-Year" mean?</div>
             <div class="faq-a"><b>ACS</b> = American Community Survey, an ongoing Census Bureau survey.
-            <b>5-Year</b> means data averaged over 2018-2022 for statistical reliability in small areas like block groups.
+            <b>5-Year</b> means data averaged over __ACS_RANGE__ for statistical reliability in small areas like block groups.
             This is official data collected and published by the U.S. Census Bureau.</div>
         </div>
         <div class="faq-item">
@@ -2052,7 +2053,9 @@ FAQ
             }
         });
     </script>
-    """
+    """.replace("__ACS_YEAR__", str(ACS_YEAR)).replace(
+        "__ACS_RANGE__", f"{ACS_YEAR - 4}-{ACS_YEAR}"
+    )
     m.get_root().html.add_child(folium.Element(banner_html))
 
     # -- Unified dot-density layer with custom control panel --
@@ -3453,7 +3456,7 @@ equity implications of school closure decisions.
 
 ## Data Sources
 
-### ACS 5-Year Estimates (2022, Block Group Level)
+### ACS 5-Year Estimates ({ACS_YEAR}, Block Group Level)
 
 **API Endpoint:** `{ACS_BASE_URL}`
 **Geography:** Block groups in Orange County, NC (FIPS {STATE_FIPS}{COUNTY_FIPS})
@@ -3556,8 +3559,8 @@ When parcels are unavailable, dots are placed randomly within Census block bound
    at the block level. Block data is used only for dot-density visualization, not
    statistical reporting.
 
-3. **5-Year Rolling Average:** ACS 2022 5-Year estimates represent data collected
-   2018-2022, not a single point in time.
+3. **5-Year Rolling Average:** ACS {ACS_YEAR} 5-Year estimates represent data collected
+   {ACS_YEAR - 4}-{ACS_YEAR}, not a single point in time.
 
 4. **Attendance Zone vs. Actual Enrollment:** Demographics of an attendance zone
    describe the resident population, not actual school enrollment. Families may
@@ -3568,7 +3571,7 @@ When parcels are unavailable, dots are placed randomly within Census block bound
    is assumed. Dasymetric refinement at the block level (for dots) partially addresses
    this but is not applied to block group statistics.
 
-6. **Temporal Mismatch:** ACS data (2018-2022), Decennial data (2020), and attendance
+6. **Temporal Mismatch:** ACS data ({ACS_YEAR - 4}-{ACS_YEAR}), Decennial data (2020), and attendance
    zone boundaries (current) may not perfectly align temporally.
 
 ## Results: Per-School-Zone Demographics

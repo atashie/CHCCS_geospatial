@@ -38,7 +38,7 @@ Affected-household analysis:
 Data sources:
 - Road networks: OpenStreetMap via OSMnx
 - School locations: NCES EDGE Public School Locations 2023-24
-- District boundary: Census TIGER/Line Unified School Districts 2023
+- District boundary: Census TIGER/Line Unified School Districts 2024
 - Residential parcels: Orange County GIS (combined_data_centroids.gpkg)
 
 Outputs:
@@ -357,7 +357,7 @@ def download_district_boundary(schools: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     import zipfile
     import tempfile
 
-    url = "https://www2.census.gov/geo/tiger/TIGER2023/UNSD/tl_2023_37_unsd.zip"
+    url = "https://www2.census.gov/geo/tiger/TIGER2024/UNSD/tl_2024_37_unsd.zip"
     try:
         resp = requests.get(url, timeout=120)
         resp.raise_for_status()

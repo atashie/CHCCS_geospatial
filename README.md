@@ -108,13 +108,13 @@ CHCCS_geospatial/
 
 ## Frequently Asked Questions
 
-### What does "Census ACS 2022 5-Year" mean?
+### What does "Census ACS 2024 5-Year" mean?
 
 **ACS** stands for **American Community Survey**, an ongoing survey conducted by the U.S. Census Bureau that collects detailed demographic, economic, and housing data annually.
 
-**5-Year** means the data is a rolling average of survey responses collected over 5 calendar years (2018–2022). This pooling increases sample size and statistical reliability, especially for small geographic areas like Census block groups.
+**5-Year** means the data is a rolling average of survey responses collected over 5 calendar years (2020–2024). This pooling increases sample size and statistical reliability, especially for small geographic areas like Census block groups.
 
-**2022** refers to the release year — the ACS 2022 5-Year estimates were published in December 2023.
+**2024** refers to the release year — the ACS 2024 5-Year estimates were published in December 2025.
 
 ### What is an Attendance Zone?
 

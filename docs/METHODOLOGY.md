@@ -50,9 +50,9 @@ You can toggle layers on and off using the layer control to explore different as
 
 | Data | Source & Link | What It Tells Us | Freshness | Key Limitations |
 |------|---------------|------------------|-----------|-----------------|
-| Demographics (income, poverty, age, vehicles, tenure, family structure) | [ACS 5-Year 2018–2022](https://www.census.gov/programs-surveys/acs) — 42 variables from 8 Census tables | Detailed socioeconomic characteristics at the block group level | 5-year average ending 2022 (released Dec 2023) | Survey-based estimates with margins of error; not a full count |
+| Demographics (income, poverty, age, vehicles, tenure, family structure) | [ACS 5-Year 2020–2024](https://www.census.gov/programs-surveys/acs) — 42 variables from 8 Census tables | Detailed socioeconomic characteristics at the block group level | 5-year average ending 2024 (released Dec 2025) | Survey-based estimates with margins of error; not a full count |
 | Race/ethnicity | [2020 Decennial Census P.L. 94-171](https://www.census.gov/programs-surveys/decennial-census/about/rdo.html) | Block-level racial/ethnic breakdown | April 2020 snapshot | Subject to differential privacy noise injection; population may have shifted since 2020 |
-| Geographic boundaries (block groups, blocks) | [Census TIGER/Line](https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html) | Shapes for mapping Census data | 2023 block groups, 2020 blocks | — |
+| Geographic boundaries (block groups, blocks) | [Census TIGER/Line](https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html) | Shapes for mapping Census data | 2024 block groups, 2020 blocks | — |
 | School locations | [NCES EDGE 2023–24](https://nces.ed.gov/programs/edge/geographic/schoollocations) | Verified coordinates for all 11 schools | 2023–24 school year | — |
 | Attendance zones | CHCCS district shapefile | Which neighborhoods feed into which school | Current as of download date | May become outdated if district rezones |
 | Residential parcels | Orange County GIS | Where homes are located (used for dasymetric weighting) | Current as of data extract | Includes only residential-classified parcels |
@@ -135,7 +135,7 @@ All weights are clipped to [0.0, 1.0] to prevent over-allocation.
 
 ### 1.5 Key Limitations
 
-1. **ACS data is a 5-year average, not a snapshot.** The income, poverty, and housing data reflects conditions averaged across 2018–2022, not a single point in time.
+1. **ACS data is a 5-year average, not a snapshot.** The income, poverty, and housing data reflects conditions averaged across 2020–2024, not a single point in time.
 
 2. **Zone demographics ≠ school enrollment.** The map shows who *lives* in each attendance zone, not who *attends* each school. School choice, magnet programs, private schools, and transfers mean actual enrollment demographics can differ significantly.
 
@@ -214,8 +214,8 @@ This map simulates what would happen to travel times and traffic patterns if ind
 | Data | Source & Link | What It Tells Us | Freshness | Key Limitations |
 |------|---------------|------------------|-----------|-----------------|
 | Road network | [OpenStreetMap via OSMnx](https://www.openstreetmap.org/) | All roads with type classifications (residential, primary, etc.) | Current as of download date | Community-maintained; may have minor gaps or misclassifications |
-| Children counts (ages 0–4, 5–9) | [ACS 5-Year 2018–2022](https://www.census.gov/programs-surveys/acs) | How many young children live in each block group | 5-year average ending 2022 | Survey estimates; actual numbers may differ |
-| Census blocks & block groups | [Census TIGER/Line](https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html) | Geographic boundaries for distributing population | 2020/2023 vintages | — |
+| Children counts (ages 0–4, 5–9) | [ACS 5-Year 2020–2024](https://www.census.gov/programs-surveys/acs) | How many young children live in each block group | 5-year average ending 2024 | Survey estimates; actual numbers may differ |
+| Census blocks & block groups | [Census TIGER/Line](https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html) | Geographic boundaries for distributing population | 2020/2024 vintages | — |
 | Residential parcels | Orange County GIS | Where homes are located (for distributing children to specific locations) | Current as of data extract | — |
 | Attendance zones | CHCCS district shapefile | Which school each area is assigned to | Current as of download date | May become outdated if district rezones |
 | Walk zones | CHCCS district shapefile | Areas designated as walkable to each school | Current as of download date | Definitions may not reflect actual walkability |
@@ -656,7 +656,7 @@ Oke, T. R. (1982). The energetic basis of the urban heat island. *Quarterly Jour
 
 Stewart, I. D., & Oke, T. R. (2012). Local climate zones for urban temperature studies. *Bulletin of the American Meteorological Society*, 93(12), 1879–1900.
 
-U.S. Census Bureau. American Community Survey 5-Year Estimates (2018–2022). Tables: B01001, B03002, B11003, B19001, B19013, B25003, B25044, C17002. https://www.census.gov/programs-surveys/acs
+U.S. Census Bureau. American Community Survey 5-Year Estimates (2020–2024). Tables: B01001, B03002, B11003, B19001, B19013, B25003, B25044, C17002. https://www.census.gov/programs-surveys/acs
 
 U.S. Census Bureau. 2020 Decennial Census, P.L. 94-171 Redistricting Data. Tables: P1, P2. https://www.census.gov/programs-surveys/decennial-census/about/rdo.html
 

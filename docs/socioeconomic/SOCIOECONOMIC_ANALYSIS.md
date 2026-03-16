@@ -9,9 +9,9 @@ equity implications of school closure decisions.
 
 ## Data Sources
 
-### ACS 5-Year Estimates (2022, Block Group Level)
+### ACS 5-Year Estimates (2024, Block Group Level)
 
-**API Endpoint:** `https://api.census.gov/data/2022/acs/acs5`
+**API Endpoint:** `https://api.census.gov/data/2024/acs/acs5`
 **Geography:** Block groups in Orange County, NC (FIPS 37135)
 
 | Census Table | Description | Key Metric |
@@ -39,7 +39,7 @@ Used exclusively for dot-density visualization (highest spatial resolution).
 
 ### TIGER/Line Geometries
 
-- **Block groups:** `https://www2.census.gov/geo/tiger/TIGER2023/BG/tl_2023_37_bg.zip`
+- **Block groups:** `https://www2.census.gov/geo/tiger/TIGER2024/BG/tl_2024_37_bg.zip`
 - **Blocks:** `https://www2.census.gov/geo/tiger/TIGER2020PL/STATE/37_NORTH_CAROLINA/37135/tl_2020_37135_tabblock20.zip`
 
 ### Local Data
@@ -112,8 +112,8 @@ When parcels are unavailable, dots are placed randomly within Census block bound
    at the block level. Block data is used only for dot-density visualization, not
    statistical reporting.
 
-3. **5-Year Rolling Average:** ACS 2022 5-Year estimates represent data collected
-   2018-2022, not a single point in time.
+3. **5-Year Rolling Average:** ACS 2024 5-Year estimates represent data collected
+   2020-2024, not a single point in time.
 
 4. **Attendance Zone vs. Actual Enrollment:** Demographics of an attendance zone
    describe the resident population, not actual school enrollment. Families may
@@ -124,23 +124,23 @@ When parcels are unavailable, dots are placed randomly within Census block bound
    is assumed. Dasymetric refinement at the block level (for dots) partially addresses
    this but is not applied to block group statistics.
 
-6. **Temporal Mismatch:** ACS data (2018-2022), Decennial data (2020), and attendance
+6. **Temporal Mismatch:** ACS data (2020-2024), Decennial data (2020), and attendance
    zone boundaries (current) may not perfectly align temporally.
 
 ## Results: Per-School-Zone Demographics
 
 | school | total_pop | median_hh_income | pct_below_185_poverty | pct_minority | pct_black | pct_hispanic | pct_renter | pct_zero_vehicle | pct_single_parent | pct_elementary_age |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Carrboro Elementary | 12016 | 67071 | 35.6 | 25.6 | 10.3 | 4.6 | 65.1 | 6.5 | 27.1 | 2.9 |
-| Ephesus Elementary | 7617 | 115973 | 17.8 | 49.0 | 9.7 | 17.8 | 38.6 | 3.9 | 28.7 | 4.0 |
-| Estes Hills Elementary | 8248 | 138600 | 18.5 | 31.8 | 4.1 | 6.6 | 42.5 | 6.1 | 20.1 | 4.2 |
-| Glenwood Elementary | 2175 | 72162 | 12.7 | 26.5 | 9.6 | 4.8 | 34.8 | 1.9 | 6.8 | 1.9 |
-| McDougle Elementary | 9648 | 101125 | 19.9 | 26.7 | 6.3 | 10.9 | 32.4 | 3.9 | 14.5 | 7.4 |
-| Morris Grove Elementary | 9666 | 139112 | 12.5 | 41.5 | 14.0 | 8.5 | 18.0 | 2.1 | 17.4 | 6.0 |
-| Northside Elementary | 16794 | 95503 | 34.6 | 32.0 | 14.3 | 4.6 | 54.1 | 8.1 | 18.2 | 4.3 |
-| Rashkis Elementary | 8481 | 102369 | 23.6 | 41.0 | 16.2 | 5.4 | 58.4 | 4.6 | 20.2 | 4.4 |
-| Scroggs Elementary | 12219 | 71994 | 26.0 | 36.3 | 11.8 | 6.4 | 51.3 | 9.4 | 16.1 | 3.4 |
-| Seawell Elementary | 4379 | 97365 | 28.9 | 40.4 | 11.5 | 7.9 | 50.4 | 7.4 | 39.2 | 5.8 |
+| Carrboro Elementary | 12238 | 66086 | 41.0 | 26.1 | 10.2 | 5.0 | 66.3 | 11.0 | 36.7 | 2.6 |
+| Ephesus Elementary | 8044 | 112784 | 18.8 | 46.4 | 13.3 | 15.4 | 43.4 | 1.7 | 29.6 | 4.6 |
+| Estes Hills Elementary | 8393 | 124822 | 17.1 | 33.9 | 5.7 | 9.5 | 49.5 | 9.1 | 13.4 | 3.4 |
+| Glenwood Elementary | 2320 | 82814 | 14.3 | 34.3 | 10.2 | 9.3 | 34.6 | 2.0 | 5.8 | 1.5 |
+| McDougle Elementary | 9946 | 120899 | 15.7 | 34.9 | 8.5 | 16.6 | 32.7 | 3.3 | 17.1 | 5.6 |
+| Morris Grove Elementary | 9443 | 136845 | 14.1 | 42.2 | 10.6 | 10.7 | 21.3 | 2.5 | 16.0 | 4.9 |
+| Northside Elementary | 18377 | 79300 | 38.7 | 37.7 | 14.3 | 8.7 | 54.6 | 6.8 | 19.2 | 4.7 |
+| Rashkis Elementary | 8076 | 91823 | 19.4 | 38.2 | 12.9 | 8.5 | 58.4 | 7.4 | 15.7 | 5.0 |
+| Scroggs Elementary | 12209 | 83555 | 20.6 | 41.0 | 12.6 | 10.2 | 46.7 | 6.7 | 13.9 | 3.0 |
+| Seawell Elementary | 4423 | 98608 | 25.1 | 41.0 | 13.9 | 7.0 | 54.6 | 5.8 | 42.7 | 4.8 |
 
 *All percentages rounded to 1 decimal place. Population counts are area-weighted estimates.*
 
