@@ -658,7 +658,7 @@ details[open] summary {{ margin-bottom: 8px; }}
     <p>All data and methodology are open. This analysis uses the same Census-based
     framework applied equally to all 11 CHCCS elementary schools.</p>
     <div class="source">
-      <strong>Data:</strong> NCES EDGE 2023-24 &bull; Census ACS 5-Year (2018&ndash;2022)
+      <strong>Data:</strong> NCES EDGE 2023-24 &bull; Census ACS 5-Year (2020&ndash;2024)
       &bull; 2020 Decennial Census &bull; OSM road network &bull; Orange County parcels<br>
       <strong>See also:</strong>
       <a href="../assets/maps/closure_methodology.html">School Closure Methodology</a>
@@ -730,6 +730,11 @@ details[open] summary {{ margin-bottom: 8px; }}
     zone, but sparsely populated in its outer reaches.</p>
     <p>This analysis considers <strong>both</strong> attendance and drive-time
     zones to limit bias introduced by CHCCS-drawn attendance boundaries.</p>
+    <div class="limitation">
+      <strong>Note:</strong> Glenwood was difficult to completely include in this
+      analysis given that it is predominantly a magnet school. Its location was
+      maintained in map calculations as another available CHCCS site.
+    </div>
   </div>
 
   <!-- Step 4: Understanding the Data -->
@@ -745,13 +750,13 @@ details[open] summary {{ margin-bottom: 8px; }}
     </ul>
     <p>Census data reflects the demographics of the <em>community surrounding</em>
     each school, which may differ from current enrollment demographics.
-    This distinction matters: Seawell&rsquo;s current student body incorporates
-    recruitment of LEAP (Launching Equity through Achievement and
-    Potential) students who may present a very different demographic makeup from
+    This distinction matters: Seawell&rsquo;s current student body includes the
+    district-wide LEAP (Launching Equity through Achievement and
+    Potential) program whose students may present a very different demographic makeup from
     the surrounding community. Census data captures who <em>lives</em> near the
     school, regardless of enrollment programs.</p>
     <div class="limitation">
-      <strong>Note:</strong> ACS 5-year estimates (2018&ndash;2022) carry margins
+      <strong>Note:</strong> ACS 5-year estimates (2020&ndash;2024) carry margins
       of error, especially at the block-group level. All values should be treated
       as approximations, not exact counts.
     </div>
@@ -765,7 +770,9 @@ details[open] summary {{ margin-bottom: 8px; }}
     <h2>Poverty: All 11 Schools</h2>
     <p>How many people in economic hardship live nearest to each school?</p>
     <p>The bar charts show <strong>people below 185% poverty</strong> (the
-    Free/Reduced-price Lunch threshold) for all 11 schools. The left panel
+    Free/Reduced-price Lunch threshold &mdash; 185% of the federal poverty level
+    is the standard definition of &ldquo;low income&rdquo; used in federal programs)
+    for all 11 schools. The left panel
     uses <strong>nearest-drive zones</strong>; the right uses official
     <strong>attendance zones</strong>.</p>
     <p>We lead with <em>counts</em> rather than percentages because we care about
@@ -849,6 +856,12 @@ details[open] summary {{ margin-bottom: 8px; }}
     </div>
     <p>The full district contains approximately 95,000 dots. Patterns of
     residential segregation are visible at this scale.</p>
+    <div class="limitation">
+      <strong>Note:</strong> The dot-density map uses 2020 Decennial Census data
+      (block-level race counts), while the socioeconomic metrics on other slides
+      use ACS 5-Year 2020&ndash;2024 estimates. Block-level race data is only
+      available from the Decennial Census.
+    </div>
   </div>
 
   <!-- Step 10: Minority count bar charts (all 11 schools) -->
@@ -879,11 +892,11 @@ details[open] summary {{ margin-bottom: 8px; }}
     <p>Darker colors indicate higher concentrations of very young children
     who will enter elementary school in coming years. Both school zone outlines
     are shown for reference.</p>
-    <p>Since this is Census data from 2022, these children would be entering
-    or in elementary school in 2027. Therefore, this information matters more
+    <p>Since this is Census data from 2024, these children would be entering
+    or in elementary school in 2029. Therefore, this information matters more
     than data on children ages 5&ndash;9.</p>
     <div class="source">
-      <strong>Data:</strong> ACS 5-Year 2018&ndash;2022, tables B01001
+      <strong>Data:</strong> ACS 5-Year 2020&ndash;2024, tables B01001
       (age by sex)
     </div>
   </div>
@@ -931,8 +944,6 @@ details[open] summary {{ margin-bottom: 8px; }}
     the demographic pipeline that sustains enrollment.</p>
     <div id="price-comparison-metrics">
     </div>
-    <p>Higher median home prices around Seawell are consistent with
-    the wealthier population surrounding that school.</p>
     <div class="limitation">
       <strong>Limitation:</strong> MLS covers listed sales only &mdash;
       not rentals or for-sale-by-owner transactions.
@@ -1293,7 +1304,7 @@ function populateMetrics() {{
       + '<thead><tr>'
       + '<th style="text-align:left;padding:4px 8px;color:#555;font-size:0.85em;width:40%;"></th>'
       + '<th style="text-align:center;padding:4px 8px;color:#555;font-weight:bold;">Below 185% Poverty</th>'
-      + '<th style="text-align:center;padding:4px 8px;color:#555;font-weight:bold;">Affordable Housing</th>'
+      + '<th style="text-align:center;padding:4px 8px;color:#555;font-weight:bold;">Affordable Housing Units</th>'
       + '</tr></thead><tbody>'
       + '<tr style="background:#f5f5f5;">'
       + '<td style="padding:6px 8px;font-weight:bold;color:#555;">Drive Zone</td>'
@@ -1319,7 +1330,7 @@ function populateMetrics() {{
       + '<thead><tr>'
       + '<th style="text-align:left;padding:4px 8px;color:#555;font-size:0.85em;width:40%;"></th>'
       + '<th style="text-align:center;padding:4px 8px;color:#555;font-weight:bold;">Below 185% Poverty</th>'
-      + '<th style="text-align:center;padding:4px 8px;color:#555;font-weight:bold;">Affordable Housing</th>'
+      + '<th style="text-align:center;padding:4px 8px;color:#555;font-weight:bold;">Affordable Housing Units</th>'
       + '</tr></thead><tbody>'
       + '<tr style="background:#f5f5f5;">'
       + '<td style="padding:6px 8px;font-weight:bold;color:#555;">Drive Zone</td>'
@@ -1414,11 +1425,8 @@ function populateMetrics() {{
   // Final summary (step 17)
   el = document.getElementById("final-summary-text");
   if (el) {{
-    el.innerHTML = '<p>This is a direct analysis of two community schools whose purpose '
-      + 'is to serve its surrounding communities, not CHCCS staff members or budget '
-      + 'spreadsheets. Part of what is important to community members is having schools '
-      + 'that are easily accessible to ALL populations.</p>'
-      + '<p>We have demonstrated:</p>'
+    el.innerHTML = '<p>For the future of CHCCS, we need to be sure school locations are '
+      + 'easily accessible to ALL populations. This analysis demonstrates:</p>'
       + '<ul style="line-height:1.8;margin-left:1.5em;padding-left:0.5em;">'
       + '<li>Ephesus is <strong>accessible to more people</strong> '
       + '(due to access to major roadways and geographic location far enough from other nearby schools)</li>'
@@ -1430,9 +1438,9 @@ function populateMetrics() {{
       + 'which may drive future enrollment increases</li>'
       + '<li>Homes around Ephesus are more <strong>affordable</strong> '
       + 'which means younger families are more likely to be able to afford living near Ephesus</li>'
-      + '<li><strong>Planned developments</strong> near Ephesus represent '
-      + '~8&times; more housing units than near Seawell, signaling future enrollment growth '
-      + 'in the Ephesus area</li>'
+      + '<li><strong>Planned developments</strong> near Ephesus consistently show more '
+      + 'housing units across all types, with projected student yields signaling future '
+      + 'enrollment growth in the Ephesus area</li>'
       + '</ul>'
       + '<p style="margin-top:12px;">Next, we examine school closure scenarios and their broader impact on the school district and greater Chapel Hill community.</p>';
   }}
@@ -1621,7 +1629,7 @@ layers.affordableHousing = L.geoJSON(AH, {{
     var p = f.properties;
     layer.bindTooltip(
       (p.ProjectName || "Affordable Housing") + "<br>" +
-      "Units: " + (p.TotalUnits || "?") + "<br>" +
+      (p.TotalUnits ? "Units: " + p.TotalUnits + "<br>" : "") +
       "AMI: " + (p.AMIServed || "Unknown")
     );
   }}
