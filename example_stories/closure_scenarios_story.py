@@ -56,6 +56,7 @@ DATA_CACHE = PROJECT_ROOT / "data" / "cache"
 OUTPUT_DIR = Path(__file__).resolve().parent
 OUTPUT_HTML = OUTPUT_DIR / "closure_scenarios.html"
 
+WALK_BIKE_TALLY_PNG = PROJECT_ROOT / "assets" / "charts" / "safe_routes_walk_bike_tally.png"
 SCHOOL_CSV = DATA_CACHE / "nces_school_locations.csv"
 DISTRICT_CACHE = DATA_CACHE / "chccs_district_boundary.gpkg"
 TRAFFIC_CSV = DATA_PROCESSED / "school_closure_traffic.csv"
@@ -78,8 +79,6 @@ SCHOOL_COLORS = {
     "Ephesus Elementary": "#C62828",
     "Glenwood Elementary": "#2E7D32",
     "Seawell Elementary": "#1565C0",
-    "Frank Porter Graham Bilingue": "#FF8F00",
-    "New FPG Location": "#FF8F00",
 }
 DEFAULT_COLOR = "#888888"
 
@@ -120,6 +119,14 @@ ENROLLMENT_PROJECTIONS = [
 # ---------------------------------------------------------------------------
 def _progress(msg: str):
     print(f"  ... {msg}")
+
+
+def _encode_image(path: Path) -> str:
+    """Base64-encode an image file for inline embedding."""
+    if not path.exists():
+        return ""
+    data = path.read_bytes()
+    return base64.b64encode(data).decode("ascii")
 
 
 def _round_coords(geom_dict: dict, precision: int = 4) -> dict:
@@ -426,21 +433,6 @@ def find_road_deltas(diff_arr: np.ndarray,
 # ---------------------------------------------------------------------------
 def build_html(data: dict) -> str:
     """Build the complete HTML page from pre-computed data."""
-    children_data = json.loads(data["children_chart_data"])
-    ephesus_kids = next(
-        (d for d in children_data if "Ephesus" in d["school"]),
-        {"children_0_4": 0, "children_5_9": 0}
-    )
-    seawell_kids = next(
-        (d for d in children_data if "Seawell" in d["school"]),
-        {"children_0_4": 0, "children_5_9": 0}
-    )
-    kids_ratio = round(ephesus_kids["children_0_4"] / max(seawell_kids["children_0_4"], 1), 0)
-
-    seawell_edges = data["seawell_edges"]
-    ephesus_edges = data["ephesus_edges"]
-    edge_ratio = round(ephesus_edges / max(seawell_edges, 1), 1)
-
     def _format_top_roads(roads):
         if not roads:
             return ""
@@ -646,10 +638,9 @@ a {{ color: #1565C0; }}
     examined <em>who lives where</em> across the district. This story
     examines <strong>what happens when schools close and children must
     relocate</strong>.</p>
-    <p>Transportation costs are a specific
-    <a href="https://www.chccs.org/Page/20737">school closure criterion</a>.
-    We analyze those costs by examining <strong>traffic burden</strong>
-    and the <strong>conversion of walkers to car or bus riders</strong>.
+    <p><strong>Transportation costs</strong> are a specific school closure
+    criterion. We analyze those costs by examining traffic burden
+    and the conversion of walkers to car or bus riders.
     The maps that follow visualize where students are currently enrolled
     and which schools have capacity to absorb them under closure
     scenarios.</p>
@@ -674,9 +665,10 @@ a {{ color: #1565C0; }}
   <div class="step" data-step="1">
     <div class="step-number">2</div>
     <h2>District Capacity at a Glance</h2>
-    <p>Before modeling closures, the map shows each school&rsquo;s projected
-    2030 enrollment against current building capacity. Labels above each
-    school display enrollment, capacity, and percent occupied.</p>
+    <p>Enrollment numbers help understand current and future transportation
+    costs: closing a school means 100% of its students need a new way to
+    get to a new school. This would mean new transportation or a new
+    route to school.</p>
 
     <div class="metrics-row">
       <div class="metric">
@@ -715,223 +707,33 @@ a {{ color: #1565C0; }}
     </div>
   </div>
 
-  <!-- Step 2: Seawell Closure — Children 5-9 -->
+  <!-- Step 2: Walker Conversion / Transportation Costs -->
   <div class="step" data-step="2">
     <div class="step-number">3</div>
-    <h2>Seawell Closure: Current Students (Ages 5&ndash;9)</h2>
-    <p>When <span class="seawell-label">Seawell</span> closes, its
-    elementary-age students (5&ndash;9) redistribute to nearby schools.
-    The map shows the <em>change</em> in student traffic compared to the
-    baseline (all schools open):</p>
-    <div class="traffic-legend">
-      <div class="traffic-legend-item">
-        <span class="traffic-legend-swatch" style="background:rgb(215,48,39);"></span>
-        More children on road
-      </div>
-      <div class="traffic-legend-item">
-        <span class="traffic-legend-swatch" style="background:rgb(49,130,189);"></span>
-        Fewer children on road
-      </div>
-    </div>
-    {seawell_roads_59}
-    <div class="limitation">
-      <strong>LEAP program context (editorial):</strong> Seawell currently
-      hosts the LEAP program &mdash; a district-wide accelerated learning
-      program where students are already bussed from across the district.
-      These students already travel long distances; closure shifts their
-      routes but doesn&rsquo;t fundamentally change their travel burden.
-      The inconvenience falls most heavily on <em>community school
-      families</em> who currently walk or drive short distances. No LEAP
-      enrollment data exists in this dataset &mdash; this context is
-      editorial, not computed.
-    </div>
-  </div>
-
-  <!-- Step 3: Seawell Closure — Children 0-4 -->
-  <div class="step" data-step="3">
-    <div class="step-number">3b</div>
-    <h2>Seawell Closure: Future Students (Ages 0&ndash;4)</h2>
-    <p>Now the same scenario viewed through the lens of children under 5
-    &mdash; future kindergarteners who will need school capacity in
-    coming years.</p>
-    {seawell_roads_04}
-    <p>The pattern is similar to the 5&ndash;9 analysis but at lower
-    magnitude. Once again, Seawell&rsquo;s zone is not expected to have as
-    high an enrollment of elementary-age students per ACS Census data
-    &mdash; fewer young children live near Seawell compared to schools in
-    the eastern district.</p>
-    <p>For a deeper look at the demographic patterns behind these numbers,
-    see the <a href="chccs_demographics.html">Socioeconomic Demographics
-    story</a>.</p>
-  </div>
-
-  <!-- Step 4: Ephesus Closure — Children 5-9 -->
-  <div class="step" data-step="4">
-    <div class="step-number">4</div>
-    <h2>Ephesus Closure: Current Students (Ages 5&ndash;9)</h2>
-    <p>When <span class="ephesus-label">Ephesus</span> closes, the
-    traffic redistribution is substantially wider. The map shows changes
-    for elementary-age children (5&ndash;9):</p>
-    <div class="traffic-legend">
-      <div class="traffic-legend-item">
-        <span class="traffic-legend-swatch" style="background:rgb(215,48,39);"></span>
-        More children on road
-      </div>
-      <div class="traffic-legend-item">
-        <span class="traffic-legend-swatch" style="background:rgb(49,130,189);"></span>
-        Fewer children on road
-      </div>
-    </div>
-    {ephesus_roads_59}
-    <p>The wider spread of affected roads reflects Ephesus&rsquo;s position
-    in the most population-dense area of the district.</p>
-
-    <p>Notice that the routing algorithm redirects most of the southern
-    Ephesus attendance zone toward
-    <span class="glenwood-label">Glenwood</span> rather than Rashkis, even
-    though Rashkis is geographically closer. This is because Glenwood is
-    more readily accessible via the road network, while Rashkis is nestled
-    at the back of a subdivision with limited through-routes.</p>
-
-    <p>This has a compounding implication: closing
-    <span class="glenwood-label">Glenwood</span> <em>in addition to</em>
-    <span class="ephesus-label">Ephesus</span> would push some of the most
-    population-dense areas of young children even further away &mdash; all
-    the way to Rashkis.</p>
-
-    <div class="limitation">
-      <strong>Attendance zone overlap:</strong> A significant portion of
-      Rashkis&rsquo;s current attendance zone is &ldquo;borrowed&rdquo;
-      from the Ephesus drive zone &mdash; meaning students in those areas
-      already share the same traffic corridors. Closing Ephesus would
-      concentrate even more student traffic onto those already-shared roads.
-    </div>
-  </div>
-
-  <!-- Step 5: Ephesus Closure — Children 0-4 -->
-  <div class="step" data-step="5">
-    <div class="step-number">4b</div>
-    <h2>Ephesus Closure: Future Students (Ages 0&ndash;4)</h2>
-    <p>For children under 5, the Ephesus closure creates even larger
-    per-road impacts than the 5&ndash;9 analysis. As rising kindergarteners
-    enter elementary school, the traffic burden from an Ephesus closure would
-    be expected to grow worse over time &mdash; not better.</p>
-    {ephesus_roads_04}
-    <p>These are future kindergarteners &mdash; removing capacity in
-    Ephesus&rsquo;s zone means removing it where future demand is
-    greatest.</p>
-    <div class="insight">
-      <strong>Comparing closure scenarios:</strong> Across both age groups,
-      closing <span class="ephesus-label">Ephesus</span> produces a wider
-      spread of affected roads, higher per-road traffic increases, and
-      concentrates the burden on already-busy corridors. Closing
-      <span class="seawell-label">Seawell</span> redistributes fewer
-      students across a smaller, less congested portion of the network.
-      The traffic evidence reinforces the transportation cost gap identified
-      by the walkability analysis.
-    </div>
-  </div>
-
-  <!-- Step 6: Young Children Bar Chart -->
-  <div class="step" data-step="6">
-    <div class="step-number">5</div>
-    <h2>Young Children by Nearest School</h2>
-    <p>The chart shows children under 5 by nearest-drive school.
-    <span class="ephesus-label">Ephesus</span>&rsquo;s bar dominates
-    because it serves the district&rsquo;s most population-dense
-    neighborhood.</p>
-    <p>These are future kindergarteners. Closing Ephesus removes
-    elementary capacity precisely where enrollment demand will be
-    highest in coming years.</p>
-    <div class="insight">
-      <strong>Key finding:</strong> Ephesus has ~{int(kids_ratio)}x more
-      children under 5 than Seawell ({ephesus_kids["children_0_4"]} vs
-      {seawell_kids["children_0_4"]}).
-    </div>
-  </div>
-
-  <!-- Step 7: Enrollment Projections vs Capacity -->
-  <div class="step" data-step="7">
-    <div class="step-number">5b</div>
-    <h2>Projected Enrollment vs. Capacity (2030)</h2>
-    <p>UNC Carolina Demography projections (PMR2 Forecast) estimate 2030
-    enrollment against current (pre-Woolpert) building capacities. The chart
-    shows each school&rsquo;s projected utilization rate.</p>
-
-    <h3>Key observations</h3>
-    <ul style="margin:8px 0 12px 20px;line-height:1.8;">
-      <li><span class="glenwood-label">Glenwood</span> is <strong>over</strong>
-        capacity (102%) &mdash; no room for additional students</li>
-      <li><span class="fpg-label">FPG</span> (97%) and McDougle (94%) are
-        near capacity</li>
-      <li><span class="ephesus-label">Ephesus</span> at 86% &mdash; moderate
-        utilization, not underused</li>
-      <li>Schools with the most spare capacity (Rashkis 45%, Scroggs 51%,
-        Northside 53%) are in the west/south of the district</li>
-      <li>Rashkis (45% occupied, 314 spare seats) may be able to accommodate
-        Glenwood&rsquo;s dual language program given its projected low
-        enrollment</li>
-    </ul>
-
-    <div class="insight">
-      <strong>Capacity geography:</strong> Closing a school pushes students
-      toward schools that are already near capacity, while the spare seats
-      are geographically distant &mdash; in the west and south of the
-      district.
-    </div>
-
-    <div class="source">
-      <strong>Source:</strong> UNC Carolina Demography / Carolina Population
-      Center (PMR2 Forecast, pre-Woolpert capacity)
-    </div>
-  </div>
-
-  <!-- Step 8: Transportation — Who Can Walk? -->
-  <div class="step" data-step="8">
-    <div class="step-number">5c</div>
     <h2>Transportation: Who Can Walk?</h2>
-    <p>Transportation costs are a specific
-    <a href="https://www.chccs.org/Page/20737">school closure criterion</a>.
-    Enrollment numbers help understand current and future transportation costs:
-    closing a school means 100% of its students need a new way to get to a
-    new school.</p>
-    <p><span class="seawell-label">Seawell</span> has the fewest students to
-    relocate. But another way to examine this is <strong>net change in students
-    needing buses</strong>.</p>
+    <p>Transportation costs can also be examined by the net change in
+    students needing a change in mode of transportation. The most extreme
+    increase in costs for the district would be from a conversion of a
+    walker to bus rider.</p>
     <p>The map shows <strong>nearest walk-time zones</strong> &mdash;
     each point is colored by which school is closest on foot.
     The 2025 Chapel Hill Safe Routes to School Action Plan measured
     how many students live within 0.5 miles of each school:</p>
     <ul style="margin:8px 0 12px 20px;line-height:1.8;">
-      <li><span class="ephesus-label">Ephesus</span>: <strong>24.7%</strong>
-        within 0.5 mi (99 students), 20% walk/bike rate</li>
-      <li><span class="seawell-label">Seawell</span>: <strong>0%</strong>
-        within 0.5 mi (0 students), 11% walk/bike rate</li>
+      <li><span class="ephesus-label">Ephesus</span>: highest in district
+        with <strong>99 students</strong></li>
+      <li><span class="seawell-label">Seawell</span>: lowest in district
+        with <strong>0 students</strong></li>
     </ul>
 
     <div class="insight">
-      <strong>Net bus riders matter more than raw enrollment.</strong>
-      Closing a walkable school converts walkers to bus riders. Ephesus has
-      99 students within 0.5 miles who currently walk or could walk &mdash;
-      closing Ephesus converts all of them to car or bus riders. Seawell has
-      0 students within 0.5 miles, so closing it adds zero new bus riders
-      from the walk-eligible pool.
+      <strong>Closure cost asymmetry:</strong> Closing
+      <span class="ephesus-label">Ephesus</span> converts at least 99
+      walkers into bus/car riders. Given that the majority of
+      <span class="seawell-label">Seawell</span> students live &gt;1 mile
+      away, the expectation is that there will be significantly fewer
+      conversions.
     </div>
-
-    <div class="source">
-      <strong>Source:</strong> Chapel Hill Safe Routes to School Action Plan
-      (adopted June 11, 2025; funded by NCDOT SRTS grant)
-    </div>
-  </div>
-
-  <!-- Step 9: Walk proximity — who loses walkability? -->
-  <div class="step" data-step="9">
-    <div class="step-number">5d</div>
-    <h2>Walk Proximity: Students Within 0.5 Miles</h2>
-    <p><span class="ephesus-label">Ephesus</span> has the highest density of
-    students living in close proximity to the school. Closing Ephesus would
-    be a nearly direct conversion of walking students to bus students &mdash;
-    an immediate net negative in transportation costs.</p>
 
     <div style="margin:16px 0;">
       <div style="font-size:0.82em;color:#777;margin-bottom:8px;font-weight:bold;">
@@ -993,119 +795,41 @@ a {{ color: #1565C0; }}
       </div>
     </div>
 
-    <div class="insight">
-      <strong>Closure cost asymmetry:</strong> Closing
-      <span class="ephesus-label">Ephesus</span> converts 99 current walkers
-      into bus or car riders. Closing
-      <span class="seawell-label">Seawell</span> converts zero &mdash;
-      no students live within walking distance.
+    <div class="source">
+      <strong>Source:</strong> Chapel Hill Safe Routes to School Action Plan
+      (adopted June 11, 2025; funded by NCDOT SRTS grant)
+    </div>
+  </div>
+
+  <!-- Step 3: Random Sampling of Travel Mode -->
+  <div class="step" data-step="3">
+    <div class="step-number">3b</div>
+    <h2>Random Sampling of Travel Mode</h2>
+    <p>Proximity to school does not always capture true mode of
+    transportation chosen by students. However, even by random sampling,
+    <span class="ephesus-label">Ephesus</span> captures the most walkers
+    in any elementary school in the district and
+    <span class="seawell-label">Seawell</span> with the fewest.</p>
+
+    <div style="margin:16px 0;text-align:center;">
+      <img src="data:image/png;base64,{data["walk_bike_tally_b64"]}"
+        alt="Walk and Bike tally counts by school"
+        style="max-width:100%;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,0.12);" />
+      <p style="font-size:0.8em;color:#888;margin-top:6px;">
+        Arrival/dismissal random tally &mdash; Walk and Bike counts by school</p>
     </div>
 
     <div class="source">
       <strong>Source:</strong> Chapel Hill Safe Routes to School Action Plan
-      (adopted June 11, 2025) &mdash; Town of Chapel Hill GIS analysis
-      (February 2025), CHCCS enrollment data (2024&ndash;2025)
+      (adopted June 11, 2025) &mdash; arrival/dismissal tally counts
+      (Fall 2024)
     </div>
   </div>
 
-  <!-- Step 10: Seawell distance profile — no walkers -->
-  <div class="step" data-step="10">
-    <div class="step-number">5e</div>
-    <h2>Seawell: Distance Means Most Already Bus</h2>
-    <p>In comparison, <span class="seawell-label">Seawell</span> has
-    <strong>zero students</strong> recorded living within 0.5 miles of the
-    school. The Safe Routes to School Action Plan&rsquo;s distance analysis
-    shows the majority of Seawell students live 1&ndash;1.5 miles away.</p>
-
-    <div style="margin:16px 0;">
-      <div style="font-size:0.82em;color:#777;margin-bottom:8px;font-weight:bold;">
-        Seawell student distance from school</div>
-      <div style="display:flex;align-items:center;margin:6px 0;">
-        <div style="width:100px;font-size:0.85em;color:#333;">0&ndash;0.5 mi</div>
-        <div style="flex:1;background:#eee;border-radius:3px;height:22px;position:relative;">
-          <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#333;font-weight:bold;">0 students (0%)</span>
-        </div>
-      </div>
-      <div style="display:flex;align-items:center;margin:6px 0;">
-        <div style="width:100px;font-size:0.85em;color:#333;">0.5&ndash;1 mi</div>
-        <div style="flex:1;background:#eee;border-radius:3px;height:22px;position:relative;">
-          <div style="width:22%;background:#90CAF9;height:100%;border-radius:3px;"></div>
-          <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#333;font-weight:bold;">~100 students</span>
-        </div>
-      </div>
-      <div style="display:flex;align-items:center;margin:6px 0;">
-        <div style="width:100px;font-size:0.85em;font-weight:bold;color:#1565C0;">1&ndash;1.5 mi</div>
-        <div style="flex:1;background:#eee;border-radius:3px;height:22px;position:relative;">
-          <div style="width:65%;background:#1565C0;height:100%;border-radius:3px;"></div>
-          <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#fff;font-weight:bold;">~295 students</span>
-        </div>
-      </div>
-      <div style="display:flex;align-items:center;margin:6px 0;">
-        <div style="width:100px;font-size:0.85em;color:#333;">1.5+ mi</div>
-        <div style="flex:1;background:#eee;border-radius:3px;height:22px;position:relative;">
-          <div style="width:13%;background:#0D47A1;height:100%;border-radius:3px;"></div>
-          <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#333;font-weight:bold;">~61 students</span>
-        </div>
-      </div>
-    </div>
-
-    <p>Longer distances from school typically indicate that most students
-    already rely on car or bus transportation. A random sampling of arrival
-    and dismissal tallies from the Safe Routes report confirmed this
-    assumption: despite an 11% walk/bike rate in the tally, the overwhelming
-    majority of Seawell students arrive by car or bus.</p>
-
-    <div class="insight">
-      <strong>Transportation cost conclusion:</strong> A significantly higher
-      net change in transportation costs would come from closing
-      <span class="ephesus-label">Ephesus</span> than
-      <span class="seawell-label">Seawell</span>. Ephesus converts more
-      walkers to bus riders (99 vs. 0 within 0.5 mi), and in general more
-      students would need to be redistricted &mdash; Ephesus is projected to
-      enroll 375 students by 2030 compared to Seawell&rsquo;s 325.
-    </div>
-
-    <div class="source">
-      <strong>Source:</strong> Chapel Hill Safe Routes to School Action Plan
-      (adopted June 11, 2025) &mdash; distance analysis and arrival/dismissal
-      tally counts (Fall 2024)
-    </div>
-  </div>
-
-  <!-- Step 11: Transition — how we model traffic impact -->
-  <div class="step" data-step="11">
-    <div class="step-number">6</div>
+  <!-- Step 4: Methodology — Reading the traffic maps -->
+  <div class="step" data-step="4">
+    <div class="step-number">4</div>
     <h2>From Walkers to Roads: How We Model Traffic</h2>
-    <p>Now that we know who may need to switch from walking to riding a car
-    or bus, the next question is: <strong>how does that change traffic
-    patterns across Chapel Hill?</strong></p>
-
-    <p>Enrollment projections alone tell you <em>how many</em> students move,
-    but not <em>where on the road network</em> the impact lands. A school
-    with 325 displaced students might spread them across many lightly-used
-    roads, while a school with 375 might funnel them onto a few already-busy
-    corridors. To see the difference, we need to simulate the actual
-    routes.</p>
-
-    <h3>How the model works</h3>
-    <ol style="margin:8px 0 16px 20px;line-height:1.9;">
-      <li><strong>Map every child to a location.</strong> Census data tells
-        us how many children aged 0&ndash;4 and 5&ndash;9 live in each
-        neighborhood. We spread those counts across a grid of points covering
-        the district.</li>
-      <li><strong>Find the shortest driving route.</strong> For each grid
-        point, a shortest-path algorithm (Dijkstra&rsquo;s) computes the
-        fastest drive to every school using the real OpenStreetMap road
-        network &mdash; including speed limits and one-way streets.</li>
-      <li><strong>Close a school and reroute.</strong> When a school is
-        removed, every child who used that school is reassigned to the
-        next-closest school. Their new driving route is traced along the road
-        network.</li>
-      <li><strong>Count children per road segment.</strong> For each road, we
-        add up how many children travel along it under the baseline (all
-        schools open) and under the closure scenario. The difference tells
-        us which roads gain or lose traffic.</li>
-    </ol>
 
     <h3>Reading the traffic maps</h3>
     <p>The maps on the following slides color each road by how much its
@@ -1129,32 +853,130 @@ a {{ color: #1565C0; }}
       </div>
     </div>
 
-    <p>This approach shows not just <em>how many</em> students relocate,
-    but <em>which specific roads</em> absorb the burden &mdash; and whether
-    those roads are already congested corridors or quiet residential
-    streets.</p>
-
     <div class="source">
       <strong>Full methodology:</strong>
       <a href="../assets/maps/closure_methodology.html">School Closure Methodology</a>
-      &bull; Data: NCES EDGE 2023-24, ACS 5-Year, OpenStreetMap
     </div>
   </div>
 
-  <!-- Step 12: Where the Children Live (Choropleth) -->
-  <div class="step" data-step="12">
-    <div class="step-number">7</div>
-    <h2>Where the Children Live</h2>
-    <p>The choropleth shows the concentration of elementary-age children
-    (ages 5&ndash;9) by Census block group. The eastern part of the district
-    &mdash; around <span class="ephesus-label">Ephesus</span>,
-    <span class="glenwood-label">Glenwood</span>, and Rashkis &mdash; has
-    the highest density of school-age children.</p>
-    <p>This is where elementary capacity is needed most.</p>
+  <!-- Step 5: Seawell Closure — Children 5-9 -->
+  <div class="step" data-step="5">
+    <div class="step-number">5</div>
+    <h2>Seawell Closure: Current Students (Ages 5&ndash;9)</h2>
+    <p>When <span class="seawell-label">Seawell</span> closes, its
+    elementary-age students (5&ndash;9) redistribute to nearby schools.
+    The map shows the <em>change</em> in student traffic compared to the
+    baseline (all schools open):</p>
+    <div class="traffic-legend">
+      <div class="traffic-legend-item">
+        <span class="traffic-legend-swatch" style="background:rgb(215,48,39);"></span>
+        More children on road
+      </div>
+      <div class="traffic-legend-item">
+        <span class="traffic-legend-swatch" style="background:rgb(49,130,189);"></span>
+        Fewer children on road
+      </div>
+    </div>
+    {seawell_roads_59}
+    <div class="limitation">
+      <strong>LEAP program context (editorial):</strong> Seawell currently
+      hosts the LEAP program &mdash; a district-wide accelerated learning
+      program where students are already bussed from across the district.
+      These students already travel long distances; closure shifts their
+      routes but doesn&rsquo;t fundamentally change their travel burden.
+      The inconvenience falls most heavily on <em>community school
+      families</em> who currently walk or drive short distances. No LEAP
+      enrollment data exists in this dataset &mdash; this context is
+      editorial, not computed.
+    </div>
   </div>
 
-  <!-- Step 13: The School Desert Scenario -->
-  <div class="step" data-step="13">
+  <!-- Step 6: Seawell Closure — Children 0-4 -->
+  <div class="step" data-step="6">
+    <div class="step-number">5b</div>
+    <h2>Seawell Closure: Future Students (Ages 0&ndash;4)</h2>
+    <p>Now the same scenario viewed through the lens of children under 5
+    &mdash; future kindergarteners who will need school capacity in
+    coming years.</p>
+    {seawell_roads_04}
+    <p>The pattern is similar to the 5&ndash;9 analysis but at lower
+    magnitude. Once again, Seawell&rsquo;s zone is not expected to have as
+    high an enrollment of elementary-age students per ACS Census data
+    &mdash; fewer young children live near Seawell compared to schools in
+    the eastern district.</p>
+    <p>For a deeper look at the demographic patterns behind these numbers,
+    see the <a href="chccs_demographics.html">Socioeconomic Demographics
+    story</a>.</p>
+  </div>
+
+  <!-- Step 7: Ephesus Closure — Children 5-9 -->
+  <div class="step" data-step="7">
+    <div class="step-number">6</div>
+    <h2>Ephesus Closure: Current Students (Ages 5&ndash;9)</h2>
+    <p>When <span class="ephesus-label">Ephesus</span> closes, the
+    traffic redistribution is substantially wider. The map shows changes
+    for elementary-age children (5&ndash;9):</p>
+    <div class="traffic-legend">
+      <div class="traffic-legend-item">
+        <span class="traffic-legend-swatch" style="background:rgb(215,48,39);"></span>
+        More children on road
+      </div>
+      <div class="traffic-legend-item">
+        <span class="traffic-legend-swatch" style="background:rgb(49,130,189);"></span>
+        Fewer children on road
+      </div>
+    </div>
+    {ephesus_roads_59}
+    <p>The wider spread of affected roads reflects Ephesus&rsquo;s position
+    in the most population-dense area of the district.</p>
+
+    <p>Notice that the routing algorithm redirects most of the southern
+    Ephesus attendance zone toward
+    <span class="glenwood-label">Glenwood</span> rather than Rashkis, even
+    though Rashkis is geographically closer. This is because Glenwood is
+    more readily accessible via the road network, while Rashkis is nestled
+    at the back of a subdivision with limited through-routes.</p>
+
+    <p><u>This has a compounding implication.</u> Closing
+    <span class="glenwood-label">Glenwood</span> <em>in addition to</em>
+    <span class="ephesus-label">Ephesus</span> would push some of the most
+    population-dense areas of young children even further away.</p>
+
+    <div class="limitation">
+      <strong>Attendance zone overlap:</strong> A significant portion of
+      Rashkis&rsquo;s current attendance zone is &ldquo;borrowed&rdquo;
+      from the Ephesus drive zone &mdash; meaning students in those areas
+      already share the same traffic corridors. Closing Ephesus would
+      concentrate even more student traffic onto those already-shared roads.
+    </div>
+  </div>
+
+  <!-- Step 8: Ephesus Closure — Children 0-4 -->
+  <div class="step" data-step="8">
+    <div class="step-number">6b</div>
+    <h2>Ephesus Closure: Future Students (Ages 0&ndash;4)</h2>
+    <p>For children under 5, the Ephesus closure creates even larger
+    per-road impacts than the 5&ndash;9 analysis. As rising kindergarteners
+    enter elementary school, the traffic burden from an Ephesus closure would
+    be expected to grow worse over time &mdash; not better.</p>
+    {ephesus_roads_04}
+    <p>These are future kindergarteners &mdash; removing capacity in
+    Ephesus&rsquo;s zone means removing it where future demand is
+    greatest.</p>
+    <div class="insight">
+      <strong>Comparing closure scenarios:</strong> Across both age groups,
+      closing <span class="ephesus-label">Ephesus</span> produces a wider
+      spread of affected roads, higher per-road traffic increases, and
+      concentrates the burden on already-busy corridors. Closing
+      <span class="seawell-label">Seawell</span> redistributes fewer
+      students across a smaller, less congested portion of the network.
+      The traffic evidence reinforces the transportation cost gap identified
+      by the walkability analysis.
+    </div>
+  </div>
+
+  <!-- Step 9: The School Desert Scenario -->
+  <div class="step" data-step="9">
     <div class="step-number">7</div>
     <h2>The School Desert Scenario</h2>
     <p>Now imagine closing <strong>both</strong>
@@ -1178,30 +1000,20 @@ a {{ color: #1565C0; }}
     farthest.</p>
   </div>
 
-  <!-- Step 14: Summary — What the Data Shows -->
-  <div class="step" data-step="14">
+  <!-- Step 10: Summary — What the Data Shows -->
+  <div class="step" data-step="10">
     <div class="step-number">8</div>
     <h2>What the Data Shows</h2>
     <p>Four key findings from the closure analysis:</p>
     <ol style="margin:8px 0 12px 20px;line-height:1.8;">
       <li><strong>Ephesus closure creates larger traffic impacts than
-        Seawell</strong> &mdash; Ephesus serves ~{int(kids_ratio)}x more
-        children under 5 ({ephesus_kids["children_0_4"]} vs
-        {seawell_kids["children_0_4"]}), and closing it produces the
-        largest per-road impacts in the district:</li>
-    </ol>
-    {ephesus_roads_04}
-    <ol start="2" style="margin:8px 0 12px 20px;line-height:1.8;">
-      <li><strong>Seawell&rsquo;s LEAP students already bus district-wide</strong>
-        &mdash; the closure burden falls on community school families,
-        not already-bussed program students</li>
+        Seawell</strong> across the road network</li>
+      <li><strong>Closing Ephesus converts significantly more walkers to
+        bus/car riders</strong> than closing Seawell</li>
       <li><strong>Closing eastern schools creates a school desert</strong>
-        in the area with the most children, forcing the longest commutes
-        on the most families</li>
-      <li><strong>Nearby schools are near capacity</strong> &mdash;
-        Glenwood (102%), FPG (97%), and McDougle (94%) have little room
-        to absorb displaced students, while spare capacity sits in the
-        west/south (Rashkis 45%, Scroggs 51%)</li>
+        in the most child-dense part of the district</li>
+      <li><strong>Spare capacity is geographically concentrated in the
+        west/south</strong>, far from where most children live</li>
     </ol>
     <div class="source">
       <strong>Interactive closure map:</strong>
@@ -1254,9 +1066,7 @@ var N_EDGES = {data["n_edges"]};
 var SCHOOL_COLORS = {{
   "Ephesus Elementary": "#C62828",
   "Glenwood Elementary": "#2E7D32",
-  "Seawell Elementary": "#1565C0",
-  "Frank Porter Graham Bilingue": "#FF8F00",
-  "New FPG Location": "#FF8F00"
+  "Seawell Elementary": "#1565C0"
 }};
 var DEFAULT_COLOR = "#888888";
 
@@ -1710,78 +1520,56 @@ function handleStep(idx) {{
       districtView();
       break;
 
-    case 2: // Seawell Traffic — Children 5-9
-      showTrafficDiff("no_seawell", "5_9");
-      layers.schools.addTo(map);
-      if (layers.closedXSeawell) layers.closedXSeawell.addTo(map);
-      districtView();
-      break;
-
-    case 3: // Seawell Traffic — Children 0-4
-      showTrafficDiff("no_seawell", "0_4");
-      layers.schools.addTo(map);
-      if (layers.closedXSeawell) layers.closedXSeawell.addTo(map);
-      districtView();
-      break;
-
-    case 4: // Ephesus Traffic — Children 5-9
-      showTrafficDiff("no_ephesus", "5_9");
-      layers.schools.addTo(map);
-      if (layers.closedXEphesus) layers.closedXEphesus.addTo(map);
-      districtView();
-      break;
-
-    case 5: // Ephesus Traffic — Children 0-4
-      showTrafficDiff("no_ephesus", "0_4");
-      layers.schools.addTo(map);
-      if (layers.closedXEphesus) layers.closedXEphesus.addTo(map);
-      districtView();
-      break;
-
-    case 6: // Bar Chart (children 0-4)
-      showChart();
-      break;
-
-    case 7: // Enrollment Projections
-      showEnrollmentChart();
-      break;
-
-    case 8: // Walk zones — nearest walk-time polygons
+    case 2: // Walker Conversion — walk zones + schools
       layers.district.addTo(map);
       layers.walkZones.addTo(map);
       layers.schoolsLabeled.addTo(map);
       districtView();
       break;
 
-    case 9: // Walk proximity bar chart — same map as step 8
+    case 3: // Random Sampling — walk zones + schools
       layers.district.addTo(map);
       layers.walkZones.addTo(map);
       layers.schoolsLabeled.addTo(map);
       districtView();
       break;
 
-    case 10: // Seawell distance profile — same map as step 8/9
-      layers.district.addTo(map);
-      layers.walkZones.addTo(map);
-      layers.schoolsLabeled.addTo(map);
-      districtView();
-      break;
-
-    case 11: // Transition — methodology intro with dim overlay
+    case 4: // Methodology — district + schools + dim
       layers.district.addTo(map);
       layers.schools.addTo(map);
       dimOverlay.style.display = "block";
       districtView();
       break;
 
-    case 12: // Block Group Choropleth
-      layers.district.addTo(map);
-      layers.blockGroups.addTo(map);
-      layers.schoolsLabeled.addTo(map);
+    case 5: // Seawell Traffic — Children 5-9
+      showTrafficDiff("no_seawell", "5_9");
+      layers.schools.addTo(map);
+      if (layers.closedXSeawell) layers.closedXSeawell.addTo(map);
       districtView();
       break;
 
-    case 13: // School Desert — choropleth + closed markers
+    case 6: // Seawell Traffic — Children 0-4
+      showTrafficDiff("no_seawell", "0_4");
+      layers.schools.addTo(map);
+      if (layers.closedXSeawell) layers.closedXSeawell.addTo(map);
+      districtView();
+      break;
+
+    case 7: // Ephesus Traffic — Children 5-9
+      showTrafficDiff("no_ephesus", "5_9");
+      layers.schools.addTo(map);
+      if (layers.closedXEphesus) layers.closedXEphesus.addTo(map);
+      districtView();
+      break;
+
+    case 8: // Ephesus Traffic — Children 0-4
+      showTrafficDiff("no_ephesus", "0_4");
+      layers.schools.addTo(map);
+      if (layers.closedXEphesus) layers.closedXEphesus.addTo(map);
+      districtView();
+      break;
+
+    case 9: // School Desert — choropleth + closed markers
       layers.blockGroups.addTo(map);
       layers.schoolsLabeled.addTo(map);
       if (layers.closedXEphesus) layers.closedXEphesus.addTo(map);
@@ -1789,7 +1577,7 @@ function handleStep(idx) {{
       zoomToEast();
       break;
 
-    case 14: // Summary
+    case 10: // Summary
       layers.district.addTo(map);
       layers.schools.addTo(map);
       dimOverlay.style.display = "block";
@@ -1984,6 +1772,7 @@ def main():
         "total_spare": total_spare,
         "below_cap_count": len(below_cap),
         "walk_zones_json": walk_zones_json,
+        "walk_bike_tally_b64": _encode_image(WALK_BIKE_TALLY_PNG),
     }
     html = build_html(data)
 
