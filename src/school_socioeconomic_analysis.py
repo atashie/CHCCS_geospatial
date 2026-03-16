@@ -1950,7 +1950,7 @@ def create_socioeconomic_map(
     </style>
     <div id="socio-banner">
         <div>
-            <h1>CHCCS Socioeconomic Analysis</h1>
+            <h1>CHCCS Demographics Analysis</h1>
             <p class="subtitle">Census ACS __ACS_YEAR__ 5-Year Estimates &mdash; Scroll down for zone comparison charts
                 <button class="faq-btn" onclick="toggleFaqPanel()" title="Click for FAQ">
 FAQ
@@ -2291,27 +2291,35 @@ FAQ
         metric_prefixes = [""] + [spec[3] for spec in METRIC_DOT_SPECS]
         metric_suffixes = [""] + [spec[4] for spec in METRIC_DOT_SPECS]
 
-        # Metric radio button labels with subsection headers
-        radio_html = ""
+        # Build category→metrics mapping for dropdown UI
+        acs_options = ""
+        housing_options = ""
         for i, name in enumerate(metric_names):
-            # Insert subsection headers
-            if i == 0:
-                radio_html += (
-                    '<div style="font-size:9px;text-transform:uppercase;color:#888;'
-                    'letter-spacing:0.8px;margin:4px 0 2px 0;">ACS Census</div>'
-                )
-            elif name == "Affordable Housing Units":
-                radio_html += (
-                    '<div style="font-size:9px;text-transform:uppercase;color:#888;'
-                    'letter-spacing:0.8px;margin:6px 0 2px 0;padding-top:4px;'
-                    'border-top:1px solid #ddd;">Housing</div>'
-                )
-            checked = ' checked' if i == 1 else ''
-            radio_html += (
-                f'<label style="display:block;margin:1px 0;cursor:pointer;">'
-                f'<input type="radio" name="metric" value="{i}"{checked}> '
-                f'{name}</label>'
-            )
+            opt = f'<option value="{i}">{name}</option>'
+            if i <= 6:
+                acs_options += opt
+            else:
+                housing_options += opt
+
+        dropdown_html = (
+            '<select id="cat-select" style="width:100%;margin-bottom:4px;'
+            'font-size:11px;padding:3px 2px;">'
+            '<option value="acs">ACS Census</option>'
+            '<option value="housing">Housing</option>'
+            '</select>'
+            '<select id="metric-select" style="width:100%;font-size:11px;'
+            'padding:3px 2px;">'
+            f'{acs_options}'
+            '</select>'
+        )
+
+        # JS arrays for category→metric dropdown rebuild
+        acs_options_js = ",".join(
+            f'[{i},"{name}"]' for i, name in enumerate(metric_names) if i <= 6
+        )
+        housing_options_js = ",".join(
+            f'[{i},"{name}"]' for i, name in enumerate(metric_names) if i > 6
+        )
 
         # Zone-type radio button labels
         zone_type_radio_html = ""
@@ -2559,7 +2567,7 @@ FAQ
         <div id="ctrl-panel">
             <div class="ctrl-section">
                 <b>Metric</b>
-                {radio_html}
+                {dropdown_html}
             </div>
             <div class="ctrl-section" id="layers-section">
                 <b>Layers</b>
@@ -3267,12 +3275,26 @@ FAQ
             }}
 
             // ── Event listeners ──
-            var radios = document.querySelectorAll('input[name="metric"]');
-            for (var r = 0; r < radios.length; r++) {{
-                radios[r].addEventListener('change', function() {{
-                    updateMetric(parseInt(this.value));
-                }});
-            }}
+            var catMetrics = {{
+                acs: [{acs_options_js}],
+                housing: [{housing_options_js}]
+            }};
+            var catSel = document.getElementById('cat-select');
+            var metSel = document.getElementById('metric-select');
+            catSel.addEventListener('change', function() {{
+                var opts = catMetrics[this.value];
+                metSel.innerHTML = '';
+                for (var i = 0; i < opts.length; i++) {{
+                    var o = document.createElement('option');
+                    o.value = opts[i][0];
+                    o.textContent = opts[i][1];
+                    metSel.appendChild(o);
+                }}
+                updateMetric(opts[0][0]);
+            }});
+            metSel.addEventListener('change', function() {{
+                updateMetric(parseInt(this.value));
+            }});
 
             var ztRadios = document.querySelectorAll('input[name="zonetype"]');
             for (var r = 0; r < ztRadios.length; r++) {{
