@@ -85,6 +85,7 @@ SEAWELL_NAME = "Seawell Elementary"
 # Colors — Ephesus = red, Seawell = blue, combined/actual = purple
 EPHESUS_COLOR = "#C62828"   # red
 SEAWELL_COLOR = "#1565C0"   # blue
+GLENWOOD_COLOR = "#2E7D32"  # green
 ACTUAL_COLOR = "#6A1B9A"    # purple (for combined/actual values)
 OTHER_COLOR = "#cccccc"     # muted gray
 
@@ -701,7 +702,7 @@ details[open] summary {{ margin-bottom: 8px; }}
     <p>The map shows all 11 attendance zones with colored fills and school
     locations.</p>
     <div class="limitation">
-      <strong>Note:</strong> Glenwood Elementary is a partial magnet/choice school.
+      <strong>Note:</strong> Glenwood Elementary is a partial magnet school.
       FPG Bilingue is a district-wide magnet school, so its zone covers
       the entire district rather than a specific neighborhood.
     </div>
@@ -720,12 +721,10 @@ details[open] summary {{ margin-bottom: 8px; }}
     triggers rezoning, drive-time zones better predict where displaced students
     would go.</em></p>
     <p>The map now shows drive-time zones instead of attendance zones.
-    Notice that Seawell&rsquo;s drive-time zone is notably small and unusually
-    shaped. This is because Seawell&rsquo;s access to roadways is limited to
-    smaller and disconnected roads, resulting in a compact zone. Some concave
-    pocket neighborhoods on the zone&rsquo;s edges have simpler, quicker access
-    to Morris Grove and McDougle Elementary on the west, and Estes Hills
-    Elementary on the east.</p>
+    Notice that Seawell&rsquo;s drive-time zone is compact due to the local
+    road network. Some concave pocket neighborhoods on the zone&rsquo;s edges
+    have simpler, quicker access to Morris Grove and McDougle Elementary on
+    the west, and Estes Hills Elementary on the east.</p>
     <div class="limitation">
       <strong>Note:</strong> A large drive-time zone means that a school is more
       accessible to more people &mdash; more households have that school as their
@@ -823,9 +822,8 @@ details[open] summary {{ margin-bottom: 8px; }}
   <div class="step" data-step="7">
     <div class="step-number">8</div>
     <h2>Ephesus: Socioeconomic Profile</h2>
-    <p>Recall that Ephesus is more accessible to a larger population
-    (13,657 vs. Seawell&rsquo;s 5,248 by drive-time). A larger catchment
-    area means the zone captures more people experiencing economic hardship.</p>
+    <p>In contrast, Ephesus has a much larger drive zone which indicates
+    that it is more accessible to a larger population.</p>
     <p>Now the <span class="ephesus-label">Ephesus</span> drive-time zone
     (solid red border) with its attendance zone as dashed overlay.</p>
     <div id="ephesus-ses-metrics">
@@ -896,9 +894,7 @@ details[open] summary {{ margin-bottom: 8px; }}
     on the right. Counts, not percentages.</p>
     <p>Notably, Ephesus has nearly <strong>twice the Hispanic population</strong>
     of Seawell &mdash; consistent with the affordable housing developments in
-    the zone serving a disproportionately Hispanic population. Under any equity
-    lens, closing the school with more minority residents has greater impact
-    on communities of color.</p>
+    the zone serving a disproportionately Hispanic population.</p>
   </div>
 
   <!-- ========== SECTION 3: AGE DISTRIBUTION (Steps 11-13) ========== -->
@@ -931,12 +927,6 @@ details[open] summary {{ margin-bottom: 8px; }}
     by school zone &mdash; drive-time zones on the left, attendance zones on
     the right. Counts, not percentages.</p>
     <div class="metric-box" id="age-comparison-metrics">
-    </div>
-    <div class="limitation">
-      <strong>Note:</strong> Rashkis&rsquo;s attendance zone was drawn within
-      neighborhoods that are more accessible to Ephesus. The odd boundaries
-      were intentionally delineated by CHCCS. Despite this, enrollment
-      numbers at Rashkis decline while Ephesus maintains.
     </div>
   </div>
 
@@ -1033,7 +1023,8 @@ details[open] summary {{ margin-bottom: 8px; }}
       committee (June 2025) and covers Chapel Hill + Carrboro. Some
       projects appear in both datasets. Student yield estimates are
       model-based (using district generation rates), not actual
-      enrollment.
+      enrollment. Carrboro&rsquo;s planned development data is not as
+      readily accessible as Chapel Hill&rsquo;s.
     </div>
     <div class="source">
       <strong>Data:</strong> SAPFOTAC 2025 Annual Report,
@@ -1098,6 +1089,7 @@ var RACE_LABELS = {race_labels_js};
 
 var EPHESUS_COLOR = "{EPHESUS_COLOR}";
 var SEAWELL_COLOR = "{SEAWELL_COLOR}";
+var GLENWOOD_COLOR = "{GLENWOOD_COLOR}";
 var ACTUAL_COLOR = "{ACTUAL_COLOR}";
 var OTHER_COLOR = "{OTHER_COLOR}";
 
@@ -1131,9 +1123,12 @@ function renderBars(containerId, data, metric, options) {{
     var barColor = OTHER_COLOR;
     if (d.school.indexOf("Ephesus") >= 0) barColor = EPHESUS_COLOR;
     else if (d.school.indexOf("Seawell") >= 0) barColor = SEAWELL_COLOR;
-    var fontWeight = (d.school.indexOf("Ephesus") >= 0 || d.school.indexOf("Seawell") >= 0) ? "bold" : "normal";
+    else if (d.school.indexOf("Glenwood") >= 0) barColor = GLENWOOD_COLOR;
+    var isHighlight = (d.school.indexOf("Ephesus") >= 0 || d.school.indexOf("Seawell") >= 0 || d.school.indexOf("Glenwood") >= 0);
+    var fontWeight = isHighlight ? "bold" : "normal";
     var fontColor = (d.school.indexOf("Ephesus") >= 0) ? EPHESUS_COLOR
-                  : (d.school.indexOf("Seawell") >= 0) ? SEAWELL_COLOR : "#555";
+                  : (d.school.indexOf("Seawell") >= 0) ? SEAWELL_COLOR
+                  : (d.school.indexOf("Glenwood") >= 0) ? GLENWOOD_COLOR : "#555";
     var valText;
     if (mode === "pct") {{
       valText = val.toFixed(1) + "%";
@@ -1325,7 +1320,7 @@ function populateMetrics() {{
     el.innerHTML = '<table style="width:100%;border-collapse:collapse;margin:8px 0;font-size:0.9em;">'
       + '<thead><tr>'
       + '<th style="text-align:left;padding:4px 8px;color:#555;font-size:0.85em;width:40%;"></th>'
-      + '<th style="text-align:center;padding:4px 8px;color:#555;font-weight:bold;">Below 185% Poverty</th>'
+      + '<th style="text-align:center;padding:4px 8px;color:#555;font-weight:bold;">Households below 185% Poverty</th>'
       + '<th style="text-align:center;padding:4px 8px;color:#555;font-weight:bold;">Affordable Housing Units</th>'
       + '</tr></thead><tbody>'
       + '<tr style="background:#f5f5f5;">'
@@ -1351,7 +1346,7 @@ function populateMetrics() {{
     el.innerHTML = '<table style="width:100%;border-collapse:collapse;margin:8px 0;font-size:0.9em;">'
       + '<thead><tr>'
       + '<th style="text-align:left;padding:4px 8px;color:#555;font-size:0.85em;width:40%;"></th>'
-      + '<th style="text-align:center;padding:4px 8px;color:#555;font-weight:bold;">Below 185% Poverty</th>'
+      + '<th style="text-align:center;padding:4px 8px;color:#555;font-weight:bold;">Households below 185% Poverty</th>'
       + '<th style="text-align:center;padding:4px 8px;color:#555;font-weight:bold;">Affordable Housing Units</th>'
       + '</tr></thead><tbody>'
       + '<tr style="background:#f5f5f5;">'
@@ -1384,7 +1379,7 @@ function populateMetrics() {{
     var seaZInc = seaZ.median_hh_income || 0;
     el.innerHTML = '<ul style="margin:8px 0 8px 20px;line-height:1.8;">'
       + '<li><span class="ephesus-label">Ephesus</span> is more accessible to a larger total population</li>'
-      + '<li><span class="ephesus-label">Ephesus</span> serves more people in poverty</li>'
+      + '<li><span class="ephesus-label">Ephesus</span> serves more people requiring government assistance programs</li>'
       + '<li><span class="ephesus-label">Ephesus</span> has more affordable housing units</li>'
       + '</ul>'
       + '<table style="width:100%;border-collapse:collapse;margin:12px 0;font-size:0.9em;">'
@@ -1463,8 +1458,7 @@ function populateMetrics() {{
       + '<li><strong>Planned developments</strong> near Ephesus consistently show more '
       + 'housing units across all types, with projected student yields signaling future '
       + 'enrollment growth in the Ephesus area</li>'
-      + '</ul>'
-      + '<p style="margin-top:12px;">Next, we examine school closure scenarios and their broader impact on the school district and greater Chapel Hill community.</p>';
+      + '</ul>';
   }}
 }}
 
@@ -1496,8 +1490,9 @@ layers.schools = L.geoJSON(SCHOOLS, {{
   pointToLayer: function(f, ll) {{
     var isE = f.properties.school && f.properties.school.indexOf("Ephesus") >= 0;
     var isS = f.properties.school && f.properties.school.indexOf("Seawell") >= 0;
-    var color = isE ? EPHESUS_COLOR : (isS ? SEAWELL_COLOR : "#888");
-    var radius = (isE || isS) ? 8 : 5;
+    var isG = f.properties.school && f.properties.school.indexOf("Glenwood") >= 0;
+    var color = isE ? EPHESUS_COLOR : (isS ? SEAWELL_COLOR : (isG ? GLENWOOD_COLOR : "#888"));
+    var radius = (isE || isS || isG) ? 8 : 5;
     return L.circleMarker(ll, {{
       radius: radius,
       fillColor: color,
@@ -1524,6 +1519,8 @@ layers.zonesColored = L.geoJSON(ZONES, {{
       return {{ color: EPHESUS_COLOR, weight: 2, fillColor: EPHESUS_COLOR, fillOpacity: 0.15 }};
     }} else if (name.indexOf("Seawell") >= 0) {{
       return {{ color: SEAWELL_COLOR, weight: 2, fillColor: SEAWELL_COLOR, fillOpacity: 0.15 }};
+    }} else if (name.indexOf("Glenwood") >= 0) {{
+      return {{ color: GLENWOOD_COLOR, weight: 2, fillColor: GLENWOOD_COLOR, fillOpacity: 0.15 }};
     }}
     return {{ color: "#aaa", weight: 1, fillColor: "#ddd", fillOpacity: 0.08 }};
   }}
@@ -1551,7 +1548,8 @@ layers.ephesusZone = L.geoJSON(ephesusZoneData, {{
   style: {{ color: EPHESUS_COLOR, weight: 3, fillOpacity: 0.1, fillColor: EPHESUS_COLOR }}
 }});
 layers.ephesusZoneFaint = L.geoJSON(ephesusZoneData, {{
-  style: {{ color: EPHESUS_COLOR, weight: 2, fillOpacity: 0.05, dashArray: "4 3" }}
+  style: {{ color: EPHESUS_COLOR, weight: 4, fillOpacity: 0, dashArray: "4 3" }},
+  interactive: false
 }});
 // Ephesus attendance zone dashed overlay (for comparison with drive zones)
 layers.ephesusAttDashed = L.geoJSON(ephesusZoneData, {{
@@ -1569,11 +1567,27 @@ layers.seawellZone = L.geoJSON(seawellZoneData, {{
   style: {{ color: SEAWELL_COLOR, weight: 3, fillOpacity: 0.1, fillColor: SEAWELL_COLOR }}
 }});
 layers.seawellZoneFaint = L.geoJSON(seawellZoneData, {{
-  style: {{ color: SEAWELL_COLOR, weight: 2, fillOpacity: 0.05, dashArray: "4 3" }}
+  style: {{ color: SEAWELL_COLOR, weight: 4, fillOpacity: 0, dashArray: "4 3" }},
+  interactive: false
 }});
 // Seawell attendance zone dashed overlay
 layers.seawellAttDashed = L.geoJSON(seawellZoneData, {{
   style: {{ color: SEAWELL_COLOR, weight: 2, fillOpacity: 0, dashArray: "8 5" }}
+}});
+
+// Glenwood attendance zone
+var glenwoodZoneData = {{
+  type: "FeatureCollection",
+  features: ZONES.features.filter(function(f) {{
+    return f.properties.school && f.properties.school.indexOf("Glenwood") >= 0;
+  }})
+}};
+layers.glenwoodZoneFaint = L.geoJSON(glenwoodZoneData, {{
+  style: {{ color: GLENWOOD_COLOR, weight: 4, fillOpacity: 0, dashArray: "4 3" }},
+  interactive: false
+}});
+layers.glenwoodAttDashed = L.geoJSON(glenwoodZoneData, {{
+  style: {{ color: GLENWOOD_COLOR, weight: 2, fillOpacity: 0, dashArray: "8 5" }}
 }});
 
 // Both attendance zones highlighted
@@ -1594,6 +1608,8 @@ layers.driveZones = L.geoJSON(DRIVE_ZONES, {{
       return {{ color: EPHESUS_COLOR, weight: 2, fillColor: EPHESUS_COLOR, fillOpacity: 0.15 }};
     }} else if (name.indexOf("Seawell") >= 0) {{
       return {{ color: SEAWELL_COLOR, weight: 2, fillColor: SEAWELL_COLOR, fillOpacity: 0.15 }};
+    }} else if (name.indexOf("Glenwood") >= 0) {{
+      return {{ color: GLENWOOD_COLOR, weight: 2, fillColor: GLENWOOD_COLOR, fillOpacity: 0.15 }};
     }}
     return {{ color: "#ccc", weight: 1, fillColor: "#eee", fillOpacity: 0.05 }};
   }},
@@ -1615,6 +1631,12 @@ var seawellDriveData = {{
     return f.properties.school && f.properties.school.indexOf("Seawell") >= 0;
   }})
 }};
+var glenwoodDriveData = {{
+  type: "FeatureCollection",
+  features: DRIVE_ZONES.features.filter(function(f) {{
+    return f.properties.school && f.properties.school.indexOf("Glenwood") >= 0;
+  }})
+}};
 
 layers.ephesusDriveZone = L.geoJSON(ephesusDriveData, {{
   style: {{ color: EPHESUS_COLOR, weight: 3, fillColor: EPHESUS_COLOR, fillOpacity: 0.1 }}
@@ -1622,12 +1644,18 @@ layers.ephesusDriveZone = L.geoJSON(ephesusDriveData, {{
 layers.seawellDriveZone = L.geoJSON(seawellDriveData, {{
   style: {{ color: SEAWELL_COLOR, weight: 3, fillColor: SEAWELL_COLOR, fillOpacity: 0.1 }}
 }});
+layers.glenwoodDriveZone = L.geoJSON(glenwoodDriveData, {{
+  style: {{ color: GLENWOOD_COLOR, weight: 3, fillColor: GLENWOOD_COLOR, fillOpacity: 0.1 }}
+}});
 layers.bothDriveZones = L.layerGroup([
   L.geoJSON(ephesusDriveData, {{
     style: {{ color: EPHESUS_COLOR, weight: 3, fillColor: EPHESUS_COLOR, fillOpacity: 0.1 }}
   }}),
   L.geoJSON(seawellDriveData, {{
     style: {{ color: SEAWELL_COLOR, weight: 3, fillColor: SEAWELL_COLOR, fillOpacity: 0.1 }}
+  }}),
+  L.geoJSON(glenwoodDriveData, {{
+    style: {{ color: GLENWOOD_COLOR, weight: 3, fillColor: GLENWOOD_COLOR, fillOpacity: 0.1 }}
   }})
 ]);
 
@@ -1916,6 +1944,7 @@ function handleStep(idx) {{
       layers.bothDriveZones.addTo(map);
       layers.ephesusAttDashed.addTo(map);
       layers.seawellAttDashed.addTo(map);
+      layers.glenwoodAttDashed.addTo(map);
       layers.schools.addTo(map);
       districtView();
       break;
@@ -1924,6 +1953,7 @@ function handleStep(idx) {{
       layers.bothDriveZones.addTo(map);
       layers.ephesusAttDashed.addTo(map);
       layers.seawellAttDashed.addTo(map);
+      layers.glenwoodAttDashed.addTo(map);
       layers.schools.addTo(map);
       districtView();
       break;
@@ -1971,6 +2001,7 @@ function handleStep(idx) {{
       layers.bgYoungChildren.addTo(map);
       layers.ephesusZoneFaint.addTo(map);
       layers.seawellZoneFaint.addTo(map);
+      layers.glenwoodZoneFaint.addTo(map);
       layers.schools.addTo(map);
       districtView();
       break;
