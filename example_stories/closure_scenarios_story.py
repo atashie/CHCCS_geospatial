@@ -633,7 +633,7 @@ a {{ color: #1565C0; }}
   <!-- Step 0: Introduction — From Demographics to Movement -->
   <div class="step" data-step="0">
     <div class="step-number">1</div>
-    <h2>From Demographics to Movement</h2>
+    <h2>School Closure Impact on Travel Patterns</h2>
     <p>The <a href="chccs_demographics.html">previous story</a>
     examined <em>who lives where</em> across the district. This story
     examines <strong>what happens when schools close and children must
@@ -664,23 +664,15 @@ a {{ color: #1565C0; }}
   <!-- Step 1: Capacity Overview -->
   <div class="step" data-step="1">
     <div class="step-number">2</div>
-    <h2>District Capacity at a Glance</h2>
+    <h2>Future School Capacity at a Glance</h2>
     <p>Enrollment numbers help understand current and future transportation
-    costs: closing a school means 100% of its students need a new way to
-    get to a new school. This would mean new transportation or a new
-    route to school.</p>
+    costs.</p>
 
-    <p>We use <strong>2030 projected enrollment</strong> because the
-    district&rsquo;s transition period begins in 2028, making 2030
-    estimates closer to the reality families will experience than
-    current-year figures.</p>
     <p><span class="seawell-label">Seawell</span> may have the fewest
     students affected by closure, indicating the fewest displaced
-    students. LEAP
-    (at Frank Porter Graham) is a controlled-enrollment program
-    &mdash; for many of its students the school location is already
-    an intentional and desired relocation, and LEAP enrollment only
-    affects 4th and 5th graders.</p>
+    students. LEAP is a districtwide program for 4th and 5th graders
+    that already pulls many of these students from other attendance
+    zones.</p>
 
     <div class="limitation">
       <strong>Limitation:</strong> Enrollment figures are PMR2 Forecast
@@ -694,12 +686,10 @@ a {{ color: #1565C0; }}
     <div class="step-number">3</div>
     <h2>Transportation: Who Can Walk?</h2>
     <p>Transportation costs can also be examined by the net change in
-    students needing a change in mode of transportation. The most extreme
-    increase in costs for the district would be from a conversion of a
-    walker to bus rider.</p>
-    <p>The map shows <strong>nearest walk-time zones</strong> &mdash;
-    each point is colored by which school is closest on foot.
-    The 2025 Chapel Hill Safe Routes to School Action Plan measured
+    students needing a change in mode of transportation. The biggest
+    increase in cost would be the conversion of walk zone students to
+    school bus eligible students.</p>
+    <p>The 2025 Chapel Hill Safe Routes to School Action Plan measured
     how many students live within 0.5 miles of each school:</p>
     <ul style="margin:8px 0 12px 20px;line-height:1.8;">
       <li><span class="ephesus-label">Ephesus</span>: highest in district
@@ -729,9 +719,11 @@ a {{ color: #1565C0; }}
     <h2>Random Sampling of Travel Mode</h2>
     <p>Proximity to school does not always capture true mode of
     transportation chosen by students. However, even by random sampling,
-    <span class="ephesus-label">Ephesus</span> captures the second most walkers
-    in any elementary school in the district and
-    <span class="seawell-label">Seawell</span> with the fewest.</p>
+    <span class="ephesus-label">Ephesus</span> captures the second most
+    active travelers (walkers and bikers) in any elementary school in
+    the district. The SRTS plan also notes that at some schools a
+    significant portion of active travelers arrive from nearby parked
+    cars rather than from home.</p>
 
     <div class="source">
       <strong>Source:</strong> Chapel Hill Safe Routes to School Action Plan
@@ -748,7 +740,7 @@ a {{ color: #1565C0; }}
     <h3>Reading the traffic maps</h3>
     <p>The maps on the following slides color each road by how much its
     student traffic changes when a school closes:</p>
-    <div class="traffic-legend" style="flex-direction:column;gap:8px;">
+    <div class="traffic-legend" style="flex-direction:column;gap:8px;align-items:flex-start;">
       <div style="display:flex;align-items:center;gap:8px;">
         <div style="width:80px;height:6px;border-radius:3px;background:linear-gradient(to right, rgb(255,255,204), rgb(254,178,76), rgb(240,59,32), rgb(189,0,38));"></div>
         <span style="font-size:0.85em;"><strong>Red/orange</strong> &mdash;
@@ -777,7 +769,7 @@ a {{ color: #1565C0; }}
   <div class="step" data-step="5">
     <div class="step-number">5</div>
     <h2>Seawell Closure: Current Students (Ages 5&ndash;9)</h2>
-    <p>When <span class="seawell-label">Seawell</span> closes, its
+    <p>If <span class="seawell-label">Seawell</span> closes, its
     elementary-age students (5&ndash;9) redistribute to nearby schools.
     The map shows the <em>change</em> in student traffic compared to the
     baseline (all schools open):</p>
@@ -803,7 +795,7 @@ a {{ color: #1565C0; }}
       program where students are already bussed from across the district.
       These students already travel long distances; closure shifts their
       routes but doesn&rsquo;t fundamentally change their travel burden.
-      The inconvenience falls most heavily on <em>community school
+      The inconvenience falls most heavily on <em>attendance zone
       families</em> who currently walk or drive short distances. No LEAP
       enrollment data exists in this dataset &mdash; this context is
       editorial, not computed.
@@ -837,7 +829,7 @@ a {{ color: #1565C0; }}
   <div class="step" data-step="7">
     <div class="step-number">6</div>
     <h2>Ephesus Closure: Current Students (Ages 5&ndash;9)</h2>
-    <p>When <span class="ephesus-label">Ephesus</span> closes, the
+    <p>If <span class="ephesus-label">Ephesus</span> closes, the
     traffic redistribution is substantially wider. The map shows changes
     for elementary-age children (5&ndash;9):</p>
     <div class="traffic-legend">
