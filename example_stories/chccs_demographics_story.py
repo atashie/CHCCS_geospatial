@@ -2199,7 +2199,7 @@ def main():
                 drive_zones, properties=["school"], simplify_m=30
             )
             drive_fragments = intersect_zones_with_blockgroups(
-                drive_zones, bg_clipped, parcels=None,
+                drive_zones, bg_clipped, parcels=all_parcels,
             )
             drive_demo = aggregate_zone_demographics(drive_fragments, drive_zones)
             # Add MLS spatial join to drive zones

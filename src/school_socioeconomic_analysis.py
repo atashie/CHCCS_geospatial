@@ -3540,19 +3540,21 @@ Used exclusively for dot-density visualization (highest spatial resolution).
 
 ## Methodology
 
-### Area-Weighted Interpolation
+### Dasymetric Areal Interpolation
 
 Census block groups do not align with CHCCS attendance zone boundaries. To estimate
-demographics for each school zone, we use **area-weighted interpolation**:
+demographics for each school zone, we use **dasymetric areal interpolation**:
 
-1. Compute the geometric intersection of each block group with each attendance zone
-2. Calculate the proportion of each block group's area that falls within each zone
+1. Compute the geometric intersection of each block group with each zone
+2. Calculate the proportion of each block group's *residential parcel area* that
+   falls within each zone fragment
 3. Allocate block group population proportionally:
-   `zone_pop = Sum(bg_pop x overlap_area / bg_area)`
+   `zone_pop = Sum(bg_pop x frag_residential_area / bg_residential_area)`
 
-**Assumption:** Population is uniformly distributed within each block group. This is
-a standard approach but introduces error where population density varies significantly
-within a block group (e.g., if one half is residential and the other is commercial).
+This concentrates interpolation weight on residential land, avoiding the uniform-
+density assumption of plain area weighting (which would spread population across
+parks, roads, and commercial areas). Falls back to plain area weighting only for
+block groups with no residential parcels.
 
 ### Median Income Estimation
 
@@ -3590,9 +3592,9 @@ When parcels are unavailable, dots are placed randomly within Census block bound
    choose charter, private, or magnet schools, and transfer policies allow enrollment
    outside the home zone.
 
-5. **Area-Weighting Assumptions:** Uniform population distribution within block groups
-   is assumed. Dasymetric refinement at the block level (for dots) partially addresses
-   this but is not applied to block group statistics.
+5. **Residual Area-Weighting Error:** Dasymetric refinement concentrates interpolation
+   weight on residential parcels, but residual error remains because density varies
+   *within* the residential footprint (e.g., apartments vs. single-family homes).
 
 6. **Temporal Mismatch:** ACS data ({ACS_YEAR - 4}-{ACS_YEAR}), Decennial data (2020), and attendance
    zone boundaries (current) may not perfectly align temporally.

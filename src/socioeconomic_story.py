@@ -2344,7 +2344,7 @@ def main():
         drive_zones = _build_nearest_zones(GRID_CSV, "drive", district)
         if drive_zones is not None and len(drive_zones) > 0:
             drive_fragments = intersect_zones_with_blockgroups(
-                drive_zones, bg_clipped, parcels=None,
+                drive_zones, bg_clipped, parcels=all_parcels,
             )
             drive_demo = aggregate_zone_demographics(drive_fragments, drive_zones)
             if len(drive_demo) > 0:
