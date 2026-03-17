@@ -31,8 +31,7 @@ from shapely.geometry import mapping
 
 from school_socioeconomic_analysis import (
     _build_nearest_zones,
-    intersect_zones_with_blockgroups,
-    aggregate_zone_demographics,
+    OUTPUT_DOT_ZONE_CSV,
 )
 
 warnings.filterwarnings("ignore", category=FutureWarning)
@@ -348,7 +347,27 @@ def load_affordable_housing() -> gpd.GeoDataFrame:
 
 
 def load_zone_demographics() -> pd.DataFrame:
-    """Load pre-computed zone demographics CSV."""
+    """Load attendance-zone demographics, preferring dot-level aggregation.
+
+    Core Census metrics come from the dot-zone CSV (``School Zones`` rows) so
+    values match the interactive map exactly.  Supplemental columns (AH, MLS,
+    dev, income brackets) are merged from ``census_school_demographics.csv``.
+    """
+    dot_csv = Path(OUTPUT_DOT_ZONE_CSV)
+    if dot_csv.exists():
+        _all = pd.read_csv(dot_csv)
+        dot_demo = _all[_all["zone_type"] == "School Zones"].copy()
+        dot_demo = dot_demo.drop(columns=["zone_type"], errors="ignore")
+        if ZONE_DEMOGRAPHICS_CSV.exists():
+            bg_demo = pd.read_csv(ZONE_DEMOGRAPHICS_CSV)
+            extra_cols = [c for c in bg_demo.columns
+                          if c not in dot_demo.columns and c != "school"]
+            if extra_cols:
+                dot_demo = dot_demo.merge(
+                    bg_demo[["school"] + extra_cols], on="school", how="left",
+                )
+        _progress(f"Loaded zone demographics from {dot_csv.name} (dot-level)")
+        return dot_demo
     if not ZONE_DEMOGRAPHICS_CSV.exists():
         _progress("Zone demographics CSV not found, skipping")
         return pd.DataFrame()
@@ -2338,15 +2357,15 @@ def main():
         zone_stats_json = "[]"
 
     # Step 12: Nearest-drive zone demographics
-    print("[12/13] Computing nearest-drive zone demographics ...")
+    print("[12/13] Loading nearest-drive zone demographics ...")
     drive_stats_json = "[]"
     try:
-        drive_zones = _build_nearest_zones(GRID_CSV, "drive", district)
-        if drive_zones is not None and len(drive_zones) > 0:
-            drive_fragments = intersect_zones_with_blockgroups(
-                drive_zones, bg_clipped, parcels=all_parcels,
-            )
-            drive_demo = aggregate_zone_demographics(drive_fragments, drive_zones)
+        dot_zone_csv = Path(OUTPUT_DOT_ZONE_CSV)
+        if dot_zone_csv.exists():
+            _all = pd.read_csv(dot_zone_csv)
+            drive_demo = _all[_all["zone_type"] == "Nearest Drive"].copy()
+            drive_demo = drive_demo.drop(columns=["zone_type"], errors="ignore")
+            _progress(f"Loaded {len(drive_demo)} drive zone rows from {dot_zone_csv.name}")
             if len(drive_demo) > 0:
                 avail_drive = [c for c in stat_cols if c in drive_demo.columns]
                 drive_recs = drive_demo[avail_drive].to_dict("records")
@@ -2359,11 +2378,11 @@ def main():
                 drive_stats_json = json.dumps(drive_recs, separators=(",", ":"))
                 _progress(f"Computed drive demographics for {len(drive_demo)} zones")
             else:
-                _progress("WARNING: aggregate_zone_demographics returned empty")
+                _progress("WARNING: dot-zone demographics CSV has no Nearest Drive rows")
         else:
-            _progress("WARNING: No drive zones built (grid CSV missing or empty)")
+            _progress(f"WARNING: {dot_zone_csv} not found — run school_socioeconomic_analysis.py first")
     except Exception as e:
-        _progress(f"WARNING: Could not compute drive demographics: {e}")
+        _progress(f"WARNING: Could not load drive demographics: {e}")
         drive_stats_json = "[]"
 
     # Step 13: Build HTML

@@ -151,6 +151,7 @@ python src/socioeconomic_story.py --cache-only  # cached data only
 | School desert grid | `data/processed/school_desert_grid.csv` | Computed (Dijkstra) |
 | Pollution scores | `data/processed/road_pollution_scores.csv` | Computed (TRAP model) |
 | Zone demographics | `data/processed/census_school_demographics.csv` | Computed (dasymetric) |
+| Dot-zone demographics | `data/processed/census_dot_zone_demographics.csv` | Computed (dot-level, matches interactive map JS) |
 | NCDOT AADT stations | `data/cache/ncdot_aadt_orange_county.gpkg` | NCDOT ArcGIS (Orange County) |
 | Affordable housing | `data/cache/affordable_housing.gpkg` | Town of Chapel Hill ArcGIS (2025) |
 | MLS home sales | `data/cache/mls_home_sales.gpkg` | Triangle MLS (2023-2025), geocoded via Census + Nominatim |

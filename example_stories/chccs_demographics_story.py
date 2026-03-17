@@ -45,8 +45,7 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from school_socioeconomic_analysis import (
     _build_nearest_zones,
-    intersect_zones_with_blockgroups,
-    aggregate_zone_demographics,
+    OUTPUT_DOT_ZONE_CSV,
 )
 
 warnings.filterwarnings("ignore", category=FutureWarning)
@@ -334,6 +333,29 @@ def load_planned_dev() -> gpd.GeoDataFrame:
 
 
 def load_zone_demographics() -> pd.DataFrame:
+    """Load attendance-zone demographics, preferring dot-level aggregation.
+
+    Core Census metrics come from the dot-zone CSV (``School Zones`` rows) so
+    values match the interactive map exactly.  Supplemental columns (AH, MLS,
+    dev, income brackets) are merged from ``census_school_demographics.csv``.
+    """
+    dot_csv = Path(OUTPUT_DOT_ZONE_CSV)
+    if dot_csv.exists():
+        _all = pd.read_csv(dot_csv)
+        dot_demo = _all[_all["zone_type"] == "School Zones"].copy()
+        dot_demo = dot_demo.drop(columns=["zone_type"], errors="ignore")
+        # Merge supplemental columns from the BG-fragment CSV
+        if ZONE_DEMOGRAPHICS_CSV.exists():
+            bg_demo = pd.read_csv(ZONE_DEMOGRAPHICS_CSV)
+            extra_cols = [c for c in bg_demo.columns
+                          if c not in dot_demo.columns and c != "school"]
+            if extra_cols:
+                dot_demo = dot_demo.merge(
+                    bg_demo[["school"] + extra_cols], on="school", how="left",
+                )
+        _progress(f"Loaded zone demographics from {dot_csv.name} (dot-level)")
+        return dot_demo
+    # Fallback: BG-fragment CSV
     if not ZONE_DEMOGRAPHICS_CSV.exists():
         _progress("Zone demographics CSV not found, skipping")
         return pd.DataFrame()
@@ -802,7 +824,7 @@ details[open] summary {{ margin-bottom: 8px; }}
     <div class="step-number">8</div>
     <h2>Ephesus: Socioeconomic Profile</h2>
     <p>Recall that Ephesus is more accessible to a larger population
-    (11,880 vs. Seawell&rsquo;s 3,663 by drive-time). A larger catchment
+    (13,657 vs. Seawell&rsquo;s 5,248 by drive-time). A larger catchment
     area means the zone captures more people experiencing economic hardship.</p>
     <p>Now the <span class="ephesus-label">Ephesus</span> drive-time zone
     (solid red border) with its attendance zone as dashed overlay.</p>
@@ -2188,7 +2210,7 @@ def main():
         zone_stats_json = "[]"
 
     # [10/12] Nearest-drive zone demographics
-    print("[10/12] Computing nearest-drive zone demographics ...")
+    print("[10/12] Loading nearest-drive zone demographics ...")
     drive_stats_json = "[]"
     drive_zones_json = '{"type":"FeatureCollection","features":[]}'
     has_drive_data = False
@@ -2198,10 +2220,17 @@ def main():
             drive_zones_json = gdf_to_geojson_str(
                 drive_zones, properties=["school"], simplify_m=30
             )
-            drive_fragments = intersect_zones_with_blockgroups(
-                drive_zones, bg_clipped, parcels=all_parcels,
-            )
-            drive_demo = aggregate_zone_demographics(drive_fragments, drive_zones)
+            # Read pre-computed dot-based demographics (matches interactive map)
+            dot_zone_csv = Path(OUTPUT_DOT_ZONE_CSV)
+            if dot_zone_csv.exists():
+                _all = pd.read_csv(dot_zone_csv)
+                drive_demo = _all[_all["zone_type"] == "Nearest Drive"].copy()
+                drive_demo = drive_demo.drop(columns=["zone_type"], errors="ignore")
+                _progress(f"Loaded {len(drive_demo)} drive zone rows from {dot_zone_csv.name}")
+            else:
+                raise FileNotFoundError(
+                    f"{dot_zone_csv} not found — run school_socioeconomic_analysis.py first"
+                )
             # Add MLS spatial join to drive zones
             if len(mls_data) > 0 and len(drive_demo) > 0:
                 mls_wgs = mls_data.to_crs(CRS_WGS84)

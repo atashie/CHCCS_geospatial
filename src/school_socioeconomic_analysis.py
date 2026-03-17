@@ -69,6 +69,7 @@ TIGER_BLOCK_CACHE = DATA_CACHE / "tiger_blocks_37135.zip"
 
 OUTPUT_MAP = ASSETS_MAPS / "school_socioeconomic_map.html"
 OUTPUT_SCHOOL_CSV = DATA_PROCESSED / "census_school_demographics.csv"
+OUTPUT_DOT_ZONE_CSV = DATA_PROCESSED / "census_dot_zone_demographics.csv"
 OUTPUT_BG_CSV = DATA_PROCESSED / "census_blockgroup_profiles.csv"
 OUTPUT_DOC = PROJECT_ROOT / "docs" / "socioeconomic" / "SOCIOECONOMIC_ANALYSIS.md"
 
@@ -1121,6 +1122,141 @@ def aggregate_zone_demographics(
     return result
 
 
+def export_dot_zone_demographics(
+    dot_data: list,
+    block_geoids: list,
+    enriched_blocks: gpd.GeoDataFrame,
+    all_dot_zones: list,
+    zone_types: list,
+    master_school_names: list,
+    output_path,
+) -> pd.DataFrame:
+    """Export per-zone demographics using dot-level aggregation (matches JS).
+
+    For each dot assigned to a zone, looks up the parent block's Census
+    metrics from enriched_blocks and computes simple means — identical to
+    the interactive map's JS ``updateHistograms()`` function.
+
+    Returns the DataFrame and saves it to *output_path*.
+    """
+    _progress("Computing dot-based zone demographics (matching interactive map) ...")
+
+    # Build block GEOID → enriched_blocks row lookup
+    eb_lookup = (
+        enriched_blocks.set_index("GEOID20")
+        if enriched_blocks is not None and "GEOID20" in enriched_blocks.columns
+        else None
+    )
+
+    # Metrics to average across dots (all available in enriched_blocks)
+    mean_metrics = [
+        "median_hh_income",
+        "pct_below_185_poverty", "pct_minority", "pct_zero_vehicle",
+        "pct_elementary_age", "pct_young_children", "pct_renter",
+    ]
+    available_metrics = [
+        m for m in mean_metrics
+        if eb_lookup is not None and m in eb_lookup.columns
+    ]
+
+    # Pre-build per-block metric arrays for vectorised lookup
+    n_blocks = len(block_geoids)
+    block_metric_arrays = {}
+    for metric in available_metrics:
+        arr = np.full(n_blocks, np.nan)
+        for bidx, geoid in enumerate(block_geoids):
+            if geoid in eb_lookup.index:
+                val = eb_lookup.at[geoid, metric]
+                if not pd.isna(val) and (metric != "median_hh_income" or val > 0):
+                    arr[bidx] = val
+        block_metric_arrays[metric] = arr
+
+    # Dot attribute arrays
+    dot_race = np.array([d[2] for d in dot_data], dtype=np.int32)
+    dot_block = np.array([d[3] for d in dot_data], dtype=np.int32)
+
+    # Race index → story column name
+    # RACE_CATEGORIES order: white_alone, black_alone, hispanic_total,
+    #                        asian_alone, two_plus, other_race
+    race_col_names = [
+        "white_nh", "black_nh", "hispanic", "asian_nh", "two_plus_nh",
+    ]
+
+    records = []
+    for zt_idx, zt in enumerate(zone_types):
+        zt_label = zt["label"]
+        dot_zones = np.array(all_dot_zones[zt_idx], dtype=np.int32)
+
+        for si, school_name in enumerate(master_school_names):
+            mask = dot_zones == si
+            n_dots = int(mask.sum())
+
+            rec = {"zone_type": zt_label, "school": school_name}
+            rec["total_pop"] = n_dots
+            rec["race_total"] = n_dots
+
+            # Race counts from dot indices
+            zone_races = dot_race[mask]
+            for ri, rname in enumerate(race_col_names):
+                rec[rname] = int((zone_races == ri).sum())
+
+            # Metric means from block-level values
+            zone_blocks = dot_block[mask]
+            for metric in available_metrics:
+                vals = block_metric_arrays[metric][zone_blocks]
+                valid = vals[~np.isnan(vals)]
+                rec[metric] = float(valid.mean()) if len(valid) > 0 else np.nan
+                # For MHI, also store the true median (matches histogram red line)
+                if metric == "median_hh_income" and len(valid) > 0:
+                    rec["median_hh_income_avg"] = rec[metric]
+                    rec["median_hh_income"] = float(np.median(valid))
+
+            # Derived count fields (pop × pct / 100)
+            def _safe_pct(key):
+                v = rec.get(key, 0)
+                return 0 if (v is None or (isinstance(v, float) and np.isnan(v))) else v
+
+            pop = n_dots
+            rec["below_185_pov"] = round(pop * _safe_pct("pct_below_185_poverty") / 100)
+            rec["poverty_universe"] = pop
+
+            young_n = round(pop * _safe_pct("pct_young_children") / 100)
+            rec["male_under_5"] = young_n // 2
+            rec["female_under_5"] = young_n - rec["male_under_5"]
+
+            elem_n = round(pop * _safe_pct("pct_elementary_age") / 100)
+            rec["male_5_9"] = elem_n // 2
+            rec["female_5_9"] = elem_n - rec["male_5_9"]
+
+            rec["tenure_renter"] = round(pop * _safe_pct("pct_renter") / 100)
+            rec["tenure_total"] = pop
+
+            rec["vehicles_zero"] = round(pop * _safe_pct("pct_zero_vehicle") / 100)
+            rec["vehicles_total_hh"] = pop
+
+            records.append(rec)
+
+    df = pd.DataFrame(records)
+
+    # Derived percentages from race counts
+    df["pct_black"] = np.where(
+        df["race_total"] > 0, df["black_nh"] / df["race_total"] * 100, 0,
+    )
+    df["pct_hispanic"] = np.where(
+        df["race_total"] > 0, df["hispanic"] / df["race_total"] * 100, 0,
+    )
+
+    # Round for readability
+    pct_cols = [c for c in df.columns if c.startswith("pct_")]
+    for col in pct_cols:
+        df[col] = df[col].round(1)
+    df["median_hh_income"] = df["median_hh_income"].round(0)
+
+    df.to_csv(output_path, index=False)
+    _progress(f"  Exported dot-zone demographics ({len(df)} rows) to {output_path}")
+    return df
+
+
 # ═══════════════════════════════════════════════════════════════════════════
 # Section 6: Dot-density map generation
 # ═══════════════════════════════════════════════════════════════════════════
@@ -2144,6 +2280,14 @@ FAQ
                 indices = [-1] * len(dot_data)
 
             all_dot_zones.append(indices)
+
+        # ── Export dot-based zone demographics (matches JS aggregation) ──
+        if enriched_blocks is not None and len(all_dot_zones) > 0:
+            export_dot_zone_demographics(
+                dot_data, block_geoids, enriched_blocks,
+                all_dot_zones, zone_types, master_school_names,
+                OUTPUT_DOT_ZONE_CSV,
+            )
 
         # Backward-compat aliases for first zone type
         dot_zone_indices = all_dot_zones[0] if all_dot_zones else [-1] * len(dot_data)

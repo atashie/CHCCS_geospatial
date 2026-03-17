@@ -126,6 +126,7 @@ Census-based demographic analysis of CHCCS elementary school attendance zones us
 | `assets/maps/school_socioeconomic_map.html` | Interactive Folium map with choropleth, dot-density, and 5 zone type overlays |
 | `assets/charts/socioeconomic_*.png` | Horizontal bar charts + income distribution chart |
 | `data/processed/census_school_demographics.csv` | Per-school-zone demographic summaries (~20 metrics) |
+| `data/processed/census_dot_zone_demographics.csv` | Per-zone-type demographics via dot-level aggregation (matches interactive map JS); consumed by scrollytelling scripts |
 | `data/processed/census_blockgroup_profiles.csv` | Block-group-level derived metrics within district |
 | `docs/socioeconomic/SOCIOECONOMIC_ANALYSIS.md` | Auto-generated methodology and results documentation |
 
@@ -251,7 +252,7 @@ Mirrors `closure_story.py` exactly: loads all data from existing caches (require
 - **Focus area:** Northside Elementary bbox (~0.02° padding) — generates ~5-10K dots instead of 95K for the full district, keeping file size < 5 MB
 - **Fragment visualization:** Computes zone-BG intersection fragments for Northside with both area and dasymetric weights, showing the contrast visually
 - **Dot-density generation:** Same algorithm as `generate_racial_dots()` in `school_socioeconomic_analysis.py`, spatially filtered to focus area, 1:1 dot-to-person ratio
-- **Nearest-drive zone demographics** use dasymetric weighting (residential parcel area), consistent with attendance zone demographics and the interactive map's JS dot-based aggregation
+- **Nearest-drive zone demographics** are read from `data/processed/census_dot_zone_demographics.csv`, a dot-level aggregation exported by `school_socioeconomic_analysis.py` that exactly matches the interactive map's JS `updateHistograms()` computation
 - **All data is cache-only** — no network requests, no Census API calls
 
 ### Key Outputs
