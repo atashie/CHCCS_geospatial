@@ -361,7 +361,7 @@ def load_uhi_grid() -> dict:
 # HTML builder
 # ---------------------------------------------------------------------------
 def build_html(data: dict) -> str:
-    """Build the 12-step environmental conditions scrollytelling HTML."""
+    """Build the 11-step environmental conditions scrollytelling HTML."""
 
     trap_data_js = data["trap_chart_data"]
     uhi_data_js = data["uhi_chart_data"]
@@ -739,7 +739,7 @@ a {{ color: #1565C0; }}
     (11.5) benefits from more surrounding vegetation.</p>
   </div>
 
-  <!-- ========== SUMMARY (Steps 10-11) ========== -->
+  <!-- ========== SUMMARY (Step 10) ========== -->
 
   <!-- Step 10: Environmental Summary -->
   <div class="step" data-step="10">
@@ -770,26 +770,6 @@ a {{ color: #1565C0; }}
       but if schools remain in locations posing environmental risks to health,
       there is potential to harm children. CHCCS needs to consider selling
       property that is located in potentially harmful or toxic environments.
-    </div>
-  </div>
-
-  <!-- Step 11: Transition -->
-  <div class="step" data-step="11">
-    <div class="step-number">12</div>
-    <h2>What&rsquo;s Next</h2>
-    <p>Environmental and geographic conditions are just one lens. Next, we
-    examine <strong>Chapel Hill&rsquo;s demographics</strong> &mdash; the
-    people, communities, and socioeconomic patterns that define each
-    school&rsquo;s role in the district.</p>
-    <p style="margin-top:20px;">
-      <a href="https://atashie.github.io/CHCCS_geospatial/example_stories/chccs_demographics.html" style="font-size:1.1em;font-weight:bold;">
-        Continue to Demographics Analysis &rarr;
-      </a>
-    </p>
-    <div class="source">
-      <strong>Data sources:</strong> FEMA NFHL &bull; OpenStreetMap road network
-      &bull; NCDOT AADT traffic counts &bull; ESA WorldCover 2021 &bull;
-      NCES EDGE 2023-24 &bull; Orange County parcel data
     </div>
   </div>
 
@@ -1114,12 +1094,6 @@ function handleStep(idx) {{
       districtView();
       break;
 
-    case 11: // What's Next
-      layers.district.addTo(map);
-      layers.schools.addTo(map);
-      dimOverlay.style.display = "block";
-      districtView();
-      break;
   }}
 }}
 
