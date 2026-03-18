@@ -717,13 +717,12 @@ a {{ color: #1565C0; }}
   <div class="step" data-step="3">
     <div class="step-number">3b</div>
     <h2>Random Sampling of Travel Mode</h2>
-    <p>Proximity to school does not always capture true mode of
-    transportation chosen by students. However, even by random sampling,
-    <span class="ephesus-label">Ephesus</span> captures the second most
-    active travelers (walkers and bikers) in any elementary school in
-    the district. The SRTS plan also notes that at some schools a
-    significant portion of active travelers arrive from nearby parked
-    cars rather than from home.</p>
+    <p>Proximity to school does not always capture mode choice.
+    However, random sampling shows that
+    <span class="ephesus-label">Ephesus</span> has the second most
+    active travelers (walkers + bikers) in Chapel Hill elementary
+    schools (comparable data for elementary schools in Carrboro were
+    not readily available).</p>
 
     <div class="source">
       <strong>Source:</strong> Chapel Hill Safe Routes to School Action Plan
