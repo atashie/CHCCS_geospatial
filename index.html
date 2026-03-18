@@ -66,27 +66,6 @@
     }
     .badge-map { background: #d4edda; color: #155724; }
     .badge-guide { background: #cce5ff; color: #004085; }
-    .badge-story { background: #fff3cd; color: #856404; }
-    .badge-soon { background: #e9ecef; color: #6c757d; }
-
-    /* Coming soon card */
-    .card-soon {
-      background: #f8f9fa;
-      border: 1px dashed #ced4da;
-      opacity: 0.7;
-      cursor: default;
-    }
-    .card-soon h3 { color: #888; }
-
-    /* Row labels */
-    .row-label {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: #999;
-      margin-bottom: 0.35rem;
-      margin-top: 0.25rem;
-    }
 
     footer {
       text-align: center;
@@ -103,89 +82,46 @@
   </header>
   <main>
 
-    <!-- Socioeconomic -->
+    <!-- Interactive Maps -->
     <div class="analysis-group">
-      <h2>Socioeconomic Analysis</h2>
-      <p class="row-label">Interactive Map</p>
+      <h2>Interactive Maps</h2>
       <div class="row">
         <a class="card" href="assets/maps/school_socioeconomic_map.html">
           <span class="badge badge-map">Map</span>
-          <h3>Socioeconomic Map</h3>
-          <p>Explore attendance zone demographics: income, poverty, minority population, renters, and more.</p>
+          <h3>Socioeconomic</h3>
+          <p>Attendance zone demographics: income, poverty, minority population, renters, and more.</p>
+        </a>
+        <a class="card" href="assets/maps/chccs_environmental_analysis.html">
+          <span class="badge badge-map">Map</span>
+          <h3>Environmental</h3>
+          <p>TRAP exposure, flood zones, urban heat island proxy, and tree canopy layers.</p>
+        </a>
+        <a class="card" href="assets/maps/school_closure_analysis.html">
+          <span class="badge badge-map">Map</span>
+          <h3>School Closure Impact</h3>
+          <p>Travel-time impacts and traffic redistribution under closure scenarios.</p>
         </a>
       </div>
-      <p class="row-label">User Guide</p>
+    </div>
+
+    <!-- Methodology Guides -->
+    <div class="analysis-group">
+      <h2>Methodology Guides</h2>
       <div class="row">
         <a class="card" href="assets/maps/socioeconomic_methodology.html">
           <span class="badge badge-guide">Guide</span>
-          <h3>How We Built This Analysis</h3>
-          <p>Step-by-step walkthrough of dasymetric mapping, Census data, and equity indicators.</p>
+          <h3>Socioeconomic</h3>
+          <p>Dasymetric mapping, Census data, and equity indicators.</p>
         </a>
-      </div>
-      <p class="row-label">Editorial Story</p>
-      <div class="row">
-        <a class="card" href="example_stories/chccs_demographics.html">
-          <span class="badge badge-story">Story</span>
-          <h3>CHCCS Demographics</h3>
-          <p>A data-driven comparison of two attendance zones &mdash; what the numbers reveal about equity.</p>
-        </a>
-      </div>
-    </div>
-
-    <!-- Environmental -->
-    <div class="analysis-group">
-      <h2>Environmental Analysis</h2>
-      <p class="row-label">Interactive Map</p>
-      <div class="row">
-        <a class="card" href="assets/maps/chccs_environmental_analysis.html">
-          <span class="badge badge-map">Map</span>
-          <h3>Environmental Map</h3>
-          <p>Explore TRAP exposure, flood zones, urban heat island proxy, and tree canopy layers.</p>
-        </a>
-      </div>
-      <p class="row-label">User Guide</p>
-      <div class="row">
         <a class="card" href="assets/maps/environmental_methodology.html">
           <span class="badge badge-guide">Guide</span>
-          <h3>How We Built This Analysis</h3>
-          <p>Step-by-step walkthrough of pollution modeling, flood risk, Urban Heat Island index, and canopy data.</p>
+          <h3>Environmental</h3>
+          <p>Pollution modeling, flood risk, Urban Heat Island index, and canopy data.</p>
         </a>
-      </div>
-      <p class="row-label">Editorial Story</p>
-      <div class="row">
-        <a class="card" href="example_stories/environmental_conditions.html">
-          <span class="badge badge-story">Story</span>
-          <h3>Environmental Conditions</h3>
-          <p>Flood risk, traffic air pollution, and urban heat &mdash; how environmental factors differ across schools.</p>
-        </a>
-      </div>
-    </div>
-
-    <!-- School Closure -->
-    <div class="analysis-group">
-      <h2>School Closure Impact</h2>
-      <p class="row-label">Interactive Map</p>
-      <div class="row">
-        <a class="card" href="assets/maps/school_closure_analysis.html">
-          <span class="badge badge-map">Map</span>
-          <h3>School Closure Map</h3>
-          <p>Explore travel-time impacts and traffic redistribution under closure scenarios.</p>
-        </a>
-      </div>
-      <p class="row-label">User Guide</p>
-      <div class="row">
         <a class="card" href="assets/maps/closure_methodology.html">
           <span class="badge badge-guide">Guide</span>
-          <h3>How We Built This Analysis</h3>
-          <p>Step-by-step walkthrough of travel-time modeling and household impact estimation.</p>
-        </a>
-      </div>
-      <p class="row-label">Editorial Story</p>
-      <div class="row">
-        <a class="card" href="example_stories/closure_scenarios.html">
-          <span class="badge badge-editorial">Editorial</span>
-          <h3>School Closure Scenarios</h3>
-          <p>How school closures would redistribute students and affect traffic across the district.</p>
+          <h3>School Closure Impact</h3>
+          <p>Travel-time modeling and household impact estimation.</p>
         </a>
       </div>
     </div>
