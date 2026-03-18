@@ -665,7 +665,7 @@ a {{ color: #1565C0; }}
       <a href="chccs_demographics.html">district-wide magnet school</a>
       whose programs serve students from across the district rather than
       a specific neighborhood. Because closure scenarios depend on
-      neighborhood-level travel patterns, Glenwood is excluded from this
+      neighborhood-level travel patterns, Glenwood is not highlighted in this
       analysis.
     </div>
   </div>
@@ -852,7 +852,7 @@ a {{ color: #1565C0; }}
     </div>
     {ephesus_roads_59}
     <p>The wider spread of affected roads reflects Ephesus&rsquo;s position
-    in the most population-dense area of the district.</p>
+    in one of the most population-dense areas of the district.</p>
 
     <p>Notice that the routing algorithm redirects most of the southern
     Ephesus attendance zone toward
@@ -863,8 +863,8 @@ a {{ color: #1565C0; }}
 
     <p><u>This has a compounding implication.</u> Closing
     <span class="glenwood-label">Glenwood</span> <em>in addition to</em>
-    <span class="ephesus-label">Ephesus</span> would push some of the most
-    population-dense areas of young children even further away.</p>
+    <span class="ephesus-label">Ephesus</span> would impact high
+    population-density areas with a high proportion of young children.</p>
 
     <div class="limitation">
       <strong>Attendance zone overlap:</strong> A significant portion of
