@@ -1451,7 +1451,7 @@ function populateMetrics() {{
       + '<li>Ephesus serves a population '
       + 'skewed to <strong>lower income communities</strong></li>'
       + '<li>Ephesus is accessible to a <strong>greater '
-      + 'diversity</strong> of people, with nearly twice the Hispanic population of Seawell</li>'
+      + 'diversity</strong> of people</li>'
       + '<li>Ephesus is accessible to <strong>more young children</strong> '
       + 'which may drive future enrollment increases</li>'
       + '<li>Homes around Ephesus are more <strong>affordable</strong> '
