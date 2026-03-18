@@ -250,10 +250,14 @@ details[open] summary { margin-bottom: 8px; }
     </div>
   </div>
 
-  <!-- Step 3: Two Community Schools Compared -->
+  <!-- Step 3: Neighborhood Schools Compared -->
   <div class="step" data-step="3">
     <div class="step-number">4</div>
-    <h2>Two Community Schools Compared</h2>
+    <h2>Neighborhood Schools Compared</h2>
+    <p>As a district-wide magnet school, Glenwood&rsquo;s programs serve students
+    from across the district rather than a specific neighborhood. Because this
+    analysis focuses on neighborhood-level demographics, Glenwood is not directly
+    comparable and is set aside from the focal comparison going forward.</p>
     <p>Making direct comparisons between two schools &mdash; each with its own
     history, strengths, and deeply committed community &mdash; is inherently
     difficult. We approach this comparison with respect for both
@@ -270,9 +274,8 @@ details[open] summary { margin-bottom: 8px; }
     <p>This analysis considers <strong>both</strong> attendance and drive-time
     zones to limit bias introduced by CHCCS-drawn attendance boundaries.</p>
     <div class="limitation">
-      <strong>Note:</strong> Glenwood was difficult to completely include in this
-      analysis given that it is predominantly a magnet school. Its location was
-      maintained in map calculations as another available CHCCS site.
+      <strong>Note:</strong> Glenwood&rsquo;s location was maintained in map
+      calculations as another available CHCCS site.
     </div>
   </div>
 
@@ -341,7 +344,8 @@ details[open] summary { margin-bottom: 8px; }
     <div class="step-number">8</div>
     <h2>Ephesus: Socioeconomic Profile</h2>
     <p>In contrast, Ephesus has a much larger drive zone which indicates
-    that it is more accessible to a larger population.</p>
+    that it is not only more accessible to a larger population but also that
+    there are fewer adjacent schools.</p>
     <p>Now the <span class="ephesus-label">Ephesus</span> drive-time zone
     (solid red border) with its attendance zone as dashed overlay.</p>
     <div id="ephesus-ses-metrics">
@@ -410,9 +414,8 @@ details[open] summary { margin-bottom: 8px; }
     <p>The bar charts show <strong>minority residents</strong> (non-White)
     for all 11 schools &mdash; drive-time zones on the left, attendance zones
     on the right. Counts, not percentages.</p>
-    <p>Notably, Ephesus has nearly <strong>twice the Hispanic population</strong>
-    of Seawell &mdash; consistent with the affordable housing developments in
-    the zone serving a disproportionately Hispanic population.</p>
+    <p>Notably, Ephesus has a higher minority population overall, and nearly
+    <strong>twice the Hispanic population</strong> of Seawell.</p>
   </div>
 
   <!-- ========== SECTION 3: AGE DISTRIBUTION (Steps 11-13) ========== -->
@@ -641,12 +644,10 @@ function renderBars(containerId, data, metric, options) {
     var barColor = OTHER_COLOR;
     if (d.school.indexOf("Ephesus") >= 0) barColor = EPHESUS_COLOR;
     else if (d.school.indexOf("Seawell") >= 0) barColor = SEAWELL_COLOR;
-    else if (d.school.indexOf("Glenwood") >= 0) barColor = GLENWOOD_COLOR;
-    var isHighlight = (d.school.indexOf("Ephesus") >= 0 || d.school.indexOf("Seawell") >= 0 || d.school.indexOf("Glenwood") >= 0);
+    var isHighlight = (d.school.indexOf("Ephesus") >= 0 || d.school.indexOf("Seawell") >= 0);
     var fontWeight = isHighlight ? "bold" : "normal";
     var fontColor = (d.school.indexOf("Ephesus") >= 0) ? EPHESUS_COLOR
-                  : (d.school.indexOf("Seawell") >= 0) ? SEAWELL_COLOR
-                  : (d.school.indexOf("Glenwood") >= 0) ? GLENWOOD_COLOR : "#555";
+                  : (d.school.indexOf("Seawell") >= 0) ? SEAWELL_COLOR : "#555";
     var valText;
     if (mode === "pct") {
       valText = val.toFixed(1) + "%";
@@ -1024,6 +1025,26 @@ layers.schools = L.geoJSON(SCHOOLS, {
   }
 });
 
+// Schools (Glenwood gray — for steps 3+)
+layers.schoolsGw = L.geoJSON(SCHOOLS, {
+  pointToLayer: function(f, ll) {
+    var isE = f.properties.school && f.properties.school.indexOf("Ephesus") >= 0;
+    var isS = f.properties.school && f.properties.school.indexOf("Seawell") >= 0;
+    var color = isE ? EPHESUS_COLOR : (isS ? SEAWELL_COLOR : "#888");
+    var radius = (isE || isS) ? 8 : 5;
+    return L.circleMarker(ll, {
+      radius: radius,
+      fillColor: color,
+      color: "#fff",
+      weight: 2,
+      fillOpacity: 0.9,
+    });
+  },
+  onEachFeature: function(f, layer) {
+    layer.bindTooltip(f.properties.school, {permanent: false});
+  }
+});
+
 // District boundary
 layers.district = L.geoJSON(DISTRICT, {
   style: { color: "#333", weight: 2, dashArray: "6 4", fillOpacity: 0 }
@@ -1101,11 +1122,11 @@ var glenwoodZoneData = {
   })
 };
 layers.glenwoodZoneFaint = L.geoJSON(glenwoodZoneData, {
-  style: { color: GLENWOOD_COLOR, weight: 4, fillOpacity: 0, dashArray: "4 3" },
+  style: { color: "#aaa", weight: 4, fillOpacity: 0, dashArray: "4 3" },
   interactive: false
 });
 layers.glenwoodAttDashed = L.geoJSON(glenwoodZoneData, {
-  style: { color: GLENWOOD_COLOR, weight: 2, fillOpacity: 0, dashArray: "8 5" }
+  style: { color: "#aaa", weight: 2, fillOpacity: 0, dashArray: "8 5" }
 });
 
 // Both attendance zones highlighted
@@ -1128,6 +1149,22 @@ layers.driveZones = L.geoJSON(DRIVE_ZONES, {
       return { color: SEAWELL_COLOR, weight: 2, fillColor: SEAWELL_COLOR, fillOpacity: 0.15 };
     } else if (name.indexOf("Glenwood") >= 0) {
       return { color: GLENWOOD_COLOR, weight: 2, fillColor: GLENWOOD_COLOR, fillOpacity: 0.15 };
+    }
+    return { color: "#ccc", weight: 1, fillColor: "#eee", fillOpacity: 0.05 };
+  },
+  onEachFeature: function(f, layer) {
+    layer.bindTooltip(f.properties.school || "");
+  }
+});
+
+// Drive-time zones (Glenwood gray — for steps 3+)
+layers.driveZonesGw = L.geoJSON(DRIVE_ZONES, {
+  style: function(f) {
+    var name = f.properties.school || "";
+    if (name.indexOf("Ephesus") >= 0) {
+      return { color: EPHESUS_COLOR, weight: 2, fillColor: EPHESUS_COLOR, fillOpacity: 0.15 };
+    } else if (name.indexOf("Seawell") >= 0) {
+      return { color: SEAWELL_COLOR, weight: 2, fillColor: SEAWELL_COLOR, fillOpacity: 0.15 };
     }
     return { color: "#ccc", weight: 1, fillColor: "#eee", fillOpacity: 0.05 };
   },
@@ -1163,7 +1200,7 @@ layers.seawellDriveZone = L.geoJSON(seawellDriveData, {
   style: { color: SEAWELL_COLOR, weight: 3, fillColor: SEAWELL_COLOR, fillOpacity: 0.1 }
 });
 layers.glenwoodDriveZone = L.geoJSON(glenwoodDriveData, {
-  style: { color: GLENWOOD_COLOR, weight: 3, fillColor: GLENWOOD_COLOR, fillOpacity: 0.1 }
+  style: { color: "#aaa", weight: 3, fillColor: "#aaa", fillOpacity: 0.1 }
 });
 layers.bothDriveZones = L.layerGroup([
   L.geoJSON(ephesusDriveData, {
@@ -1173,7 +1210,7 @@ layers.bothDriveZones = L.layerGroup([
     style: { color: SEAWELL_COLOR, weight: 3, fillColor: SEAWELL_COLOR, fillOpacity: 0.1 }
   }),
   L.geoJSON(glenwoodDriveData, {
-    style: { color: GLENWOOD_COLOR, weight: 3, fillColor: GLENWOOD_COLOR, fillOpacity: 0.1 }
+    style: { color: "#ccc", weight: 3, fillColor: "#ccc", fillOpacity: 0.1 }
   })
 ]);
 
@@ -1458,12 +1495,12 @@ function handleStep(idx) {
       districtView();
       break;
 
-    case 3: // Two Community Schools — both drive zones bold + attendance dashed
+    case 3: // Neighborhood Schools — both drive zones bold + attendance dashed
       layers.bothDriveZones.addTo(map);
       layers.ephesusAttDashed.addTo(map);
       layers.seawellAttDashed.addTo(map);
       layers.glenwoodAttDashed.addTo(map);
-      layers.schools.addTo(map);
+      layers.schoolsGw.addTo(map);
       districtView();
       break;
 
@@ -1472,7 +1509,7 @@ function handleStep(idx) {
       layers.ephesusAttDashed.addTo(map);
       layers.seawellAttDashed.addTo(map);
       layers.glenwoodAttDashed.addTo(map);
-      layers.schools.addTo(map);
+      layers.schoolsGw.addTo(map);
       districtView();
       break;
 
@@ -1484,7 +1521,7 @@ function handleStep(idx) {
       layers.seawellDriveZone.addTo(map);
       layers.seawellAttDashed.addTo(map);
       layers.affordableHousing.addTo(map);
-      layers.schools.addTo(map);
+      layers.schoolsGw.addTo(map);
       zoomToZone(seawellDriveData.features.length ? seawellDriveData : seawellZoneData);
       break;
 
@@ -1492,14 +1529,14 @@ function handleStep(idx) {
       layers.ephesusDriveZone.addTo(map);
       layers.ephesusAttDashed.addTo(map);
       layers.affordableHousing.addTo(map);
-      layers.schools.addTo(map);
+      layers.schoolsGw.addTo(map);
       zoomToZone(ephesusDriveData.features.length ? ephesusDriveData : ephesusZoneData);
       break;
 
     case 8: // SES summary
       layers.bothDriveZones.addTo(map);
       layers.affordableHousing.addTo(map);
-      layers.schools.addTo(map);
+      layers.schoolsGw.addTo(map);
       districtView();
       break;
 
@@ -1507,7 +1544,7 @@ function handleStep(idx) {
       ensureDotsLoaded();
       layers.dots.addTo(map);
       layers.district.addTo(map);
-      layers.schools.addTo(map);
+      layers.schoolsGw.addTo(map);
       districtView();
       break;
 
@@ -1520,7 +1557,7 @@ function handleStep(idx) {
       layers.ephesusZoneFaint.addTo(map);
       layers.seawellZoneFaint.addTo(map);
       layers.glenwoodZoneFaint.addTo(map);
-      layers.schools.addTo(map);
+      layers.schoolsGw.addTo(map);
       districtView();
       break;
 
@@ -1529,31 +1566,31 @@ function handleStep(idx) {
       break;
 
     case 13: // Home sales — drive zones + MLS dots
-      layers.driveZones.addTo(map);
+      layers.driveZonesGw.addTo(map);
       layers.mlsSales.addTo(map);
-      layers.schools.addTo(map);
+      layers.schoolsGw.addTo(map);
       districtView();
       break;
 
     case 14: // Median prices — drive zones + price-colored dots
-      layers.driveZones.addTo(map);
+      layers.driveZonesGw.addTo(map);
       layers.mlsPrices.addTo(map);
-      layers.schools.addTo(map);
+      layers.schoolsGw.addTo(map);
       districtView();
       break;
 
     case 15: // Planned dev (CH Active Dev) — drive zones + dev markers
-      layers.driveZones.addTo(map);
+      layers.driveZonesGw.addTo(map);
       layers.devMarkers.addTo(map);
-      layers.schools.addTo(map);
+      layers.schoolsGw.addTo(map);
       districtView();
       showDevCharts();
       break;
 
     case 16: // Planned dev (SAPFOTAC) — drive zones + SAPFOTAC markers
-      layers.driveZones.addTo(map);
+      layers.driveZonesGw.addTo(map);
       layers.sapfotacMarkers.addTo(map);
-      layers.schools.addTo(map);
+      layers.schoolsGw.addTo(map);
       districtView();
       showSapfotacCharts();
       break;
@@ -1563,7 +1600,7 @@ function handleStep(idx) {
       layers.dots.addTo(map);
       layers.bothDriveZones.addTo(map);
       layers.district.addTo(map);
-      layers.schools.addTo(map);
+      layers.schoolsGw.addTo(map);
       dimOverlay.style.display = "block";
       districtView();
       break;
