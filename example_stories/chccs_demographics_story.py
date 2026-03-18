@@ -967,7 +967,7 @@ details[open] summary {{ margin-bottom: 8px; }}
 
   <!-- Step 15: Planned Developments (CH Active Dev) -->
   <div class="step" data-step="15">
-    <div class="step-number">16a</div>
+    <div class="step-number">16</div>
     <h2>Where Is Growth Headed?</h2>
     <p>The Town of Chapel Hill&rsquo;s
     <a href="https://www.chapelhillnc.gov/Business-and-Development/Active-Development"
@@ -1005,7 +1005,7 @@ details[open] summary {{ margin-bottom: 8px; }}
 
   <!-- Step 16: Planned Developments (SAPFOTAC) -->
   <div class="step" data-step="16">
-    <div class="step-number">16b</div>
+    <div class="step-number">17</div>
     <h2>Student Impact of Growth</h2>
     <p>The <strong>SAPFOTAC 2025 Annual Report</strong> (certified June 3, 2025)
     provides a complementary view: 21 future residential projects with

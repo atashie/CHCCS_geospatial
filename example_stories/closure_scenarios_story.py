@@ -724,7 +724,7 @@ a {{ color: #1565C0; }}
 
   <!-- Step 3: Random Sampling of Travel Mode -->
   <div class="step" data-step="3">
-    <div class="step-number">3b</div>
+    <div class="step-number">4</div>
     <h2>Random Sampling of Travel Mode</h2>
     <p>Proximity to school does not always capture mode choice.
     However, random sampling shows that
@@ -742,7 +742,7 @@ a {{ color: #1565C0; }}
 
   <!-- Step 4: Methodology — Reading the traffic maps -->
   <div class="step" data-step="4">
-    <div class="step-number">4</div>
+    <div class="step-number">5</div>
     <h2>From Walkers to Roads: How We Model Traffic</h2>
 
     <h3>Reading the traffic maps</h3>
@@ -775,7 +775,7 @@ a {{ color: #1565C0; }}
 
   <!-- Step 5: Seawell Closure — Children 5-9 -->
   <div class="step" data-step="5">
-    <div class="step-number">5</div>
+    <div class="step-number">6</div>
     <h2>Seawell Closure: Current Students (Ages 5&ndash;9)</h2>
     <p>If <span class="seawell-label">Seawell</span> closes, its
     elementary-age students (5&ndash;9) redistribute to nearby schools.
@@ -812,7 +812,7 @@ a {{ color: #1565C0; }}
 
   <!-- Step 6: Seawell Closure — Children 0-4 -->
   <div class="step" data-step="6">
-    <div class="step-number">5b</div>
+    <div class="step-number">7</div>
     <h2>Seawell Closure: Future Students (Ages 0&ndash;4)</h2>
     <p>Now the same scenario viewed through the lens of children under 5
     &mdash; future kindergarteners who will need school capacity in
@@ -835,7 +835,7 @@ a {{ color: #1565C0; }}
 
   <!-- Step 7: Ephesus Closure — Children 5-9 -->
   <div class="step" data-step="7">
-    <div class="step-number">6</div>
+    <div class="step-number">8</div>
     <h2>Ephesus Closure: Current Students (Ages 5&ndash;9)</h2>
     <p>If <span class="ephesus-label">Ephesus</span> closes, the
     traffic redistribution is substantially wider. The map shows changes
@@ -877,7 +877,7 @@ a {{ color: #1565C0; }}
 
   <!-- Step 8: Ephesus Closure — Children 0-4 -->
   <div class="step" data-step="8">
-    <div class="step-number">6b</div>
+    <div class="step-number">9</div>
     <h2>Ephesus Closure: Future Students (Ages 0&ndash;4)</h2>
     <p>For children under 5, the Ephesus closure creates even larger
     per-road impacts than the 5&ndash;9 analysis. As rising kindergarteners
@@ -901,7 +901,7 @@ a {{ color: #1565C0; }}
 
   <!-- Step 10: Summary — What the Data Shows -->
   <div class="step" data-step="10">
-    <div class="step-number">7</div>
+    <div class="step-number">10</div>
     <h2>What the Data Shows</h2>
     <p>Three key findings from the closure analysis:</p>
     <ol style="margin:8px 0 12px 20px;line-height:1.8;">
@@ -909,7 +909,7 @@ a {{ color: #1565C0; }}
         Seawell</strong> across the road network</li>
       <li><strong>Closing Ephesus converts significantly more walkers to
         bus/car riders</strong> than closing Seawell</li>
-      <li><strong>Closing eastern schools creates a school desert</strong>
+      <li><strong>Closing eastern schools (Ephesus and Glenwood) creates a school desert</strong>
         in the most child-dense part of the district</li>
     </ol>
     <div class="source">
