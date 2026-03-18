@@ -634,8 +634,8 @@ a {{ color: #1565C0; }}
   <div class="step" data-step="0">
     <div class="step-number">1</div>
     <h2>School Closure Impact on Travel Patterns</h2>
-    <p>The <a href="chccs_demographics.html">previous story</a>
-    examined <em>who lives where</em> across the district. This story
+    <p>While <a href="chccs_demographics.html">another story</a>
+    examined <em>who lives where</em> across the district, this story
     examines <strong>what happens when schools close and children must
     relocate</strong>.</p>
     <p><strong>Transportation costs</strong> are a specific school closure
