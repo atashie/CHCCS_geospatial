@@ -583,7 +583,9 @@ a {{ color: #1565C0; }}
       <li>North Carolina flooding is projected to accelerate with climate change</li>
     </ul>
     <div class="source">
-      <strong>Data:</strong> FEMA National Flood Hazard Layer (NFHL)
+      <strong>Data:</strong> FEMA National Flood Hazard Layer (NFHL)<br>
+      <strong>Source:</strong> <a href="https://www.newsobserver.com/news/local/counties/orange-county/article310619555.html"
+        target="_blank" rel="noopener">News &amp; Observer — Orange County flood damage</a>
     </div>
   </div>
 
