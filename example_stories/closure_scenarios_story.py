@@ -913,8 +913,7 @@ a {{ color: #1565C0; }}
       UNC Carolina Demography (PMR2 Forecast)
     </p>
     <p style="margin-top:24px;font-size:0.9em;color:#666;text-align:center;">
-      Return to the <a href="../index.html">homepage</a> for interactive maps
-      and full methodology guides.
+      Return to the homepage for interactive maps and full methodology guides.
     </p>
   </div>
 
