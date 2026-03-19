@@ -1200,9 +1200,6 @@ def create_environmental_map(
             <div class="faq-a"><b>No.</b> All indices are <b>comparative screening tools</b> for identifying areas of potential concern.
             They should not be interpreted as definitive health or safety risk levels. Professional assessments require site-specific data collection.</div>
         </div>
-        <div style="margin-top:10px; padding-top:8px; border-top:1px solid #ddd; font-size:12px;">
-            For a detailed methodology walkthrough, see <a href="environmental_methodology.html" style="color:#007bff;">Environmental Methodology</a>.
-        </div>
     </div>
     <script>
         window.toggleFaqPanel = function() {

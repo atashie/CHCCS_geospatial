@@ -2172,7 +2172,7 @@ FAQ
         </div>
         <div class="faq-item">
             <div class="faq-q">Where can I learn more about the methodology?</div>
-            <div class="faq-a">See the <a href="socioeconomic_methodology.html" target="_blank" style="color:#2166ac;">Socioeconomic Methodology</a> page for detailed documentation of data sources, processing steps, and limitations.</div>
+            <div class="faq-a">See the Socioeconomic Methodology page for detailed documentation of data sources, processing steps, and limitations.</div>
         </div>
     </div>
     <script>

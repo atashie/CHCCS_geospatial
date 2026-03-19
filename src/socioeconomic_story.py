@@ -1340,9 +1340,8 @@ details[open] summary {{ margin-bottom: 8px; }}
     school-level demographic composition. A school whose official zone
     extends into a lower-income area may show a very different poverty
     rate when zone boundaries are redrawn by proximity.</p>
-    <p>The full production map (<code>school_socioeconomic_map.html</code>)
-    lets users switch between 5 zone types interactively, with bar charts
-    that update in real time.</p>
+    <p>The full production map lets users switch between 5 zone types
+    interactively, with bar charts that update in real time.</p>
   </div>
 
   <!-- Step 20: Limitations -->
@@ -1382,9 +1381,8 @@ details[open] summary {{ margin-bottom: 8px; }}
     </ul>
     <details>
       <summary>Full documentation</summary>
-      <p>See <code>docs/SOCIOECONOMIC_ANALYSIS_AND_LIMITATIONS.md</code> for
-      the complete list of 26 limitations with references and validation
-      results.</p>
+      <p>The complete list of 26 limitations with references and validation
+      results is available in the project documentation.</p>
     </details>
     <div class="limitation">
       <strong>Bottom line:</strong> The analysis provides useful <em>relative</em>

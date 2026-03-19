@@ -548,7 +548,7 @@ body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans
     <div class="step" data-step="0">
       <h2 class="intro-header">How the Environmental Analysis Map Works</h2>
       <p>This walkthrough shows, step by step, how we build the
-      <a href="chccs_environmental_analysis.html" target="_blank">CHCCS Environmental Analysis Map</a>
+      CHCCS Environmental Analysis Map
       — from raw public data to the final combined visualization.</p>
       <p>We use <strong>Glenwood Elementary</strong> as a running example to
       illustrate each step, but the exact same methodology is applied equally
@@ -790,7 +790,7 @@ body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans
       district-wide view with all data visible.</p>
       <p>Each school receives scores at 500m and 1,000m radii, enabling
       direct comparison across all 11 schools.</p>
-      <div class="source">All layers combined. See <a href="chccs_environmental_analysis.html" target="_blank">the full interactive map</a>.</div>
+      <div class="source">All layers combined.</div>
     </div>
 
     <!-- Step 13: Limitations -->
@@ -810,8 +810,7 @@ body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans
         a single school property</li>
       </ul>
       <p>For the full list of 23 known limitations, see the
-      <a href="../docs/ENVIRONMENTAL_ANALYSIS_README.md" target="_blank">Environmental
-      Analysis documentation</a>.</p>
+      Environmental Analysis documentation.</p>
       <p style="margin-top: 15px; font-size: 0.85rem; color: #666;">
       All source code is available in this repository. Each data source is documented
       with its provider, access date, and refresh method.</p>

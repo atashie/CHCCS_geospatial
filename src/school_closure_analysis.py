@@ -495,13 +495,13 @@ def _graph_to_geojson_with_ids(G: nx.MultiDiGraph) -> tuple[dict, dict]:
         seen.add(edge_key)
 
         if "geometry" in data:
-            coords = [[round(c[0], 5), round(c[1], 5)]
+            coords = [[round(c[0], 4), round(c[1], 4)]
                       for c in data["geometry"].coords]
         else:
-            u_x = round(G.nodes[u]["x"], 5)
-            u_y = round(G.nodes[u]["y"], 5)
-            v_x = round(G.nodes[v]["x"], 5)
-            v_y = round(G.nodes[v]["y"], 5)
+            u_x = round(G.nodes[u]["x"], 4)
+            u_y = round(G.nodes[u]["y"], 4)
+            v_x = round(G.nodes[v]["x"], 4)
+            v_y = round(G.nodes[v]["y"], 4)
             coords = [[u_x, u_y], [v_x, v_y]]
 
         highway = data.get("highway", "")
@@ -544,21 +544,31 @@ def _graph_to_display_geojson(G: nx.MultiDiGraph) -> dict:
         seen.add(edge_key)
 
         if "geometry" in data:
-            coords = [[round(c[0], 5), round(c[1], 5)]
+            coords = [[round(c[0], 4), round(c[1], 4)]
                       for c in data["geometry"].coords]
         else:
             coords = [
-                [round(G.nodes[u]["x"], 5), round(G.nodes[u]["y"], 5)],
-                [round(G.nodes[v]["x"], 5), round(G.nodes[v]["y"], 5)],
+                [round(G.nodes[u]["x"], 4), round(G.nodes[u]["y"], 4)],
+                [round(G.nodes[v]["x"], 4), round(G.nodes[v]["y"], 4)],
             ]
 
         features.append({
             "type": "Feature",
             "geometry": {"type": "LineString", "coordinates": coords},
-            "properties": {},
         })
 
     return {"type": "FeatureCollection", "features": features}
+
+
+def _round_coords(obj, precision=4):
+    """Round all coordinates in a GeoJSON-like structure to *precision* dp."""
+    if isinstance(obj, list):
+        if obj and isinstance(obj[0], (int, float)):
+            return [round(v, precision) for v in obj]
+        return [_round_coords(item, precision) for item in obj]
+    if isinstance(obj, dict):
+        return {k: _round_coords(v, precision) for k, v in obj.items()}
+    return obj
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -1631,7 +1641,7 @@ def create_map(
 
     control_html = _build_control_html(
         heatmap_overlays, per_school_grids, grid_meta, school_data,
-        road_geojson, traffic_arrays, walk_zone_contributions,
+        traffic_arrays, walk_zone_contributions,
         n_edges, zone_polygons, walk_zones_geojson,
         network_geojson=network_geojson,
     )
@@ -1642,7 +1652,7 @@ def create_map(
 def _build_control_html(
     heatmap_overlays: dict, per_school_grids: dict, grid_meta: dict,
     schools: list,
-    road_geojson: dict, traffic_arrays: dict,
+    traffic_arrays: dict,
     walk_zone_contributions: dict,
     n_edges: int,
     zone_polygons: dict,
@@ -1669,12 +1679,13 @@ def _build_control_html(
     schools_json = json.dumps(schools)
     grid_meta_json = json.dumps(grid_meta) if grid_meta else "null"
     per_school_grids_json = json.dumps(per_school_grids)
-    road_geojson_json = json.dumps(road_geojson)
     traffic_arrays_json = json.dumps(traffic_arrays)
     n_edges_json = json.dumps(n_edges)
-    zone_polygons_json = json.dumps(zone_polygons)
+    zone_polygons_json = json.dumps(zone_polygons, separators=(",", ":"))
     walk_zones_json = json.dumps(walk_zones_geojson or {})
-    walk_zone_contributions_json = json.dumps(walk_zone_contributions)
+    walk_zone_contributions_json = json.dumps(
+        walk_zone_contributions, separators=(",", ":")
+    )
     network_geojson_json = json.dumps(network_geojson or {})
 
     # Build list of all school names for walk zone checkboxes
@@ -1928,7 +1939,7 @@ def _build_control_html(
         <h1>CHCCS School Closure Impact Analysis</h1>
         <p class="subtitle">Travel time and traffic redistribution modeling for elementary school closures
             <button class="faq-btn-closure" onclick="toggleFaqPanelClosure()" title="Click for FAQ">
-                <span class="faq-icon">?</span> Help
+                <span class="faq-icon">?</span> FAQ
             </button>
         </p>
     </div>
@@ -2057,7 +2068,6 @@ def _build_control_html(
     var GRID_META = {grid_meta_json};
     var PER_SCHOOL_GRIDS_B64 = {per_school_grids_json};
     var OVERLAYS_DATA = {overlays_data_json};
-    var ROAD_GEOJSON = {road_geojson_json};
     var TRAFFIC_ARRAYS_B64 = {traffic_arrays_json};
     var DIFF_CLAMP = 300;
     var WZ_CONTRIBUTIONS = {walk_zone_contributions_json};
@@ -2329,7 +2339,7 @@ def _build_control_html(
         initOverlays(map);
 
         // Road layer for Part 2
-        roadLayer = L.geoJSON(ROAD_GEOJSON, {{
+        roadLayer = L.geoJSON(NETWORK_GEOJSON.drive, {{
             style: {{ color: 'transparent', weight: 0, opacity: 0 }},
             onEachFeature: function(feature, layer) {{
                 layer.on('mouseover', function(e) {{
@@ -2919,8 +2929,8 @@ def main():
                 grid, nearest_schools, snaps[mode].reachable, district_gdf,
             )
             if zone_gdf is not None:
-                zone_polygons[f"{scenario_name}|{mode}"] = json.loads(
-                    zone_gdf.to_json()
+                zone_polygons[f"{scenario_name}|{mode}"] = _round_coords(
+                    json.loads(zone_gdf.to_json())
                 )
 
     # Save assignments CSV
@@ -3036,7 +3046,7 @@ def main():
                             c = edge_counts.get(f"children_{age_group}", 0)
                             if c > 0.001:
                                 sparse[str(feat_idx)] = {
-                                    f"children_{age_group}": round(c, 4)
+                                    f"children_{age_group}": round(c, 2)
                                 }
                         if sparse:
                             wz_key = f"{key}|{wz_school}"
@@ -3074,9 +3084,9 @@ def main():
         for _, row in walk_zones_gdf.iterrows():
             features.append({
                 "type": "Feature",
-                "geometry": json.loads(
+                "geometry": _round_coords(json.loads(
                     gpd.GeoSeries([row.geometry]).to_json()
-                )["features"][0]["geometry"],
+                )["features"][0]["geometry"]),
                 "properties": {"school": row["school"]},
             })
         walk_zones_geojson = {"type": "FeatureCollection", "features": features}

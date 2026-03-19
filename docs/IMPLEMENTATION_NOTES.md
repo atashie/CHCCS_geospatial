@@ -229,7 +229,7 @@ Mirrors `environmental_story.py` exactly: loads all data from existing caches (r
 | File | Purpose |
 |------|---------|
 | `src/closure_story.py` | Generator script |
-| `assets/maps/closure_methodology.html` | Self-contained scrollytelling page (~300-500 KB) |
+| `assets/maps/closure_methodology.html` | Self-contained scrollytelling page (~1.2 MB) |
 
 ---
 
