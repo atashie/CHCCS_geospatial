@@ -554,11 +554,8 @@ a {{ color: #1565C0; }}
     <p>These factors affect student health, infrastructure costs, and long-term
     viability of school sites.</p>
     <div class="source">
-      <strong>Full interactive map:</strong>
-      <a href="https://atashie.github.io/CHCCS_geospatial/assets/maps/chccs_environmental_analysis.html">CHCCS Environmental Analysis</a>
-      &bull;
-      <strong>Methodology:</strong>
-      <a href="https://atashie.github.io/CHCCS_geospatial/assets/maps/environmental_methodology.html">Environmental Methodology</a>
+      See the interactive environmental analysis map and methodology walkthrough
+      for full details.
     </div>
   </div>
 
@@ -671,8 +668,7 @@ a {{ color: #1565C0; }}
     remains after tree canopy mitigation. Hotter colors indicate higher
     cumulative exposure.</p>
     <div class="source">
-      <strong>Full methodology:</strong>
-      <a href="https://atashie.github.io/CHCCS_geospatial/assets/maps/environmental_methodology.html">Environmental Methodology Walkthrough</a>
+      See the environmental methodology walkthrough for full details.
     </div>
   </div>
 
