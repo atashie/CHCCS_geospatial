@@ -771,7 +771,7 @@ details[open] summary {{ margin-bottom: 8px; }}
       <li>Anticipated Enrollment</li>
     </ul>
     <p>Census data reflects the demographics of the <em>community surrounding</em>
-    each school, which may differ from current enrollment demographics.
+    each school, which may differ from current attendance zone demographics.
     This distinction matters: Seawell&rsquo;s current student body includes the
     district-wide LEAP (Launching Equity through Achievement and
     Potential) program whose students may present a very different demographic makeup from
@@ -817,6 +817,14 @@ details[open] summary {{ margin-bottom: 8px; }}
     zone (solid blue border) with its attendance zone shown as a dashed overlay.</p>
     <div id="seawell-ses-metrics">
     </div>
+    <p style="margin-top:10px;font-size:0.8em;color:#777;line-height:1.4;">
+      <strong>Affordable housing units</strong> shown on the map are from the
+      Town of Chapel Hill&rsquo;s affordable housing inventory (2025). These are
+      income-restricted units categorized by AMI (Area Median Income) &mdash; the
+      midpoint household income for the region, used by HUD to set eligibility
+      thresholds for housing assistance programs (e.g., 0&ndash;30% AMI = extremely
+      low income, 30&ndash;60% AMI = very low income).
+    </p>
   </div>
 
   <!-- Step 7: Ephesus SES close-up -->
@@ -1068,6 +1076,7 @@ details[open] summary {{ margin-bottom: 8px; }}
       </div>
     </div>
     <p id="chart-footer" style="text-align:center;margin:16px 0 0;font-size:0.8em;color:#999;line-height:1.4;"></p>
+    <p id="chart-footer-secondary" style="text-align:center;margin:4px 0 0;font-size:0.75em;color:#aaa;line-height:1.3;font-style:italic;"></p>
   </div>
 </div>
 
@@ -1165,6 +1174,7 @@ function dualPanelChart(title, subtitle, footer, metric, options) {{
   document.getElementById("chart-right-title").innerHTML = 'Attendance Zones <span style="font-weight:normal;font-size:0.85em;">(current)</span>';
   document.getElementById("chart-right-col").style.display = "block";
   document.getElementById("chart-footer").textContent = footer;
+  document.getElementById("chart-footer-secondary").textContent = "";
 
   // Prepare drive data (left panel — primary)
   var driveData = [];
@@ -1218,6 +1228,8 @@ function showPovertyCharts() {{
     "below_185_pov",
     {{ mode: "count" }}
   );
+  document.getElementById("chart-footer-secondary").textContent =
+    "FPG does not have an attendance zone as it is designated as a full magnet school.";
 }}
 
 function showMinorityCharts() {{

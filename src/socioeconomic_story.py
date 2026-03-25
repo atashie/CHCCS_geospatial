@@ -595,7 +595,7 @@ def build_html(data: dict) -> str:
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>How the Socioeconomic Map Works &mdash; CHCCS District Analysis</title>
+<title>How the Demographics Map Works &mdash; CHCCS District Analysis</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
 <style>
 * {{ margin: 0; padding: 0; box-sizing: border-box; }}
@@ -763,7 +763,7 @@ details[open] summary {{ margin-bottom: 8px; }}
   <!-- Step 0: Intro -->
   <div class="step" data-step="0">
     <div class="step-number">1</div>
-    <h2>How the Socioeconomic Map Works</h2>
+    <h2>How the Demographics Map Works</h2>
     <p>The CHCCS socioeconomic analysis characterizes the demographic profiles
     of elementary school attendance zones using U.S. Census data. This page
     walks through the methodology step by step.</p>
@@ -1528,11 +1528,12 @@ layers.schools = L.geoJSON(SCHOOLS, {{
   pointToLayer: function(f, ll) {{
     var isNS = f.properties.school === NORTHSIDE.school;
     return L.circleMarker(ll, {{
-      radius: isNS ? 8 : 6,
-      fillColor: isNS ? "#e41a1c" : "#2196F3",
+      radius: isNS ? 9 : 6,
+      fillColor: "#2196F3",
       color: "#fff",
-      weight: 2,
+      weight: isNS ? 2.5 : 2,
       fillOpacity: 0.9,
+      dashArray: isNS ? "4 3" : null,
     }});
   }},
   onEachFeature: function(f, layer) {{
