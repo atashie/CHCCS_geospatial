@@ -11,17 +11,18 @@ Methodology:
 - For closure scenarios, simply excludes removed school(s) and re-takes the
   minimum travel time — no recomputation needed
 - Travel speeds: walk 2.5 mph (K-5 children), bike 12 mph,
-  drive by road type using effective speeds (10-60 mph)
+  drive by road type using friction speeds + intersection penalties (10-62 mph)
 - Grid resolution: 100m over the entire CHCCS district
 
 Speed model sources:
 - Walk: MUTCD Section 4E.06 design walk speed (3.5 ft/s = 2.4 mph).
   Fitzpatrick et al. (2006, FHWA-HRT-06-042) measured 3.7-4.2 ft/s for
   school-age children. We use 2.5 mph (3.67 ft/s) — mid-range for K-5.
-- Drive: Posted limits reduced to effective speeds per HCM6 Ch.16 (Urban
-  Street Facilities) and FHWA Urban Arterial Speed Studies. Effective/posted
-  ratios: ~65% residential, ~71% secondary, ~73% primary/trunk, ~92% motorway.
-  Accounts for intersection delays, stop signs, signals, school-hour traffic.
+- Drive: Decomposed into free-flow friction speed + intersection penalties.
+  Friction speeds (per HCM6 Ch.16 / FHWA Urban Arterial Speed Studies) capture
+  mid-block delay; explicit per-node penalties (HCM6 Ch.19/20) add 15 s at
+  traffic signals, 7 s at stop signs, etc.  Intersection control tags are
+  supplemented from the Overpass API to fill gaps in OSMnx-simplified graphs.
 - Edge snapping: grid points snap to nearest edge LineString (not just nodes)
   via Shapely STRtree, with travel time interpolated along the matched edge.
   Longitudes scaled by cos(latitude) for metric-approximate queries in WGS84.
@@ -47,7 +48,8 @@ Outputs:
 - data/processed/school_desert_grid.csv (raw grid travel time data)
 
 Assumptions & limitations:
-- Travel time model uses static speeds; no real-time traffic or turn penalties.
+- Travel time model uses static speeds with explicit intersection penalties;
+  no real-time traffic, turn penalties, or time-of-day variation.
 - "Affected" is binary (delta > 0); does not weight by magnitude of increase.
 - Parcel-to-grid snapping uses straight-line nearest-point, not network distance.
 - Assessed values are from the latest Orange County tax records and may lag
@@ -114,19 +116,47 @@ DRIVE_POSTED_SPEEDS_MPH = {
     "service": 15, "unclassified": 25,
 }
 
-# Effective speeds accounting for signals, stops, and school-hour traffic
+# Free-flow friction speeds — mid-block travel speed accounting for
+# acceleration/deceleration cycles, pedestrian conflicts, and roadway friction,
+# but EXCLUDING intersection control delays (signals, stops) which are now
+# modeled explicitly as node penalties (see INTERSECTION_PENALTIES_S below).
+#
+# Compared to the previous "effective speed" model (which baked all delay into
+# a single per-road-type speed), these values are ~3-6 mph higher because the
+# signal/stop component has been extracted.
+#
 # Sources: HCM6 Ch.16 Urban Street Facilities, FHWA Urban Arterial Speed Studies
-# Ratios vs posted: ~92% motorway, ~73% trunk/primary, ~71% secondary, ~65% residential
-DRIVE_EFFECTIVE_SPEEDS_MPH = {
-    "motorway": 60, "motorway_link": 50,
-    "trunk": 40, "trunk_link": 35,
-    "primary": 30, "primary_link": 25,
-    "secondary": 25, "secondary_link": 22,
-    "tertiary": 22, "tertiary_link": 18,
-    "residential": 18, "living_street": 10,
-    "service": 10, "unclassified": 18,
+# Ratios vs posted: ~84-95% (up from ~65-92% in the old model)
+DRIVE_FREEFLOW_FRICTION_MPH = {
+    "motorway": 62, "motorway_link": 52,
+    "trunk": 45, "trunk_link": 39,
+    "primary": 36, "primary_link": 30,
+    "secondary": 29, "secondary_link": 25,
+    "tertiary": 25, "tertiary_link": 21,
+    "residential": 21, "living_street": 12,
+    "service": 12, "unclassified": 21,
 }
-DEFAULT_DRIVE_EFFECTIVE_MPH = 18
+DEFAULT_DRIVE_FREEFLOW_FRICTION_MPH = 21
+
+# Intersection control penalties — per-node delay (seconds) added to each edge
+# arriving at a node tagged with the given OSM highway value.
+#
+# These penalties are applied only in drive mode. They replace the portion of
+# the old "effective speed" reduction that was attributable to intersection
+# control, allowing the model to differentiate signalised corridors from
+# quiet residential streets with no intersections.
+#
+# Sources: HCM6 Ch.19 (Signalized Intersections, LOS C average delay),
+#          HCM6 Ch.20 (Two-Way Stop-Controlled Intersections),
+#          HCM6 Ch.22 (Roundabouts)
+INTERSECTION_PENALTIES_S = {
+    "traffic_signals": 15.0,   # Average signal cycle delay (HCM6 LOS C)
+    "stop":             7.0,   # Decelerate + full stop + wait gap + accelerate
+    "give_way":         4.0,   # Yield sign — slow but not full stop
+    "crossing":         2.0,   # Pedestrian crossing — minor yield/awareness for drivers
+    "turning_circle":   3.0,   # Cul-de-sac turnaround
+    "motorway_junction": 0.0,  # Merge ramp — no stop, delay in speed
+}
 
 # Grid
 GRID_RESOLUTION_M = 100
@@ -409,7 +439,15 @@ def _get_network_cache_path(mode: str) -> Path:
 
 
 def _add_travel_time_weights(G: nx.MultiDiGraph, mode: str) -> nx.MultiDiGraph:
-    """Add travel_time (seconds) edge weights based on mode."""
+    """Add travel_time (seconds) edge weights based on mode.
+
+    For drive mode, the weight is decomposed into two components:
+      1. Free-flow friction time  = length / friction_speed
+      2. Intersection penalty     = delay at the destination node (v)
+         based on its OSM highway tag (traffic_signals, stop, etc.)
+
+    Walk and bike modes use a flat speed with no intersection penalties.
+    """
     for u, v, key, data in G.edges(keys=True, data=True):
         length_m = data.get("length", 0)
 
@@ -418,13 +456,142 @@ def _add_travel_time_weights(G: nx.MultiDiGraph, mode: str) -> nx.MultiDiGraph:
         elif mode == "bike":
             data["travel_time"] = length_m / BIKE_SPEED_MPS
         elif mode == "drive":
+            # Edge speed from road classification
             highway = data.get("highway", "residential")
             if isinstance(highway, list):
                 highway = highway[0]
-            speed_mph = DRIVE_EFFECTIVE_SPEEDS_MPH.get(highway, DEFAULT_DRIVE_EFFECTIVE_MPH)
+            speed_mph = DRIVE_FREEFLOW_FRICTION_MPH.get(
+                highway, DEFAULT_DRIVE_FREEFLOW_FRICTION_MPH
+            )
             speed_mps = speed_mph * 0.44704  # mph to m/s
-            data["travel_time"] = length_m / speed_mps if speed_mps > 0 else 9999
+            tt = length_m / speed_mps if speed_mps > 0 else 9999
+
+            # Destination-node intersection penalty
+            v_highway = G.nodes[v].get("highway", "")
+            if isinstance(v_highway, list):
+                v_highway = v_highway[0]
+            if v_highway:
+                tt += INTERSECTION_PENALTIES_S.get(v_highway, 0.0)
+
+            data["travel_time"] = tt
     return G
+
+
+def _supplement_intersection_tags(G: nx.MultiDiGraph) -> int:
+    """Enrich graph nodes with intersection control tags from the Overpass API.
+
+    OSMnx graph simplification drops many intermediate nodes that carried
+    highway=stop or highway=give_way tags.  This function queries the
+    Overpass API for **all** traffic-control nodes in the graph's bounding box,
+    then matches each result to the nearest graph node (within 25 m).  Nodes
+    that already have a highway tag are not overwritten.
+
+    Returns the number of new tags applied.
+    """
+    import requests as _requests
+
+    cache_path = DATA_CACHE / "intersection_control_tags.json"
+
+    # -- Load from cache if available ----------------------------------------
+    if cache_path.exists():
+        import json as _json
+        with open(cache_path) as f:
+            cached = _json.load(f)
+        applied = 0
+        for nid_str, tag in cached.items():
+            nid = int(nid_str)
+            if nid in G.nodes and not G.nodes[nid].get("highway"):
+                G.nodes[nid]["highway"] = tag
+                applied += 1
+        _progress(f"Loaded intersection tags from cache ({len(cached)} entries, {applied} newly applied)")
+        return applied
+
+    # -- Query Overpass -------------------------------------------------------
+    lats = [G.nodes[n]["y"] for n in G.nodes]
+    lons = [G.nodes[n]["x"] for n in G.nodes]
+    bbox = (min(lats) - 0.005, min(lons) - 0.005,
+            max(lats) + 0.005, max(lons) + 0.005)   # slight pad
+
+    query = f"""
+    [out:json][timeout:60];
+    (
+      node["highway"="traffic_signals"]({bbox[0]},{bbox[1]},{bbox[2]},{bbox[3]});
+      node["highway"="stop"]({bbox[0]},{bbox[1]},{bbox[2]},{bbox[3]});
+      node["highway"="give_way"]({bbox[0]},{bbox[1]},{bbox[2]},{bbox[3]});
+      node["highway"="crossing"]({bbox[0]},{bbox[1]},{bbox[2]},{bbox[3]});
+    );
+    out body;
+    """
+
+    _progress("Querying Overpass API for intersection control nodes ...")
+    try:
+        resp = _requests.post(
+            "https://overpass-api.de/api/interpreter",
+            data={"data": query},
+            timeout=90,
+        )
+        resp.raise_for_status()
+        elements = resp.json().get("elements", [])
+    except Exception as e:
+        _progress(f"WARNING: Overpass query failed ({e}); using existing graph tags only")
+        return 0
+
+    if not elements:
+        _progress("Overpass returned 0 intersection nodes")
+        return 0
+
+    _progress(f"Overpass returned {len(elements)} intersection control nodes")
+
+    # -- Build cKDTree of graph nodes ----------------------------------------
+    node_ids = list(G.nodes)
+    coords = np.array([(G.nodes[n]["x"], G.nodes[n]["y"]) for n in node_ids])
+    mean_lat = coords[:, 1].mean()
+    cos_lat = math.cos(math.radians(mean_lat))
+    scaled = np.column_stack([coords[:, 0] * cos_lat, coords[:, 1]])
+    tree = cKDTree(scaled)
+
+    # Matching threshold: 25 m in approximate degrees
+    threshold_deg = 25.0 / 111_320.0
+
+    # -- Match Overpass nodes to graph nodes ---------------------------------
+    tag_map: dict[int, str] = {}   # graph_node_id -> highway tag
+    already_tagged = 0
+    for elem in elements:
+        if elem.get("type") != "node":
+            continue
+        olat, olon = elem["lat"], elem["lon"]
+        tag = elem.get("tags", {}).get("highway", "")
+        if not tag:
+            continue
+
+        dist, idx = tree.query([olon * cos_lat, olat])
+        if dist > threshold_deg:
+            continue
+
+        gnode = node_ids[idx]
+        existing = G.nodes[gnode].get("highway", "")
+        if existing:
+            already_tagged += 1
+            # Keep existing tag (OSMnx's is authoritative for this node)
+            if gnode not in tag_map:
+                tag_map[gnode] = existing
+            continue
+
+        G.nodes[gnode]["highway"] = tag
+        tag_map[gnode] = tag
+
+    # -- Cache ----------------------------------------------------------------
+    import json as _json
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(cache_path, "w") as f:
+        _json.dump({str(k): v for k, v in tag_map.items()}, f)
+
+    new_count = len(tag_map) - already_tagged
+    _progress(
+        f"Intersection tags: {new_count} new, {already_tagged} already tagged "
+        f"(cached to {cache_path.name})"
+    )
+    return new_count
 
 
 def download_network(district_polygon, mode: str) -> nx.MultiDiGraph:
@@ -441,6 +608,9 @@ def download_network(district_polygon, mode: str) -> nx.MultiDiGraph:
     if cache_path.exists():
         _progress(f"Loading cached {mode} network from {cache_path}")
         G = ox.load_graphml(cache_path)
+        # Supplement intersection control tags before computing weights
+        if mode == "drive":
+            _supplement_intersection_tags(G)
         # Re-add travel_time weights (graphml stores as strings)
         _add_travel_time_weights(G, mode)
         n_before = G.number_of_edges()
@@ -474,6 +644,10 @@ def download_network(district_polygon, mode: str) -> nx.MultiDiGraph:
             G = ox.graph_from_polygon(buffered_wgs, network_type="all", simplify=True)
         else:
             raise
+
+    # Supplement intersection control tags before computing weights
+    if mode == "drive":
+        _supplement_intersection_tags(G)
 
     G = _add_travel_time_weights(G, mode)
 
@@ -614,7 +788,7 @@ def compute_travel_scores(
         ACCESS_SPEED_FACTOR = {"walk": 0.9, "bike": 0.8, "drive": 0.2}[mode]
         access_speed = ACCESS_SPEED_FACTOR * {
             "walk": WALK_SPEED_MPS, "bike": BIKE_SPEED_MPS,
-            "drive": DEFAULT_DRIVE_EFFECTIVE_MPH * 0.44704,
+            "drive": DEFAULT_DRIVE_FREEFLOW_FRICTION_MPH * 0.44704,
         }[mode]
 
         # Max access-leg distance: pixels more than 2 grid cells from any

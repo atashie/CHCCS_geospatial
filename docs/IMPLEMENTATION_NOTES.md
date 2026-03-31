@@ -71,9 +71,9 @@ A residential parcel is **affected** if its nearest grid point has `delta_minute
 
 | Assumption | Rationale |
 |-----------|-----------|
-| Static travel speeds (no real-time traffic, no turn penalties) | Consistent, reproducible model; effective speeds already discount for signals/stops via HCM6 ratios |
+| Static travel speeds with explicit intersection penalties (no real-time traffic) | Consistent, reproducible model; friction speeds capture mid-block delay, intersection penalties (signals 15 s, stops 7 s) model control delays explicitly |
 | Walk speed 2.5 mph for all K-5 | Mid-range of MUTCD/FHWA measurements for school-age children |
-| Effective drive speeds 65-92% of posted | HCM6 Ch.16 and FHWA Urban Arterial Speed Studies |
+| Drive friction speeds 80-95% of posted + node penalties | HCM6 Ch.16 (friction), Ch.19/20 (intersection penalties); tags from Overpass API |
 | Off-network access leg at reduced speed (walk 90%, bike 80%, drive 20%) | Walking/biking to the road is nearly full-speed; driving off-network (driveways, lots) is much slower |
 | Grid points >200 m from any road are unreachable | 2x grid resolution; filters lakes, large parks, undeveloped land |
 | All remaining schools absorb displaced students | No capacity constraints modeled |
@@ -83,7 +83,7 @@ A residential parcel is **affected** if its nearest grid point has `delta_minute
 ### Limitations
 
 - **No capacity constraints:** The model assumes every remaining school can absorb displaced students. In practice, some schools may be full.
-- **No turn penalties or intersection delays:** Dijkstra uses edge-level travel times only; left-turn delays, traffic signals, and stop signs are approximated by the effective speed reduction but not modeled explicitly.
+- **No turn penalties:** Dijkstra models intersection control delays (traffic signals, stop signs, yield signs) as explicit per-node penalties added to edge weights, but does not differentiate left-turn vs. right-turn costs. Stop sign coverage in OSM is incomplete — only a fraction of actual stop signs are mapped; untagged intersections receive no penalty.
 - **Tax-record lag:** Assessed values are from the latest Orange County tax records and may not reflect current market values.
 - **Sale date coverage:** `years_since_sale` reflects the most recent recorded deed transfer. Properties with no recorded sale are excluded from that histogram (shown as NaN).
 - **Static road network:** The OSM snapshot is fixed at download time. Road construction or closures after download are not reflected.

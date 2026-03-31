@@ -36,7 +36,9 @@ Identical travel-time model as `school_desert.py`, re-implemented with `dijkstra
 |------|-------|--------|
 | Walk | 2.5 mph (1.12 m/s) | MUTCD 4E.06 / Fitzpatrick et al. (2006, FHWA-HRT-06-042), mid-range K-5 |
 | Bike | 12 mph (5.36 m/s) | Standard urban cycling speed |
-| Drive | By road type (10-60 mph effective) | HCM6 Ch.16, FHWA Urban Arterial Speed Studies |
+| Drive | By road type (12-62 mph friction) + intersection penalties | HCM6 Ch.16/19/20, Overpass API |
+
+Drive mode uses a decomposed model: free-flow friction speed (mid-block, by road type) plus explicit intersection penalties at tagged nodes (15 s at traffic signals, 7 s at stop signs, 4 s at yield signs). Intersection control tags are supplemented from the Overpass API.
 
 **Off-network access leg**: Walk 90%, Bike 80%, Drive 20% of modal speed.
 
@@ -185,7 +187,7 @@ The map uses a **tabbed sidebar** (320px right panel) with two tabs:
 
 | Assumption | Rationale |
 |-----------|-----------|
-| Static travel speeds | Consistent, reproducible; effective speeds discount for signals/stops |
+| Static travel speeds with intersection penalties | Consistent, reproducible; friction speeds + explicit delays at signals/stops from Overpass API |
 | Walk speed 2.5 mph | Mid-range MUTCD/FHWA for K-5 children |
 | Drive traffic only | Bike/walk traffic is negligible for road network analysis |
 | All schools absorb displaced students | No capacity constraints modeled |
@@ -199,7 +201,7 @@ The map uses a **tabbed sidebar** (320px right panel) with two tabs:
 ## Limitations
 
 1. **No capacity constraints**: Remaining schools assumed to absorb all displaced students.
-2. **No turn penalties**: Dijkstra uses edge-level times only; intersection delays approximated by effective speed reduction.
+2. **No turn penalties**: Dijkstra models intersection control delays (signals, stops) explicitly but does not differentiate left-turn vs. right-turn costs. Stop sign coverage in OSM is incomplete.
 3. **Static road network**: OSM snapshot fixed at download time.
 4. **No school choice or magnet effects**: Assumes geographic attendance.
 5. **ACS margins of error**: Block-group children counts have sampling uncertainty (typically ±20-40% for small counts).

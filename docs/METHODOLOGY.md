@@ -264,31 +264,47 @@ The analysis lays a grid of approximately 16,000 points across the district at 1
 |-------------|-------|-------|
 | Walk | 2.5 mph (1.12 m/s) | Between the MUTCD 4E.06 design minimum (3.5 ft/s = 2.4 mph) and Fitzpatrick et al. (2006) measured range (3.7–4.2 ft/s = 2.5–2.9 mph). Conservative for K–5 children. |
 | Bike | 12 mph (5.36 m/s) | Standard planning assumption for mixed-age cyclists |
-| Drive | 10–60 mph | Varies by road type (see details below) |
+| Drive | 12–62 mph (friction) + intersection penalties | Varies by road type + intersection control (see details below) |
 
 <details>
-<summary>Technical detail: Drive speed table and Dijkstra implementation</summary>
+<summary>Technical detail: Drive speed model and Dijkstra implementation</summary>
 
-**Effective driving speeds by road type:**
+Drive travel time is decomposed into two components:
 
-| Road Type | Speed (mph) |
-|-----------|-------------|
-| Motorway | 60 |
-| Motorway link | 50 |
-| Trunk | 40 |
-| Trunk link | 35 |
-| Primary | 30 |
-| Primary link | 25 |
-| Secondary | 25 |
-| Secondary link | 22 |
-| Tertiary | 22 |
-| Tertiary link | 18 |
-| Residential | 18 |
-| Living street | 10 |
-| Service | 10 |
-| Unclassified | 18 |
+1. **Free-flow friction speed** — mid-block travel speed that accounts for acceleration/deceleration cycles and roadway friction, but excludes intersection control delays.
+2. **Intersection penalties** — explicit per-node delays at traffic signals, stop signs, yield signs, and pedestrian crossings.
 
-These are *effective* speeds — lower than posted speed limits to account for stops, turns, congestion, and school-zone slowdowns.
+**Free-flow friction speeds by road type:**
+
+| Road Type | Friction Speed (mph) |
+|-----------|---------------------|
+| Motorway | 62 |
+| Motorway link | 52 |
+| Trunk | 45 |
+| Trunk link | 39 |
+| Primary | 36 |
+| Primary link | 30 |
+| Secondary | 29 |
+| Secondary link | 25 |
+| Tertiary | 25 |
+| Tertiary link | 21 |
+| Residential | 21 |
+| Living street | 12 |
+| Service | 12 |
+| Unclassified | 21 |
+
+These are lower than posted speed limits to account for mid-block friction (acceleration cycles, pedestrian conflicts, roadway geometry), but higher than the previous "effective speed" model because intersection control delays are now modeled explicitly.
+
+**Intersection penalties:**
+
+| Intersection Type | Delay |
+|-------------------|-------|
+| Traffic signal | 15 seconds |
+| Stop sign | 7 seconds |
+| Yield sign | 4 seconds |
+| Pedestrian crossing | 2 seconds |
+
+Intersection control tags come from OpenStreetMap (preserved by OSMnx during graph download) and are supplemented by a separate Overpass API query to recover tags lost during graph simplification. Not all stop signs are mapped in OSM — untagged intersections receive no penalty.
 
 **Access leg:** Each grid point must connect to the nearest road. This "access leg" uses a reduced speed (90% for walk, 80% for bike, 20% for drive) to account for parking, crossing streets, or navigating to the road network. Maximum access distance is 200m (twice the grid resolution).
 
@@ -297,7 +313,7 @@ These are *effective* speeds — lower than posted speed limits to account for s
 **References:**
 - MUTCD Section 4E.06 — pedestrian walking speed for signal timing
 - Fitzpatrick, K., et al. (2006). *Improving Pedestrian Safety at Unsignalized Crossings.* FHWA-HRT-06-042.
-- Highway Capacity Manual, 6th Ed., Ch. 16
+- Highway Capacity Manual, 6th Ed., Ch. 16 (friction speeds), Ch. 19 (signalized intersections), Ch. 20 (stop-controlled intersections)
 
 </details>
 
@@ -384,7 +400,7 @@ Each block's children are distributed to the 100m grid pixels based on the fract
 
 4. **No school choice modeled.** All children are routed to either their assigned zone school or the nearest open school. In practice, families may choose magnet programs, private schools, or other options.
 
-5. **Theoretical shortest paths.** Routes assume drivers take the fastest path. Real-world route choices vary based on familiarity, traffic signals, personal preference, and congestion.
+5. **Theoretical shortest paths.** Routes assume drivers take the fastest path. Real-world route choices vary based on familiarity, personal preference, and congestion. Traffic signals and stop signs are modeled as intersection penalties, but left-turn vs. right-turn costs are not differentiated.
 
 6. **No elevation or hills.** Walk and bike speeds are constant — the model doesn't slow down for uphill segments, which matters in Chapel Hill's hilly terrain.
 

@@ -22,8 +22,9 @@ Part 2 — Traffic Network Impacts (new):
 Speed model sources:
 - Walk: MUTCD Section 4E.06 / Fitzpatrick et al. (2006, FHWA-HRT-06-042).
   2.5 mph (3.67 ft/s) — mid-range for K-5 children.
-- Drive: HCM6 Ch.16 Urban Street Facilities, FHWA Urban Arterial Speed Studies.
-  Effective/posted ratios: ~65% residential, ~71% secondary, ~73% primary/trunk.
+- Drive: Decomposed into free-flow friction speed + intersection penalties.
+  Friction speeds (per HCM6 Ch.16 / FHWA) capture mid-block delay; explicit
+  per-node penalties (HCM6 Ch.19/20) add 15 s at signals, 7 s at stops, etc.
 - Edge snapping: Shapely STRtree nearest-edge with fractional interpolation
   (identical to school_desert.py methodology).
 
@@ -42,7 +43,8 @@ Outputs:
 - data/processed/school_closure_traffic.csv — Per-edge traffic aggregation
 
 Assumptions & limitations:
-- Static speeds; no real-time traffic or turn penalties.
+- Static speeds with explicit intersection penalties; no real-time traffic,
+  turn penalties, or time-of-day variation.
 - All remaining schools absorb displaced students (no capacity constraints).
 - Children distribution uses dasymetric area weighting (residential parcels).
 - Traffic analysis is drive-mode only (bike/walk traffic is negligible).
@@ -106,16 +108,26 @@ PARCEL_POLYS = DATA_RAW / "properties" / "combined_data_polys.gpkg"
 # Travel speeds
 WALK_SPEED_MPS = 1.12   # 2.5 mph — K-5 children
 BIKE_SPEED_MPS = 5.36   # 12 mph
-DRIVE_EFFECTIVE_SPEEDS_MPH = {
-    "motorway": 60, "motorway_link": 50,
-    "trunk": 40, "trunk_link": 35,
-    "primary": 30, "primary_link": 25,
-    "secondary": 25, "secondary_link": 22,
-    "tertiary": 22, "tertiary_link": 18,
-    "residential": 18, "living_street": 10,
-    "service": 10, "unclassified": 18,
+DRIVE_FREEFLOW_FRICTION_MPH = {
+    "motorway": 62, "motorway_link": 52,
+    "trunk": 45, "trunk_link": 39,
+    "primary": 36, "primary_link": 30,
+    "secondary": 29, "secondary_link": 25,
+    "tertiary": 25, "tertiary_link": 21,
+    "residential": 21, "living_street": 12,
+    "service": 12, "unclassified": 21,
 }
-DEFAULT_DRIVE_EFFECTIVE_MPH = 18
+DEFAULT_DRIVE_FREEFLOW_FRICTION_MPH = 21
+
+# Intersection control penalties (seconds, drive mode only)
+INTERSECTION_PENALTIES_S = {
+    "traffic_signals": 15.0,
+    "stop":             7.0,
+    "give_way":         4.0,
+    "crossing":         2.0,
+    "turning_circle":   3.0,
+    "motorway_junction": 0.0,
+}
 ACCESS_SPEED_FACTORS = {"walk": 0.9, "bike": 0.8, "drive": 0.2}
 
 # Grid
@@ -357,7 +369,12 @@ def load_attendance_zones() -> gpd.GeoDataFrame | None:
 # ═══════════════════════════════════════════════════════════════════════════
 
 def _add_travel_time_weights(G: nx.MultiDiGraph, mode: str):
-    """Add travel_time (seconds) edge weights based on mode."""
+    """Add travel_time (seconds) edge weights based on mode.
+
+    For drive mode, the weight is decomposed into two components:
+      1. Free-flow friction time  = length / friction_speed
+      2. Intersection penalty     = delay at the destination node (v)
+    """
     for u, v, key, data in G.edges(keys=True, data=True):
         length_m = data.get("length", 0)
         if mode == "walk":
@@ -368,9 +385,20 @@ def _add_travel_time_weights(G: nx.MultiDiGraph, mode: str):
             highway = data.get("highway", "residential")
             if isinstance(highway, list):
                 highway = highway[0]
-            speed_mph = DRIVE_EFFECTIVE_SPEEDS_MPH.get(highway, DEFAULT_DRIVE_EFFECTIVE_MPH)
+            speed_mph = DRIVE_FREEFLOW_FRICTION_MPH.get(
+                highway, DEFAULT_DRIVE_FREEFLOW_FRICTION_MPH
+            )
             speed_mps = speed_mph * 0.44704
-            data["travel_time"] = length_m / speed_mps if speed_mps > 0 else 9999
+            tt = length_m / speed_mps if speed_mps > 0 else 9999
+
+            # Destination-node intersection penalty
+            v_highway = G.nodes[v].get("highway", "")
+            if isinstance(v_highway, list):
+                v_highway = v_highway[0]
+            if v_highway:
+                tt += INTERSECTION_PENALTIES_S.get(v_highway, 0.0)
+
+            data["travel_time"] = tt
 
 
 def _ensure_bidirectional(G: nx.MultiDiGraph):
@@ -394,6 +422,10 @@ def load_network(mode: str) -> nx.MultiDiGraph:
 
     _progress(f"Loading cached {mode} network from {cache_path}")
     G = ox.load_graphml(cache_path)
+    # Supplement intersection control tags before computing weights
+    if mode == "drive":
+        from school_desert import _supplement_intersection_tags
+        _supplement_intersection_tags(G)
     _add_travel_time_weights(G, mode)
     n_before = G.number_of_edges()
     _ensure_bidirectional(G)
@@ -656,7 +688,7 @@ def snap_grid_to_edges(
     modal_speed = {
         "walk": WALK_SPEED_MPS,
         "bike": BIKE_SPEED_MPS,
-        "drive": DEFAULT_DRIVE_EFFECTIVE_MPH * 0.44704,
+        "drive": DEFAULT_DRIVE_FREEFLOW_FRICTION_MPH * 0.44704,
     }[mode]
     access_speed = ACCESS_SPEED_FACTORS[mode] * modal_speed
     max_access_m = 2 * GRID_RESOLUTION_M

@@ -40,20 +40,38 @@ Each network is downloaded for the district polygon plus a 500-meter buffer (in 
 
 - **Walk:** 2.5 mph (1.12 m/s) — mid-range for K-5 children. Based on MUTCD Section 4E.06 design speed of 3.5 ft/s and Fitzpatrick et al. (2006, FHWA-HRT-06-042) measurements of 3.7–4.2 ft/s for school-age children.
 - **Bike:** 12 mph (5.36 m/s) — flat constant.
-- **Drive:** Variable by OSM `highway` tag, using effective speeds that account for signals, stop signs, and school-hour traffic. Derived from posted speed limits reduced by empirical ratios from HCM6 Chapter 16 and FHWA Urban Arterial Speed Studies:
+- **Drive:** Decomposed into two components:
+  1. **Free-flow friction speed** — mid-block travel speed by OSM `highway` tag, accounting for acceleration/deceleration cycles and roadway friction but excluding intersection control delays.
+  2. **Intersection penalties** — explicit per-node delays at traffic signals, stop signs, yield signs, and pedestrian crossings, based on the destination node's OSM `highway` tag.
 
-| Road type | Posted (mph) | Effective (mph) | Ratio |
-|-----------|-------------|-----------------|-------|
-| Motorway | 65 | 60 | 92% |
-| Trunk | 55 | 40 | 73% |
-| Primary | 45 | 30 | 67% |
-| Secondary | 35 | 25 | 71% |
-| Tertiary | 30 | 22 | 73% |
-| Residential | 25 | 18 | 72% |
-| Living street | 15 | 10 | 67% |
-| Service | 15 | 10 | 67% |
+  Intersection control tags are supplemented from the Overpass API to fill gaps left by OSMnx graph simplification (which drops intermediate nodes that may carry stop/signal tags).
 
-Edges with unrecognized highway types default to 18 mph effective speed.
+  **Free-flow friction speeds:**
+
+| Road type | Posted (mph) | Friction (mph) | Ratio |
+|-----------|-------------|----------------|-------|
+| Motorway | 65 | 62 | 95% |
+| Trunk | 55 | 45 | 82% |
+| Primary | 45 | 36 | 80% |
+| Secondary | 35 | 29 | 83% |
+| Tertiary | 30 | 25 | 83% |
+| Residential | 25 | 21 | 84% |
+| Living street | 15 | 12 | 80% |
+| Service | 15 | 12 | 80% |
+
+  Edges with unrecognized highway types default to 21 mph.
+
+  **Intersection penalties (seconds):**
+
+| Node tag | Penalty | Source |
+|----------|---------|--------|
+| traffic_signals | 15 s | HCM6 Ch.19, LOS C average cycle delay |
+| stop | 7 s | HCM6 Ch.20, decelerate + stop + gap acceptance + accelerate |
+| give_way | 4 s | Yield — slow but not full stop |
+| crossing | 2 s | Pedestrian crossing — minor yield/awareness for drivers |
+| turning_circle | 3 s | Cul-de-sac turnaround |
+
+  For each edge (u, v): `travel_time = length / friction_speed + penalty(v)`.
 
 ### Step 4: Compute School-Outward Travel Times (Dijkstra)
 
@@ -152,7 +170,9 @@ A Folium map is generated with:
 | District boundary | U.S. Census TIGER/Line Unified School Districts | 2023 | Public download, GEOID 3700720 |
 | Road networks | OpenStreetMap via OSMnx | Fetched at analysis time | Overpass API |
 | Walk speed | MUTCD 4E.06, Fitzpatrick et al. 2006 (FHWA-HRT-06-042) | 2006 | Published research |
-| Drive speed adjustments | HCM6 Ch.16, FHWA Urban Arterial Speed Studies | 2016 | Published standards |
+| Drive friction speeds | HCM6 Ch.16, FHWA Urban Arterial Speed Studies | 2016 | Published standards |
+| Intersection penalties | HCM6 Ch.19 (signalized), Ch.20 (stop-controlled) | 2016 | Published standards |
+| Intersection control tags | OpenStreetMap via Overpass API | Fetched at analysis time | Overpass API |
 
 ---
 
@@ -169,12 +189,12 @@ A Folium map is generated with:
 
 **Bike speed is a single constant (12 mph).** No adjustment for hills, road surface, or rider age.
 
-**Drive effective speeds are static estimates per road class.** They do not account for:
+**Drive speeds use a decomposed model (friction speed + intersection penalties) that is still static.** Remaining limitations:
 - Time-of-day variation (school drop-off congestion vs. midday)
-- Intersection-specific signal timing
 - Seasonal variation or construction
-- Left-turn delays at specific intersections
+- Left-turn vs. right-turn penalties (no turn-angle modeling)
 - School zone speed reductions (20 mph zones active during arrival/dismissal)
+- Stop sign coverage in OSM is incomplete — only a fraction of actual stop signs are tagged; untagged intersections receive no penalty
 
 ### 2. Network Completeness and Accuracy
 

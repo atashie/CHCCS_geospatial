@@ -69,15 +69,19 @@ NORTHSIDE_BBOX_PAD = 0.020  # ±0.02° around Northside for local views
 # Speed model (mirrors school_closure_analysis.py)
 WALK_SPEED_MPS = 1.12   # 2.5 mph — MUTCD 4E.06
 BIKE_SPEED_MPS = 5.36   # 12 mph
-DEFAULT_DRIVE_EFFECTIVE_MPH = 18
-DRIVE_EFFECTIVE_SPEEDS_MPH = {
-    "motorway": 60, "motorway_link": 50,
-    "trunk": 40, "trunk_link": 35,
-    "primary": 30, "primary_link": 25,
-    "secondary": 25, "secondary_link": 22,
-    "tertiary": 22, "tertiary_link": 18,
-    "residential": 18, "living_street": 10,
-    "service": 10, "unclassified": 18,
+DEFAULT_DRIVE_FREEFLOW_FRICTION_MPH = 21
+DRIVE_FREEFLOW_FRICTION_MPH = {
+    "motorway": 62, "motorway_link": 52,
+    "trunk": 45, "trunk_link": 39,
+    "primary": 36, "primary_link": 30,
+    "secondary": 29, "secondary_link": 25,
+    "tertiary": 25, "tertiary_link": 21,
+    "residential": 21, "living_street": 12,
+    "service": 12, "unclassified": 21,
+}
+INTERSECTION_PENALTIES_S = {
+    "traffic_signals": 15.0, "stop": 7.0, "give_way": 4.0,
+    "crossing": 2.0, "turning_circle": 3.0, "motorway_junction": 0.0,
 }
 ACCESS_SPEED_FACTORS = {"walk": 0.9, "bike": 0.8, "drive": 0.2}
 GRID_RESOLUTION_M = 100
@@ -98,15 +102,15 @@ ROAD_COLORS = {
     "service": "#cccccc", "unclassified": "#999999",
 }
 
-# Posted vs effective speeds for narrative table
+# Posted vs free-flow friction speeds for narrative table
 ROAD_SPEED_TABLE = [
-    ("Motorway / Freeway", 65, 60),
-    ("Trunk", 55, 40),
-    ("Primary", 45, 30),
-    ("Secondary", 35, 25),
-    ("Tertiary", 25, 22),
-    ("Residential", 25, 18),
-    ("Service / Living street", 15, 10),
+    ("Motorway / Freeway", 65, 62),
+    ("Trunk", 55, 45),
+    ("Primary", 45, 36),
+    ("Secondary", 35, 29),
+    ("Tertiary", 30, 25),
+    ("Residential", 25, 21),
+    ("Service / Living street", 15, 12),
 ]
 
 
@@ -267,7 +271,7 @@ def load_network_edges(mode: str, bbox: tuple) -> gpd.GeoDataFrame:
         if isinstance(highway, list):
             highway = highway[0]
 
-        speed_mph = DRIVE_EFFECTIVE_SPEEDS_MPH.get(highway, DEFAULT_DRIVE_EFFECTIVE_MPH)
+        speed_mph = DRIVE_FREEFLOW_FRICTION_MPH.get(highway, DEFAULT_DRIVE_FREEFLOW_FRICTION_MPH)
 
         edges.append({
             "geometry": geom,
@@ -314,8 +318,8 @@ def load_graph(mode: str) -> nx.MultiDiGraph:
             highway = data.get("highway", "residential")
             if isinstance(highway, list):
                 highway = highway[0]
-            speed_mph = DRIVE_EFFECTIVE_SPEEDS_MPH.get(
-                highway, DEFAULT_DRIVE_EFFECTIVE_MPH
+            speed_mph = DRIVE_FREEFLOW_FRICTION_MPH.get(
+                highway, DEFAULT_DRIVE_FREEFLOW_FRICTION_MPH
             )
             speed_mps = speed_mph * 0.44704
             data["travel_time"] = length_m / speed_mps if speed_mps > 0 else 9999
@@ -1073,24 +1077,35 @@ a {{ color: #1565C0; }}
   <div class="step-number">3</div>
   <h2>Travel Speed Model</h2>
   <p>Raw road type alone doesn&rsquo;t tell us how fast people actually drive.
-     We assign <strong>effective speeds</strong> &mdash; typical urban travel speeds
-     that account for stop signs, traffic lights, congestion, and turning movements.</p>
+     Our model has two components:</p>
+  <ol>
+    <li><strong>Free-flow friction speeds</strong> &mdash; mid-block travel speeds
+        that account for acceleration/deceleration cycles and roadway friction,
+        but not intersection control.</li>
+    <li><strong>Intersection penalties</strong> &mdash; explicit delays at
+        traffic signals (+15 s), stop signs (+7 s), yield signs (+4 s),
+        and pedestrian crossings (+2 s),
+        applied at each tagged intersection node.</li>
+  </ol>
   <table class="data-table">
-    <thead><tr><th>Road Type</th><th>Posted (mph)</th><th>Effective (mph)</th><th>Ratio</th></tr></thead>
+    <thead><tr><th>Road Type</th><th>Posted (mph)</th><th>Friction (mph)</th><th>Ratio</th></tr></thead>
     <tbody>{speed_rows}</tbody>
   </table>
-  <p>Roads on the map are now colored by effective speed: darker = faster.</p>
+  <p>Roads on the map are colored by friction speed: darker = faster.
+     Intersection delays are added on top at signalized and stop-controlled nodes.</p>
   <div class="source">
-    <strong>Source:</strong> Effective-to-posted ratios derived from
+    <strong>Source:</strong> Friction speeds derived from
     HCM 6th Edition, Chapter 16 (Urban Street Facilities).
-    Residential effective speeds are conservative, reflecting school-zone conditions.
+    Intersection penalties from HCM Chapters 19 (signalized) and 20 (stop-controlled).
+    Intersection control tags from OpenStreetMap, supplemented via Overpass API.
   </div>
   <details>
-    <summary>Why not posted speed limits?</summary>
-    <p>Posted limits rarely match actual travel speeds during school hours.
-       Urban arterials average 65&ndash;75% of posted speed; residential streets
-       even less during morning/afternoon peaks. The HCM-based factors
-       provide a more realistic estimate.</p>
+    <summary>Why decompose speed and intersection delay?</summary>
+    <p>A single &ldquo;effective speed&rdquo; per road type treats a residential
+       segment between two traffic signals the same as one on a quiet cul-de-sac.
+       By separating mid-block friction from intersection control, routes through
+       signalized corridors correctly accumulate more delay than parallel residential
+       streets with fewer intersections.</p>
   </details>
 </div>
 
