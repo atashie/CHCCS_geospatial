@@ -697,8 +697,6 @@ def compute_dijkstra_routes(G: nx.MultiDiGraph, dijkstra_results: dict,
                     "route": sname,
                     "route_idx": si,
                     "cumul_min": round(cumul_s / 60.0, 2),
-                    "total_min": round(total_s / 60.0, 1),
-                    "seg_sec": round(tt, 1),
                 },
             })
 
@@ -1698,14 +1696,14 @@ layers.isochrones = (function() {{
   L.geoJSON(DRIVE_ROADS, {{
     style: {{ color: "#ddd", weight: 1, opacity: 0.4 }}
   }}).addTo(group);
-  // Route segments with cumulative-time colour ramp
+  // Route segments with cumulative-time colour ramp (static 0–16 min scale)
+  var MAX_MIN = 16;
   L.geoJSON(ISOCHRONES, {{
     filter: function(f) {{ return f.geometry.type === "LineString"; }},
     style: function(f) {{
       var t = f.properties.cumul_min || 0;
-      var maxT = f.properties.total_min || 10;
-      // Green (0 min) → Yellow (mid) → Red (arrival)
-      var p = Math.min(t / Math.max(maxT, 1), 1);
+      // Green (0 min) → Yellow (8 min) → Red (16 min)
+      var p = Math.min(t / MAX_MIN, 1);
       var r, g;
       if (p <= 0.5) {{
         r = Math.round(510 * p);
@@ -1719,7 +1717,7 @@ layers.isochrones = (function() {{
     onEachFeature: function(f, layer) {{
       layer.bindTooltip(
         "<b>" + f.properties.route + "</b><br>" +
-        f.properties.cumul_min + " / " + f.properties.total_min + " min"
+        f.properties.cumul_min + " min"
       );
     }}
   }}).addTo(group);
