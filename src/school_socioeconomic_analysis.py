@@ -2111,7 +2111,7 @@ FAQ
         <div class="faq-item">
             <div class="faq-q">What are Nearest Walk/Bike/Drive zones?</div>
             <div class="faq-a">Areas grouped by which school is closest via that travel mode, using actual road networks (Dijkstra shortest-path algorithm).
-            <b>Walk:</b> 2.5 mph &bull; <b>Bike:</b> 12 mph &bull; <b>Drive:</b> 18-60 mph depending on road type.</div>
+            <b>Walk:</b> 2.5 mph &bull; <b>Bike:</b> 12 mph &bull; <b>Drive:</b> 12-62 mph friction speed + intersection penalties (15 s at signals, 7 s at stops).</div>
         </div>
         <div class="faq-item">
             <div class="faq-q">What are "Block Groups" vs "Blocks (est.)"?</div>

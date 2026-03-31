@@ -104,7 +104,7 @@ For each travel mode, grid points are snapped to the road network using **edge-s
    |------|--------|-------------|--------------|--------------|
    | Walk | 90% | 1.12 m/s (2.5 mph) | 1.01 m/s (2.3 mph) | 50 s |
    | Bike | 80% | 5.36 m/s (12 mph) | 4.29 m/s (9.6 mph) | 12 s |
-   | Drive | 20% | 8.05 m/s (18 mph) | 1.61 m/s (3.6 mph) | 31 s |
+   | Drive | 20% | 9.39 m/s (21 mph) | 1.88 m/s (4.2 mph) | 27 s |
 7. **Minimum across schools:** The minimum total time (network travel + access penalty) across all open schools is recorded, along with the identity of the nearest school. If no school reaches either endpoint of the matched edge, the travel time is NaN.
 
 **Scenarios evaluated:**

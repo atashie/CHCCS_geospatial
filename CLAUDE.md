@@ -160,6 +160,7 @@ python src/socioeconomic_story.py --cache-only  # cached data only
 | UHI proxy scores | `data/processed/uhi_proxy_scores.csv` | Computed (ESA WorldCover proxy) |
 | TRAP grid cache | `data/cache/trap_grids.npz` | Computed (road_pollution grid) |
 | UHI grid cache | `data/cache/uhi_grid.npz` | Computed (ESA WorldCover proxy) |
+| Intersection control tags | `data/cache/intersection_control_tags.json` | Overpass API (signals, stops, yields, crossings) |
 | Closure Dijkstra cache | `data/cache/closure_analysis/dijkstra_{mode}.pkl` | Computed (predecessors + distances) |
 | Pixel children | `data/cache/closure_analysis/pixel_children.csv` | Computed (dasymetric ACS → pixels) |
 | Closure assignments | `data/processed/school_closure_assignments.csv` | Computed (travel time per pixel) |

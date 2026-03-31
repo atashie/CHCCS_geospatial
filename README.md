@@ -154,7 +154,7 @@ The Travel Mode selector shows **travel time to the geographically nearest open 
 
 - **Walk:** Time at 2.5 mph child walking speed
 - **Bike:** Time at 12 mph cycling speed
-- **Drive:** Time at effective driving speeds (18–60 mph depending on road type)
+- **Drive:** Time at free-flow friction speeds (12–62 mph depending on road type) plus explicit intersection penalties (15 s at signals, 7 s at stop signs)
 
 Travel times are computed using Dijkstra shortest-path algorithm on actual road networks from OpenStreetMap, not straight-line distance.
 

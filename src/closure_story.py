@@ -571,66 +571,136 @@ def crop_grid(grid: np.ndarray, grid_bounds: tuple, crop_bbox: tuple):
     return cropped, cropped_bounds
 
 
-def compute_isochrones(pixel_grid: pd.DataFrame, dijkstra_results: dict,
-                       snap: dict, school_name: str,
-                       thresholds_min: list = None) -> str:
-    """Compute drive-time isochrone rings from a school. Returns GeoJSON string."""
-    if thresholds_min is None:
-        thresholds_min = [5, 10, 15, 20]
+def compute_dijkstra_routes(G: nx.MultiDiGraph, dijkstra_results: dict,
+                            pixel_grid: pd.DataFrame, snap: dict,
+                            school_name: str) -> str:
+    """Routes from one household to all 11 schools, colour-coded by time.
 
-    if school_name not in dijkstra_results:
-        return '{"type":"FeatureCollection","features":[]}'
+    Illustrates the inverted-Dijkstra trick: a single origin point near
+    the centre of the district, with shortest-path routes reconstructed
+    to every school using each school's outward predecessor map.
 
-    dist = dijkstra_results[school_name]["dist"]
+    Every edge in each route is emitted as a separate GeoJSON LineString
+    whose ``cumul_min`` property holds the cumulative travel time from
+    the origin, enabling a graduated colour ramp on the map.
 
-    t_u = np.array([dist.get(int(u), np.inf) for u in snap["start_nodes"]])
-    t_v = np.array([dist.get(int(v), np.inf) for v in snap["end_nodes"]])
-    via_u = t_u + snap["fractions"] * snap["edge_times"]
-    via_v = t_v + (1.0 - snap["fractions"]) * snap["edge_times"]
-    total = np.minimum(via_u, via_v) + snap["access_times"]
-    total_min = total / 60.0
+    Also emits:
+    - An origin marker (Point feature with ``type: "origin"``)
+
+    Returns a GeoJSON FeatureCollection string.
+    """
+    from math import cos, radians
 
     lats = pixel_grid["lat"].values
     lons = pixel_grid["lon"].values
-    reachable = snap["reachable"]
 
+    # ── Pick one origin near the geographic centre of the district ──────
+    centre_lat = (lats.min() + lats.max()) / 2.0
+    centre_lon = (lons.min() + lons.max()) / 2.0
+    cos_lat = cos(radians(centre_lat))
+
+    # Find the grid point closest to the district centroid that is
+    # reachable by all schools (so every route can be reconstructed).
+    dists_to_centre = np.sqrt(
+        ((lats - centre_lat) * 111_320) ** 2 +
+        ((lons - centre_lon) * 111_320 * cos_lat) ** 2
+    )
+    # Sort by distance to centre; pick first one reachable by all schools
+    order = np.argsort(dists_to_centre)
+    origin_idx = None
+    for idx in order:
+        if not snap["reachable"][idx]:
+            continue
+        # Check reachable from every school's Dijkstra
+        all_ok = True
+        for sname, dij in dijkstra_results.items():
+            u = int(snap["start_nodes"][idx])
+            v = int(snap["end_nodes"][idx])
+            if u not in dij["dist"] and v not in dij["dist"]:
+                all_ok = False
+                break
+        if all_ok:
+            origin_idx = idx
+            break
+
+    if origin_idx is None:
+        return '{"type":"FeatureCollection","features":[]}'
+
+    origin_lat = float(lats[origin_idx])
+    origin_lon = float(lons[origin_idx])
+
+    # ── Build route features for each school ────────────────────────────
     features = []
-    colors = ["#fee5d9", "#fcae91", "#fb6a4a", "#cb181d"]
 
-    for i, thresh in enumerate(thresholds_min):
-        prev = thresholds_min[i - 1] if i > 0 else 0
-        mask = reachable & (total_min >= prev) & (total_min < thresh)
-        if not mask.any():
+    # Origin marker
+    features.append({
+        "type": "Feature",
+        "geometry": {"type": "Point", "coordinates": [origin_lon, origin_lat]},
+        "properties": {"type": "origin"},
+    })
+
+    for si, (sname, dij) in enumerate(sorted(dijkstra_results.items())):
+        source = dij["source_node"]
+        dist = dij["dist"]
+        pred = dij["pred"]
+
+        # Find entry node from the snapped edge
+        t_u = dist.get(int(snap["start_nodes"][origin_idx]), np.inf)
+        t_v = dist.get(int(snap["end_nodes"][origin_idx]), np.inf)
+        f = snap["fractions"][origin_idx]
+        et = snap["edge_times"][origin_idx]
+        via_u = t_u + f * et
+        via_v = t_v + (1.0 - f) * et
+
+        if via_u <= via_v:
+            entry = int(snap["start_nodes"][origin_idx])
+        else:
+            entry = int(snap["end_nodes"][origin_idx])
+
+        path = _reconstruct_path(pred, source, entry)
+        if path is None or len(path) < 2:
             continue
 
-        mask_pts = lats[mask]
-        # Subsample if too many points (for manageable polygon size)
-        max_pts = 400
-        mask_idx = np.where(mask)[0]
-        if len(mask_idx) > max_pts:
-            mask_idx = mask_idx[np.linspace(0, len(mask_idx) - 1, max_pts, dtype=int)]
-        pts = gpd.GeoDataFrame(
-            {"lat": lats[mask_idx], "lon": lons[mask_idx]},
-            geometry=gpd.points_from_xy(lons[mask_idx], lats[mask_idx]),
-            crs=CRS_WGS84,
-        ).to_crs(CRS_UTM17N)
+        # Path goes school→entry; reverse to get origin→school direction
+        path_rev = list(reversed(path))
+        cumul_s = 0.0
+        total_s = min(via_u, via_v) + snap["access_times"][origin_idx]
 
-        # Buffer each point and dissolve
-        pts["geometry"] = pts.geometry.buffer(80)
-        dissolved = pts.dissolve()
-        dissolved = dissolved.to_crs(CRS_WGS84)
-        geom = dissolved.geometry.iloc[0]
-        geom = geom.simplify(0.002, preserve_topology=True)
+        for j in range(len(path_rev) - 1):
+            u_node = path_rev[j]
+            v_node = path_rev[j + 1]
 
-        features.append({
-            "type": "Feature",
-            "geometry": mapping(geom),
-            "properties": {
-                "min": prev, "max": thresh,
-                "label": f"{prev}-{thresh} min",
-                "color": colors[i] if i < len(colors) else "#67000d",
-            },
-        })
+            edge_data = G.get_edge_data(u_node, v_node)
+            if edge_data:
+                first_key = next(iter(edge_data))
+                tt = float(edge_data[first_key].get("travel_time", 0))
+                geom_data = edge_data[first_key].get("geometry")
+            else:
+                tt = 0
+                geom_data = None
+
+            ux = G.nodes[u_node].get("x", 0)
+            uy = G.nodes[u_node].get("y", 0)
+            vx = G.nodes[v_node].get("x", 0)
+            vy = G.nodes[v_node].get("y", 0)
+
+            if geom_data and hasattr(geom_data, "coords"):
+                coords = list(geom_data.coords)
+            else:
+                coords = [(ux, uy), (vx, vy)]
+
+            cumul_s += tt
+            features.append({
+                "type": "Feature",
+                "geometry": {"type": "LineString", "coordinates": coords},
+                "properties": {
+                    "route": sname,
+                    "route_idx": si,
+                    "cumul_min": round(cumul_s / 60.0, 2),
+                    "total_min": round(total_s / 60.0, 1),
+                    "seg_sec": round(tt, 1),
+                },
+            })
 
     fc = {"type": "FeatureCollection", "features": features}
     return json.dumps(fc, separators=(",", ":"))
@@ -795,26 +865,70 @@ def compute_snap_diagram(pixel_grid: pd.DataFrame, snap: dict,
     return json.dumps(fc, separators=(",", ":"))
 
 
-def compute_grid_points_sample(pixel_grid: pd.DataFrame, bbox: tuple,
-                               max_points: int = 300) -> str:
-    """Sample grid points within bbox for visualization. Returns GeoJSON."""
+def compute_grid_cells_sample(pixel_grid: pd.DataFrame, bbox: tuple,
+                              max_cells: int = 800) -> str:
+    """Sample grid cells within bbox for visualization. Returns GeoJSON.
+
+    Emits each cell as a rectangle polygon (not a point) so the map shows
+    the actual 100 m grid structure.  Subsampling uses spatial stride
+    (every Nth row and column) rather than flat-array linspace, which
+    preserves the regular grid pattern instead of producing horizontal bands.
+    """
+    from math import cos, radians
+
     lats = pixel_grid["lat"].values
     lons = pixel_grid["lon"].values
 
+    # Cell half-dimensions in degrees (100 m grid at Chapel Hill latitude)
+    center_lat = (bbox[1] + bbox[3]) / 2.0
+    half_dlat = (GRID_RESOLUTION_M / 111_320.0) / 2.0
+    half_dlon = (GRID_RESOLUTION_M / (111_320.0 * cos(radians(center_lat)))) / 2.0
+
+    # Filter to bbox
     mask = (
         (lons >= bbox[0]) & (lons <= bbox[2]) &
         (lats >= bbox[1]) & (lats <= bbox[3])
     )
     indices = np.where(mask)[0]
 
-    if len(indices) > max_points:
-        indices = indices[np.linspace(0, len(indices) - 1, max_points, dtype=int)]
+    if len(indices) == 0:
+        return '{"type":"FeatureCollection","features":[]}'
+
+    # Spatial subsampling: assign grid row/col indices, then stride
+    sub_lats = lats[indices]
+    sub_lons = lons[indices]
+    unique_lats = np.sort(np.unique(np.round(sub_lats, 7)))
+    unique_lons = np.sort(np.unique(np.round(sub_lons, 7)))
+
+    # Compute stride so total cells ≤ max_cells
+    n_total = len(unique_lats) * len(unique_lons)
+    if n_total > max_cells:
+        stride = max(1, int(np.sqrt(n_total / max_cells)))
+    else:
+        stride = 1
+
+    keep_lats = set(np.round(unique_lats[::stride], 7))
+    keep_lons = set(np.round(unique_lons[::stride], 7))
 
     features = []
     for idx in indices:
+        lat_r = round(float(lats[idx]), 7)
+        lon_r = round(float(lons[idx]), 7)
+        if lat_r not in keep_lats or lon_r not in keep_lons:
+            continue
+        lat_f = float(lats[idx])
+        lon_f = float(lons[idx])
+        # Rectangle polygon: [SW, SE, NE, NW, SW]
+        coords = [[
+            [lon_f - half_dlon, lat_f - half_dlat],
+            [lon_f + half_dlon, lat_f - half_dlat],
+            [lon_f + half_dlon, lat_f + half_dlat],
+            [lon_f - half_dlon, lat_f + half_dlat],
+            [lon_f - half_dlon, lat_f - half_dlat],
+        ]]
         features.append({
             "type": "Feature",
-            "geometry": {"type": "Point", "coordinates": [float(lons[idx]), float(lats[idx])]},
+            "geometry": {"type": "Polygon", "coordinates": coords},
             "properties": {},
         })
 
@@ -1142,8 +1256,16 @@ a {{ color: #1565C0; }}
      the same time as driving <em>from</em> it. This gives us distances from
      all ~16,000 grid points using just <strong>11 runs per mode</strong>
      (33 total across drive/walk/bike).</p>
-  <p>The map shows drive-time rings radiating outward from Northside.
-     Notice how they follow the road network rather than forming perfect circles.</p>
+  <p>The map shows shortest-path routes from a single household
+     (<span style="color:#4169e1"><b>&#9679;</b></span> blue dot) to all 11 elementary schools.
+     Each road segment is coloured by cumulative travel time from the origin:
+     <strong style="color:#228b22">green</strong> (just departed) &rarr;
+     <strong style="color:#daa520">yellow</strong> (mid-route) &rarr;
+     <strong style="color:#cc0000">red</strong> (arriving at school).
+     This is the core of the inverted Dijkstra trick &mdash; each school&rsquo;s
+     outward search gives us the route from <em>any</em> point back to that school,
+     so one household can reach all 11 schools without running 11 separate searches
+     from that household.</p>
   <div class="source">
     <strong>Algorithm:</strong> Single-source Dijkstra via NetworkX
     (<code>dijkstra_predecessor_and_distance</code>). Produces both
@@ -1189,12 +1311,13 @@ a {{ color: #1565C0; }}
   <div class="step-number">7</div>
   <h2>The 100-Meter Grid</h2>
   <p>We tile the entire CHCCS district with a <strong>100 m &times; 100 m grid</strong>
-     &mdash; roughly 16,000 points. Each point represents a potential household location.</p>
+     &mdash; roughly 16,000 cells. Each cell represents a potential household location.</p>
   <p>The grid uses WGS84-native coordinates with a cosine-latitude correction
      to keep cells approximately square despite the curvature of longitude lines.
      At Chapel Hill&rsquo;s latitude (35.9&deg;N), 100 m &asymp; 0.000898&deg; lat
      and &asymp; 0.001109&deg; lon.</p>
-  <p>Only points inside the district boundary are kept.</p>
+  <p>Only cells inside the district boundary are kept. The map shows the grid
+     near Northside &mdash; zoom in to see how the cells tile the landscape.</p>
   <details>
     <summary>Why not a projected (UTM) grid?</summary>
     <p>Earlier versions used UTM 17N, but the convergence angle introduced
@@ -1568,16 +1691,50 @@ layers.walkRoads = L.geoJSON(WALK_ROADS, {{
   style: {{ color: "#4daf4a", weight: 1, opacity: 0.5 }}
 }});
 
-// Isochrones
-layers.isochrones = L.geoJSON(ISOCHRONES, {{
-  style: function(f) {{
-    return {{ color: f.properties.color, weight: 1, fillColor: f.properties.color,
-             fillOpacity: 0.3 }};
-  }},
-  onEachFeature: function(f, layer) {{
-    layer.bindTooltip(f.properties.label);
-  }}
-}});
+// Dijkstra routes: one origin → all 11 schools, colour-coded by cumulative time
+layers.isochrones = (function() {{
+  var group = L.layerGroup();
+  // Background: light road network for context
+  L.geoJSON(DRIVE_ROADS, {{
+    style: {{ color: "#ddd", weight: 1, opacity: 0.4 }}
+  }}).addTo(group);
+  // Route segments with cumulative-time colour ramp
+  L.geoJSON(ISOCHRONES, {{
+    filter: function(f) {{ return f.geometry.type === "LineString"; }},
+    style: function(f) {{
+      var t = f.properties.cumul_min || 0;
+      var maxT = f.properties.total_min || 10;
+      // Green (0 min) → Yellow (mid) → Red (arrival)
+      var p = Math.min(t / Math.max(maxT, 1), 1);
+      var r, g;
+      if (p <= 0.5) {{
+        r = Math.round(510 * p);
+        g = 180;
+      }} else {{
+        r = 255;
+        g = Math.round(180 * (1 - (p - 0.5) * 2));
+      }}
+      return {{ color: "rgb("+r+","+g+",0)", weight: 3.5, opacity: 0.85 }};
+    }},
+    onEachFeature: function(f, layer) {{
+      layer.bindTooltip(
+        "<b>" + f.properties.route + "</b><br>" +
+        f.properties.cumul_min + " / " + f.properties.total_min + " min"
+      );
+    }}
+  }}).addTo(group);
+  // Origin marker (large blue dot)
+  L.geoJSON(ISOCHRONES, {{
+    filter: function(f) {{ return f.properties.type === "origin"; }},
+    pointToLayer: function(f, ll) {{
+      return L.circleMarker(ll, {{
+        radius: 8, color: "#1a1a8b", fillColor: "#4169e1",
+        fillOpacity: 0.9, weight: 2
+      }}).bindTooltip("<b>Origin household</b>");
+    }}
+  }}).addTo(group);
+  return group;
+}})();
 
 // Snap diagram
 layers.snapDiagram = L.geoJSON(SNAP_DIAGRAM, {{
@@ -1595,11 +1752,11 @@ layers.snapDiagram = L.geoJSON(SNAP_DIAGRAM, {{
   }}
 }});
 
-// Grid points
+// Grid cells (100m rectangles)
 layers.gridPoints = L.geoJSON(GRID_POINTS, {{
-  pointToLayer: function(f, ll) {{
-    return L.circleMarker(ll, {{ radius: 2, color: "#666", fillColor: "#999",
-                                 fillOpacity: 0.6, weight: 1 }});
+  style: function(f) {{
+    return {{ color: "#666", weight: 0.5, fillColor: "#b0c4de",
+              fillOpacity: 0.35 }};
   }}
 }});
 
@@ -1748,11 +1905,11 @@ function handleStep(idx) {{
       map.setView(ns, 14);
       break;
 
-    case 4: // Isochrones
+    case 4: // Dijkstra routes: one origin → all schools
       layers.district.addTo(map);
       layers.schools.addTo(map);
       layers.isochrones.addTo(map);
-      map.setView(ns, 13);
+      districtView();
       break;
 
     case 5: // Snap diagram
@@ -2025,19 +2182,19 @@ def main():
         walk_bl_bounds = (0, 0, 0, 0)
         walk_dl_bounds = (0, 0, 0, 0)
 
-    # ── 10. Isochrones ──
-    _progress("Computing isochrones")
-    isochrones_json = compute_isochrones(
-        pixel_grid, dijkstra_drive, snap_drive, NORTHSIDE_NAME
+    # ── 10. Graph, Dijkstra routes, and snap diagram ──
+    _progress("Loading graph for Dijkstra routes and snap diagram")
+    G_drive = load_graph("drive")
+
+    _progress("Computing Dijkstra route visualization")
+    isochrones_json = compute_dijkstra_routes(
+        G_drive, dijkstra_drive, pixel_grid, snap_drive, NORTHSIDE_NAME
     )
 
-    # ── 11. Snap diagram ──
-    _progress("Loading graph for snap diagram and routes")
-    G_drive = load_graph("drive")
     snap_diagram_json = compute_snap_diagram(pixel_grid, snap_drive, G_drive, northside)
 
     # ── 12. Grid points sample ──
-    grid_points_json = compute_grid_points_sample(pixel_grid, bbox, max_points=150)
+    grid_points_json = compute_grid_cells_sample(pixel_grid, bbox, max_cells=800)
 
     # ── 13. Block groups ──
     _progress("Loading block groups")
