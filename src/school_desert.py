@@ -628,10 +628,12 @@ def download_network(district_polygon, mode: str) -> nx.MultiDiGraph:
     ox.settings.use_cache = True
     ox.settings.requests_timeout = 300
 
-    # Buffer the polygon slightly for edge accuracy
+    # Buffer the polygon for edge accuracy — drive needs a wider buffer to
+    # capture major roads outside city limits that are commonly used for travel
+    buffer_m = 2500 if mode == "drive" else 500
     district_gdf = gpd.GeoDataFrame(geometry=[district_polygon], crs=CRS_WGS84)
     district_utm = district_gdf.to_crs(CRS_UTM17N)
-    buffered_utm = district_utm.geometry.iloc[0].buffer(500)
+    buffered_utm = district_utm.geometry.iloc[0].buffer(buffer_m)
     buffered_wgs = gpd.GeoDataFrame(
         geometry=[buffered_utm], crs=CRS_UTM17N
     ).to_crs(CRS_WGS84).geometry.iloc[0]
