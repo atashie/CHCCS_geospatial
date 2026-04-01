@@ -1431,17 +1431,29 @@ function bgChoropleth(metric, colorFn) {
   });
 }
 
-function ylOrRd(val) {
-  // YlOrRd-like: 0% → pale yellow, 10%+ → dark red
-  var t = Math.min(val / 10, 1);
-  var r = Math.round(255);
-  var g = Math.round(255 - t * 180);
-  var b = Math.round(200 - t * 200);
-  return "rgb(" + r + "," + g + "," + b + ")";
+function makeYlOrRd(maxVal) {
+  // YlOrRd-like: 0% → pale yellow, maxVal% → dark red
+  return function(val) {
+    var t = Math.min(val / maxVal, 1);
+    var r = Math.round(255);
+    var g = Math.round(255 - t * 180);
+    var b = Math.round(200 - t * 200);
+    return "rgb(" + r + "," + g + "," + b + ")";
+  };
 }
 
-layers.bgYoungChildren = bgChoropleth("pct_young_children", ylOrRd);
-layers.bgElementaryAge = bgChoropleth("pct_elementary_age", ylOrRd);
+// Compute data-driven max for each metric
+function bgMax(metric) {
+  var mx = 0;
+  BG.features.forEach(function(f) {
+    var v = f.properties[metric] || 0;
+    if (v > mx) mx = v;
+  });
+  return mx;
+}
+
+layers.bgYoungChildren = bgChoropleth("pct_young_children", makeYlOrRd(bgMax("pct_young_children")));
+layers.bgElementaryAge = bgChoropleth("pct_elementary_age", makeYlOrRd(bgMax("pct_elementary_age")));
 
 // Dots (canvas rendered — deferred)
 var dotCanvas = L.canvas({ padding: 0.5 });
