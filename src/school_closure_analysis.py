@@ -2556,7 +2556,7 @@ def _build_control_html(
         return null;
     }}
 
-    // --- Traffic color scale (unchanged) ---
+    // --- Traffic color scale ---
     function trafficColor(val, maxVal, isDiff) {{
         if (val === 0 || isNaN(val)) return {{ color: 'transparent', weight: 0, opacity: 0 }};
         if (isDiff) {{
