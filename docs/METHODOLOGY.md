@@ -264,7 +264,7 @@ The analysis lays a grid of approximately 16,000 points across the district at 1
 |-------------|-------|-------|
 | Walk | 2.5 mph (1.12 m/s) | Between the MUTCD 4E.06 design minimum (3.5 ft/s = 2.4 mph) and Fitzpatrick et al. (2006) measured range (3.7–4.2 ft/s = 2.5–2.9 mph). Conservative for K–5 children. |
 | Bike | 12 mph (5.36 m/s) | Standard planning assumption for mixed-age cyclists |
-| Drive | 12–62 mph (friction) + intersection penalties | Varies by road type + intersection control (see details below) |
+| Drive | 11–59 mph (friction) + intersection penalties | Varies by road type + intersection control (see details below) |
 
 <details>
 <summary>Technical detail: Drive speed model and Dijkstra implementation</summary>
@@ -278,31 +278,31 @@ Drive travel time is decomposed into two components:
 
 | Road Type | Friction Speed (mph) |
 |-----------|---------------------|
-| Motorway | 62 |
-| Motorway link | 52 |
-| Trunk | 45 |
-| Trunk link | 39 |
-| Primary | 36 |
-| Primary link | 30 |
-| Secondary | 29 |
-| Secondary link | 25 |
-| Tertiary | 25 |
-| Tertiary link | 21 |
-| Residential | 21 |
-| Living street | 12 |
-| Service | 12 |
-| Unclassified | 21 |
+| Motorway | 59 |
+| Motorway link | 49 |
+| Trunk | 43 |
+| Trunk link | 37 |
+| Primary | 34 |
+| Primary link | 28 |
+| Secondary | 28 |
+| Secondary link | 24 |
+| Tertiary | 24 |
+| Tertiary link | 20 |
+| Residential | 20 |
+| Living street | 11 |
+| Service | 11 |
+| Unclassified | 20 |
 
-These are lower than posted speed limits to account for mid-block friction (acceleration cycles, pedestrian conflicts, roadway geometry), but higher than the previous "effective speed" model because intersection control delays are now modeled explicitly.
+These are 76–91% of posted speed limits, calibrated for school-hour conditions (queue spillback, school-zone caution, higher pedestrian activity). Intersection control delays are modeled explicitly as separate per-node penalties.
 
 **Intersection penalties:**
 
 | Intersection Type | Delay |
 |-------------------|-------|
-| Traffic signal | 15 seconds |
-| Stop sign | 7 seconds |
-| Yield sign | 4 seconds |
-| Pedestrian crossing | 2 seconds |
+| Traffic signal | 22 seconds |
+| Stop sign | 11 seconds |
+| Yield sign | 6 seconds |
+| Pedestrian crossing | 3 seconds |
 
 Intersection control tags come from OpenStreetMap (preserved by OSMnx during graph download) and are supplemented by a separate Overpass API query to recover tags lost during graph simplification. Not all stop signs are mapped in OSM — untagged intersections receive no penalty.
 
@@ -378,17 +378,16 @@ Each block's children are distributed to the 100m grid pixels based on the fract
 ### 2.5 Map Layers and Controls
 
 **Tab 1 — Travel Time:**
-- **Scenario selector:** Choose which school to close (or "All Open" baseline)
+- **Schools to Close:** Check any combination of schools to simulate simultaneous closures (no checkmarks = baseline with all schools open)
 - **Mode selector:** Walk, Bike, or Drive
-- **Heatmap overlay:** Color-coded grid showing travel time to nearest open school (blue = short, red = long)
-- **Walk zone overlays:** CHCCS-designated walkable areas (turn red when their school is closed)
-- **School markers:** Open schools shown normally; closed school shown with X
+- **Heatmap overlay:** Color-coded grid showing travel time to nearest open school (light yellow = short, deep red = long)
+- **School markers:** Open schools shown in blue; closed schools shown with red X
 
 **Tab 2 — Traffic:**
-- **Scenario selector:** Choose which school to close
+- **Schools to Close:** Same multi-select as Tab 1
 - **Routing mode:** "Current school zone" (routes to assigned school) or "Closest school by driving" (routes to nearest school by road)
 - **Road segments:** Color-coded by number of children routed along them (thicker/redder = more children)
-- **Walk zone masking:** Children inside walk zones are tracked separately
+- **Walk zone masking:** Excludes traffic from children who walk (in walk zones of open schools)
 
 ### 2.6 Key Limitations
 

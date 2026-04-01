@@ -71,9 +71,9 @@ A residential parcel is **affected** if its nearest grid point has `delta_minute
 
 | Assumption | Rationale |
 |-----------|-----------|
-| Static travel speeds with explicit intersection penalties (no real-time traffic) | Consistent, reproducible model; friction speeds capture mid-block delay, intersection penalties (signals 15 s, stops 7 s) model control delays explicitly |
+| Static travel speeds with explicit intersection penalties (no real-time traffic) | Consistent, reproducible model; friction speeds capture mid-block delay, intersection penalties (signals 22 s, stops 11 s) model control delays explicitly |
 | Walk speed 2.5 mph for all K-5 | Mid-range of MUTCD/FHWA measurements for school-age children |
-| Drive friction speeds 80-95% of posted + node penalties | HCM6 Ch.16 (friction), Ch.19/20 (intersection penalties); tags from Overpass API |
+| Drive friction speeds 76-91% of posted + node penalties | HCM6 Ch.16 (friction), Ch.19/20 (intersection penalties, LOS D school-hour peak); tags from Overpass API |
 | Off-network access leg at reduced speed (walk 90%, bike 80%, drive 20%) | Walking/biking to the road is nearly full-speed; driving off-network (driveways, lots) is much slower |
 | Grid points >200 m from any road are unreachable | 2x grid resolution; filters lakes, large parks, undeveloped land |
 | All remaining schools absorb displaced students | No capacity constraints modeled |
@@ -162,7 +162,7 @@ Consolidated interactive map combining TRAP pollution, flood risk, tree canopy, 
 
 ### Overview
 
-Comprehensive analysis combining travel-time impacts with children-weighted traffic network analysis for all 11 CHCCS elementary school closure scenarios. Extends the school desert methodology with route extraction (via predecessor maps) and dasymetric children distribution.
+Comprehensive analysis combining travel-time impacts with children-weighted traffic network analysis for arbitrary multi-school closure scenarios across all 11 CHCCS elementary schools. Extends the school desert methodology with predecessor maps for client-side route reconstruction and dasymetric children distribution.
 
 ### Workflow
 
@@ -172,10 +172,10 @@ Comprehensive analysis combining travel-time impacts with children-weighted traf
 4. **Edge-snap** — Shapely STRtree batch nearest-edge with fractional interpolation
 5. **Dijkstra with predecessors** — `dijkstra_predecessor_and_distance()` returns both distances AND predecessor maps; ~4 MB total memory for 33 runs
 6. **Per-school travel grids** — For each school × mode, rasterize travel time to float32 2D array (~2.8 MB total for 33 grids). These replace pre-rendered PNG overlays.
-7. **Zone polygon generation** — Pixel assignments → 55 m squares → dissolve → clip → GeoJSON (36 sets: 12 scenarios × 3 modes)
+7. **Zone polygon generation** — Baseline pixel assignments → 55 m squares → dissolve → clip → GeoJSON (3 sets: baseline × 3 modes)
 8. **Children distribution** — ACS B01001 → blocks (dasymetric) → pixels (area intersection)
-9. **Route extraction + traffic** — Reconstruct paths from predecessors, accumulate children on edges. Simultaneously tracks per-walk-zone contributions as sparse arrays.
-10. **Build map** — Folium + client-side canvas rendering with embedded per-school float32 grids, colormap LUTs, road GeoJSON, traffic arrays, sparse walk zone contributions
+9. **Client-side traffic data** — Predecessor maps (int16, ~200 KB) + edge lookup (~66 KB) + per-pixel metadata (children, walk zone, zone school, entry nodes) embedded for JS route reconstruction
+10. **Build map** — Folium + client-side canvas rendering with embedded per-school float32 grids, colormap LUTs, road GeoJSON, predecessor maps, edge lookup
 
 ### Key Design Decisions
 
@@ -183,9 +183,9 @@ Comprehensive analysis combining travel-time impacts with children-weighted traf
 |----------|-----------|
 | `dijkstra_predecessor_and_distance()` instead of `single_source_dijkstra_path_length()` | Enables route reconstruction at O(V) memory cost instead of O(V×path_length) |
 | Vectorized pixel assignment with NumPy | ~10x speedup over per-pixel Python loop |
-| Client-side canvas rendering from per-school grids | Eliminates 72 pre-rendered PNGs; JS computes `min(open_schools)` in ~5 ms for any closure scenario |
-| Colormap LUTs (256-entry RGBA arrays from matplotlib) | Client-side coloring without hand-coded RGB ramps; faithful to matplotlib colormaps |
-| Unmasked traffic + sparse walk zone contributions | Client-side masking via subtraction; 2 zone modes × 12 scenarios × 2 ages = 48 arrays (down from 96), plus ~528 sparse contribution sets (~1 MB) |
+| Multi-select school checkboxes instead of single-scenario radio buttons | Enables any combination of closures (2^11 = 2,048 scenarios) without pre-computation |
+| Client-side canvas rendering from per-school grids + colormap LUTs | JS computes `min(open_schools)` in ~5 ms for any closure combination; 256-entry RGBA LUTs from matplotlib for faithful coloring |
+| Predecessor maps + edge lookup for client-side traffic (~0.5 MB) | JS walks predecessor chains to reconstruct routes for any closure set; replaces 4.8 MB of pre-computed per-scenario traffic arrays |
 | Tabbed sidebar UI (Part 1 / Part 2) | Separates travel time and traffic controls into focused views instead of 17+ mixed controls |
 | Drive-only traffic analysis | Bike/walk traffic is negligible for road network impact |
 | Pickle for Dijkstra cache | Complex nested dict structure not suited for NPZ/CSV |

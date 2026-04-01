@@ -69,19 +69,19 @@ NORTHSIDE_BBOX_PAD = 0.020  # ±0.02° around Northside for local views
 # Speed model (mirrors school_closure_analysis.py)
 WALK_SPEED_MPS = 1.12   # 2.5 mph — MUTCD 4E.06
 BIKE_SPEED_MPS = 5.36   # 12 mph
-DEFAULT_DRIVE_FREEFLOW_FRICTION_MPH = 21
+DEFAULT_DRIVE_FREEFLOW_FRICTION_MPH = 20
 DRIVE_FREEFLOW_FRICTION_MPH = {
-    "motorway": 62, "motorway_link": 52,
-    "trunk": 45, "trunk_link": 39,
-    "primary": 36, "primary_link": 30,
-    "secondary": 29, "secondary_link": 25,
-    "tertiary": 25, "tertiary_link": 21,
-    "residential": 21, "living_street": 12,
-    "service": 12, "unclassified": 21,
+    "motorway": 59, "motorway_link": 49,
+    "trunk": 43, "trunk_link": 37,
+    "primary": 34, "primary_link": 28,
+    "secondary": 28, "secondary_link": 24,
+    "tertiary": 24, "tertiary_link": 20,
+    "residential": 20, "living_street": 11,
+    "service": 11, "unclassified": 20,
 }
 INTERSECTION_PENALTIES_S = {
-    "traffic_signals": 15.0, "stop": 7.0, "give_way": 4.0,
-    "crossing": 2.0, "turning_circle": 3.0, "motorway_junction": 0.0,
+    "traffic_signals": 22.0, "stop": 11.0, "give_way": 6.0,
+    "crossing": 3.0, "turning_circle": 4.0, "motorway_junction": 0.0,
 }
 ACCESS_SPEED_FACTORS = {"walk": 0.9, "bike": 0.8, "drive": 0.2}
 GRID_RESOLUTION_M = 100
@@ -104,13 +104,13 @@ ROAD_COLORS = {
 
 # Posted vs free-flow friction speeds for narrative table
 ROAD_SPEED_TABLE = [
-    ("Motorway / Freeway", 65, 62),
-    ("Trunk", 55, 45),
-    ("Primary", 45, 36),
-    ("Secondary", 35, 29),
-    ("Tertiary", 30, 25),
-    ("Residential", 25, 21),
-    ("Service / Living street", 15, 12),
+    ("Motorway / Freeway", 65, 59),
+    ("Trunk", 55, 43),
+    ("Primary", 45, 34),
+    ("Secondary", 35, 28),
+    ("Tertiary", 30, 24),
+    ("Residential", 25, 20),
+    ("Service / Living street", 15, 11),
 ]
 
 
@@ -1195,8 +1195,8 @@ a {{ color: #1565C0; }}
         that account for acceleration/deceleration cycles and roadway friction,
         but not intersection control.</li>
     <li><strong>Intersection penalties</strong> &mdash; explicit delays at
-        traffic signals (+15 s), stop signs (+7 s), yield signs (+4 s),
-        and pedestrian crossings (+2 s),
+        traffic signals (+22 s), stop signs (+11 s), yield signs (+6 s),
+        and pedestrian crossings (+3 s),
         applied at each tagged intersection node.</li>
   </ol>
   <table class="data-table">

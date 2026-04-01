@@ -36,15 +36,15 @@ Identical travel-time model as `school_desert.py`, re-implemented with `dijkstra
 |------|-------|--------|
 | Walk | 2.5 mph (1.12 m/s) | MUTCD 4E.06 / Fitzpatrick et al. (2006, FHWA-HRT-06-042), mid-range K-5 |
 | Bike | 12 mph (5.36 m/s) | Standard urban cycling speed |
-| Drive | By road type (12-62 mph friction) + intersection penalties | HCM6 Ch.16/19/20, Overpass API |
+| Drive | By road type (11-59 mph friction) + intersection penalties | HCM6 Ch.16/19/20, Overpass API |
 
-Drive mode uses a decomposed model: free-flow friction speed (mid-block, by road type) plus explicit intersection penalties at tagged nodes (15 s at traffic signals, 7 s at stop signs, 4 s at yield signs). Intersection control tags are supplemented from the Overpass API.
+Drive mode uses a decomposed model: free-flow friction speed (mid-block, by road type) plus explicit intersection penalties at tagged nodes (22 s at traffic signals, 11 s at stop signs, 6 s at yield signs), calibrated for school-hour peak conditions (HCM6 LOS D). Intersection control tags are supplemented from the Overpass API.
 
 **Off-network access leg**: Walk 90%, Bike 80%, Drive 20% of modal speed.
 
 ### Closure Scenarios
 
-12 scenarios: baseline (all 11 open) + one scenario per school closure. All schools treated equally.
+The interactive map supports **arbitrary multi-school closure** via checkbox selection. Baseline is implicit (no schools checked). All 2^11 = 2,048 possible closure combinations are computed client-side in real time.
 
 ---
 
@@ -146,29 +146,29 @@ The map uses a **tabbed sidebar** (320px right panel) with two tabs:
 
 | Control | Type | Options |
 |---------|------|---------|
-| Closure Scenario | Dropdown | Baseline + 11 closure scenarios |
+| Schools to Close | Checkboxes | Any combination of the 11 schools (none = baseline) |
 | Travel Mode | Radio | Drive, Bike, Walk |
 | View | Radio | Absolute travel time / Increase vs. baseline |
-| Zone Boundaries | Checkbox | Show/hide color-coded zone borders |
+| Zone Boundaries | Checkbox | Show/hide baseline zone borders |
 
-**Heatmap rendering**: Client-side `<canvas>` from per-school float32 grids. JS computes `min(open_schools)` for any closure scenario in real-time (~5 ms for ~16K pixels). Colormaps applied via 256-entry RGBA lookup tables exported from matplotlib.
+**Heatmap rendering**: Client-side `<canvas>` from per-school float32 grids. JS computes `min(open_schools)` for any closure combination in real-time (~5 ms for ~16K pixels), then applies colormap via 256-entry RGBA lookup tables exported from matplotlib.
 
 - **Absolute view**: YlOrRd gradient (light yellow = short, deep red = long)
 - **Delta view**: Oranges gradient (white-to-orange); only affected areas show color
-- **Zone boundaries**: Color-coded borders (11 distinct colors), border-only (no fill)
+- **Zone boundaries**: Baseline color-coded borders (11 distinct colors), border-only (no fill)
 
 ### Tab 2: Traffic Burden
 
 | Control | Type | Options |
 |---------|------|---------|
-| Closure Scenario | Dropdown | Baseline + 11 closure scenarios |
+| Schools to Close | Checkboxes | Any combination of the 11 schools (none = baseline) |
 | Age Group | Radio | Children 5-9 / Children 0-4 |
 | Routing | Radio | Nearest by drive time / Current districts |
 | View | Radio | Absolute / Difference vs. baseline |
-| Walk Zone Masking | Checkboxes | Per-school walk zone exclusion (Select All / Deselect All) |
-| Show Walk Zones | Checkbox | Display walk zone polygons |
+| Walk Zone Masking | Radio | Yes / No |
+| Show Walk Zones | Radio | Yes / No |
 
-**Walk zone masking**: Client-side subtraction. Python pre-computes unmasked traffic for all scenario/routing/age combos. Per-walk-zone contribution arrays (sparse JSON) record how many children from each walk zone traverse each edge. Client-side: `displayed = unmasked - sum(contributions[checked_zones])`.
+**Client-side traffic computation**: Predecessor maps and an edge lookup table are embedded in the HTML (~0.5 MB total). For any closure combination, JS reconstructs drive routes by walking predecessor chains from each pixel's entry node to the destination school's source node, accumulating children-weighted traffic on each edge. Walk zone masking excludes pixels in walk zones of open schools.
 
 ### Road Segment Visualization
 

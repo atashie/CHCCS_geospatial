@@ -126,17 +126,18 @@ DRIVE_POSTED_SPEEDS_MPH = {
 # signal/stop component has been extracted.
 #
 # Sources: HCM6 Ch.16 Urban Street Facilities, FHWA Urban Arterial Speed Studies
-# Ratios vs posted: ~84-95% (up from ~65-92% in the old model)
+# Ratios vs posted: ~76-91% — calibrated for school-hour conditions
+# (queue spillback, school-zone caution, higher pedestrian activity)
 DRIVE_FREEFLOW_FRICTION_MPH = {
-    "motorway": 62, "motorway_link": 52,
-    "trunk": 45, "trunk_link": 39,
-    "primary": 36, "primary_link": 30,
-    "secondary": 29, "secondary_link": 25,
-    "tertiary": 25, "tertiary_link": 21,
-    "residential": 21, "living_street": 12,
-    "service": 12, "unclassified": 21,
+    "motorway": 59, "motorway_link": 49,
+    "trunk": 43, "trunk_link": 37,
+    "primary": 34, "primary_link": 28,
+    "secondary": 28, "secondary_link": 24,
+    "tertiary": 24, "tertiary_link": 20,
+    "residential": 20, "living_street": 11,
+    "service": 11, "unclassified": 20,
 }
-DEFAULT_DRIVE_FREEFLOW_FRICTION_MPH = 21
+DEFAULT_DRIVE_FREEFLOW_FRICTION_MPH = 20
 
 # Intersection control penalties — per-node delay (seconds) added to each edge
 # arriving at a node tagged with the given OSM highway value.
@@ -146,15 +147,17 @@ DEFAULT_DRIVE_FREEFLOW_FRICTION_MPH = 21
 # control, allowing the model to differentiate signalised corridors from
 # quiet residential streets with no intersections.
 #
-# Sources: HCM6 Ch.19 (Signalized Intersections, LOS C average delay),
+# Sources: HCM6 Ch.19 (Signalized Intersections, LOS D school-hour peak),
 #          HCM6 Ch.20 (Two-Way Stop-Controlled Intersections),
 #          HCM6 Ch.22 (Roundabouts)
+# Penalties reflect school-hour conditions: longer signal queues, higher
+# pedestrian activity at crossings, and more cautious yielding.
 INTERSECTION_PENALTIES_S = {
-    "traffic_signals": 15.0,   # Average signal cycle delay (HCM6 LOS C)
-    "stop":             7.0,   # Decelerate + full stop + wait gap + accelerate
-    "give_way":         4.0,   # Yield sign — slow but not full stop
-    "crossing":         2.0,   # Pedestrian crossing — minor yield/awareness for drivers
-    "turning_circle":   3.0,   # Cul-de-sac turnaround
+    "traffic_signals": 22.0,   # Signal cycle delay — HCM6 LOS D (school-hour peak)
+    "stop":            11.0,   # Decelerate + stop + queue behind other vehicles + accelerate
+    "give_way":         6.0,   # Yield sign — cautious during school traffic
+    "crossing":         3.0,   # Pedestrian crossing — higher ped activity near schools
+    "turning_circle":   4.0,   # Cul-de-sac turnaround
     "motorway_junction": 0.0,  # Merge ramp — no stop, delay in speed
 }
 

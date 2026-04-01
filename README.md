@@ -95,7 +95,7 @@ CHCCS_geospatial/
 
 ## Documentation
 
-- **[School Closure Impact Analysis](docs/SCHOOL_CLOSURE_ANALYSIS.md)** — Travel-time + traffic redistribution methodology and 12 known limitations
+- **[School Closure Impact Analysis](docs/SCHOOL_CLOSURE_ANALYSIS.md)** — Travel-time + traffic redistribution methodology and 13 known limitations
 - **[School Desert Analysis & Limitations](docs/SCHOOL_DESERT_ANALYSIS_AND_LIMITATIONS.md)** — Travel-time methodology, assumptions, and 13 known limitations
 - **[Socioeconomic Analysis & Limitations](docs/SOCIOECONOMIC_ANALYSIS_AND_LIMITATIONS.md)** — Census demographics methodology and 26 known limitations
 - **[Environmental Analysis](docs/ENVIRONMENTAL_ANALYSIS_README.md)** — TRAP, flood, UHI proxy, tree canopy methodology and 23 known limitations
@@ -154,7 +154,7 @@ The Travel Mode selector shows **travel time to the geographically nearest open 
 
 - **Walk:** Time at 2.5 mph child walking speed
 - **Bike:** Time at 12 mph cycling speed
-- **Drive:** Time at free-flow friction speeds (12–62 mph depending on road type) plus explicit intersection penalties (15 s at signals, 7 s at stop signs)
+- **Drive:** Time at free-flow friction speeds (11–59 mph depending on road type) plus explicit intersection penalties (22 s at signals, 11 s at stop signs), calibrated for school-hour peak conditions
 
 Travel times are computed using Dijkstra shortest-path algorithm on actual road networks from OpenStreetMap, not straight-line distance.
 

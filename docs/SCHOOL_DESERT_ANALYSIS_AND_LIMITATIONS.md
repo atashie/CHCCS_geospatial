@@ -50,26 +50,26 @@ Each network is downloaded for the district polygon plus a 500-meter buffer (in 
 
 | Road type | Posted (mph) | Friction (mph) | Ratio |
 |-----------|-------------|----------------|-------|
-| Motorway | 65 | 62 | 95% |
-| Trunk | 55 | 45 | 82% |
-| Primary | 45 | 36 | 80% |
-| Secondary | 35 | 29 | 83% |
-| Tertiary | 30 | 25 | 83% |
-| Residential | 25 | 21 | 84% |
-| Living street | 15 | 12 | 80% |
-| Service | 15 | 12 | 80% |
+| Motorway | 65 | 59 | 91% |
+| Trunk | 55 | 43 | 78% |
+| Primary | 45 | 34 | 76% |
+| Secondary | 35 | 28 | 80% |
+| Tertiary | 30 | 24 | 80% |
+| Residential | 25 | 20 | 80% |
+| Living street | 15 | 11 | 73% |
+| Service | 15 | 11 | 73% |
 
-  Edges with unrecognized highway types default to 21 mph.
+  Edges with unrecognized highway types default to 20 mph.
 
   **Intersection penalties (seconds):**
 
 | Node tag | Penalty | Source |
 |----------|---------|--------|
-| traffic_signals | 15 s | HCM6 Ch.19, LOS C average cycle delay |
-| stop | 7 s | HCM6 Ch.20, decelerate + stop + gap acceptance + accelerate |
-| give_way | 4 s | Yield — slow but not full stop |
-| crossing | 2 s | Pedestrian crossing — minor yield/awareness for drivers |
-| turning_circle | 3 s | Cul-de-sac turnaround |
+| traffic_signals | 22 s | HCM6 Ch.19, LOS D school-hour peak delay |
+| stop | 11 s | HCM6 Ch.20, decelerate + stop + queue + accelerate |
+| give_way | 6 s | Yield — cautious during school traffic |
+| crossing | 3 s | Pedestrian crossing — higher ped activity near schools |
+| turning_circle | 4 s | Cul-de-sac turnaround |
 
   For each edge (u, v): `travel_time = length / friction_speed + penalty(v)`.
 
@@ -104,7 +104,7 @@ For each travel mode, grid points are snapped to the road network using **edge-s
    |------|--------|-------------|--------------|--------------|
    | Walk | 90% | 1.12 m/s (2.5 mph) | 1.01 m/s (2.3 mph) | 50 s |
    | Bike | 80% | 5.36 m/s (12 mph) | 4.29 m/s (9.6 mph) | 12 s |
-   | Drive | 20% | 9.39 m/s (21 mph) | 1.88 m/s (4.2 mph) | 27 s |
+   | Drive | 20% | 8.94 m/s (20 mph) | 1.79 m/s (4.0 mph) | 28 s |
 7. **Minimum across schools:** The minimum total time (network travel + access penalty) across all open schools is recorded, along with the identity of the nearest school. If no school reaches either endpoint of the matched edge, the travel time is NaN.
 
 **Scenarios evaluated:**
