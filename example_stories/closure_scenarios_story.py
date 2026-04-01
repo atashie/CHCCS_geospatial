@@ -236,39 +236,14 @@ WORKING_MAP_HTML = PROJECT_ROOT / "assets" / "maps" / "school_closure_analysis.h
 
 
 def extract_from_working_map() -> dict:
-    """Extract ROAD_GEOJSON and traffic base64 strings directly from
-    the working school_closure_analysis.html.
+    """Extract ROAD_GEOJSON and traffic base64 strings.
 
-    This bypasses ALL intermediate processing and guarantees the exact
-    same data + rendering as the working map.
+    Tries two sources in order:
+    1. The existing closure_scenarios.html (if it already has embedded data)
+    2. The working school_closure_analysis.html (legacy format)
     """
-    if not WORKING_MAP_HTML.exists():
-        raise FileNotFoundError(
-            f"Working map not found: {WORKING_MAP_HTML}\n"
-            "Run: python src/school_closure_analysis.py"
-        )
     import re
-    html = WORKING_MAP_HTML.read_text(encoding="utf-8")
 
-    # Extract ROAD_GEOJSON (one very long line: var ROAD_GEOJSON = {...};)
-    road_match = re.search(r"var ROAD_GEOJSON = (\{.*?\});\s*$", html, re.MULTILINE)
-    if not road_match:
-        raise RuntimeError("Could not extract ROAD_GEOJSON from working map")
-    road_geojson_str = road_match.group(1)
-
-    # Extract TRAFFIC_ARRAYS_B64 (one very long line: var TRAFFIC_ARRAYS_B64 = {...};)
-    traffic_match = re.search(
-        r"var TRAFFIC_ARRAYS_B64 = (\{.*?\});\s*$", html, re.MULTILINE
-    )
-    if not traffic_match:
-        raise RuntimeError("Could not extract TRAFFIC_ARRAYS_B64 from working map")
-    traffic_arrays = json.loads(traffic_match.group(1))
-
-    # Extract N_EDGES
-    n_edges_match = re.search(r"var N_EDGES = (\d+);", html)
-    n_edges = int(n_edges_match.group(1)) if n_edges_match else None
-
-    # Pull only the keys we need (both age groups, nearest routing)
     needed_keys = [
         "baseline|nearest|0_4",
         "baseline|nearest|5_9",
@@ -277,17 +252,68 @@ def extract_from_working_map() -> dict:
         "no_ephesus|nearest|0_4",
         "no_ephesus|nearest|5_9",
     ]
-    subset = {}
-    for k in needed_keys:
-        if k not in traffic_arrays:
-            raise RuntimeError(f"Key '{k}' not found in TRAFFIC_ARRAYS_B64")
-        subset[k] = traffic_arrays[k]
 
-    return {
-        "road_geojson_str": road_geojson_str,
-        "traffic_b64": subset,
-        "n_edges": n_edges,
-    }
+    # Try existing output HTML first (it already has the data we need)
+    for source in [OUTPUT_HTML, WORKING_MAP_HTML]:
+        if not source.exists():
+            continue
+        html = source.read_text(encoding="utf-8")
+
+        road_match = re.search(
+            r"var ROAD_GEOJSON = (\{.*?\});\s*$", html, re.MULTILINE
+        )
+        if not road_match:
+            # Try NETWORK_GEOJSON (newer format — dict keyed by mode)
+            net_match = re.search(
+                r'var NETWORK_GEOJSON = (\{"drive":\{.*?\})\};', html
+            )
+            if net_match:
+                # Extract just the drive sub-object
+                try:
+                    full = json.loads(net_match.group(1) + "}")
+                    road_match_str = json.dumps(
+                        full["drive"], separators=(",", ":")
+                    )
+                except Exception:
+                    continue
+            else:
+                continue
+        else:
+            road_match_str = road_match.group(1)
+
+        traffic_match = re.search(
+            r"var TRAFFIC_(?:ARRAYS_)?B64 = (\{.*?\});\s*$",
+            html, re.MULTILINE,
+        )
+        if not traffic_match:
+            continue
+        traffic_arrays = json.loads(traffic_match.group(1))
+
+        n_edges_match = re.search(r"var N_EDGES = (\d+);", html)
+        n_edges = int(n_edges_match.group(1)) if n_edges_match else None
+
+        subset = {}
+        missing = False
+        for k in needed_keys:
+            if k not in traffic_arrays:
+                missing = True
+                break
+            subset[k] = traffic_arrays[k]
+        if missing:
+            continue
+
+        _progress(f"Extracted data from {source.name}")
+        return {
+            "road_geojson_str": road_match_str,
+            "traffic_b64": subset,
+            "n_edges": n_edges,
+        }
+
+    raise FileNotFoundError(
+        "Could not extract road/traffic data from any source.\n"
+        "Ensure closure_scenarios.html or school_closure_analysis.html "
+        "contains embedded ROAD_GEOJSON and TRAFFIC_B64 data."
+    )
 
 
 def load_block_groups() -> gpd.GeoDataFrame:
@@ -715,14 +741,52 @@ a {{ color: #1565C0; }}
       conversions.
     </div>
 
-    <div class="source">
-      <strong>Source:</strong> Chapel Hill Safe Routes to School Action Plan
-      (adopted June 11, 2025; funded by NCDOT SRTS grant)
-    </div>
   </div>
 
-  <!-- Step 3: Random Sampling of Travel Mode -->
+  <!-- Step 3: Transportation Cost Estimate -->
   <div class="step" data-step="3">
+    <div class="step-number">3b</div>
+    <h2>Estimating Added Transportation Costs</h2>
+    <p>On average, it costs <strong>$900 per student annually</strong>
+    for a bus rider (NC state average values). If we converted all
+    students potentially eligible for walking (living within 1 mile of
+    school) to bus riders, we can roughly calculate the added
+    transportation cost for a school closure.</p>
+
+    <h3><span class="ephesus-label">Ephesus</span> Closure</h3>
+    <p>99 students live within 0.5 miles; 93 live within 0.5&ndash;1 mile.<br>
+    192 total students &times; $900 = <strong>$172,800</strong> added
+    annually</p>
+
+    <h3><span class="seawell-label">Seawell</span> Closure</h3>
+    <p>0 students live within 0.5 miles; 60 live within 0.5&ndash;1 mile.<br>
+    60 total students &times; $900 = <strong>$54,000</strong> added
+    annually</p>
+
+    <div class="insight">
+      <strong>Summary:</strong> The transportation costs are
+      significant &mdash; closing Ephesus costs roughly
+      <strong>$119,000 more per year</strong> in new bus riders alone
+      compared to closing Seawell.
+    </div>
+
+    <p>Importantly, these figures represent only the
+    <strong>net change</strong> &mdash; the additional cost of
+    converting current walkers to bus riders. The total transportation
+    cost for either closure would be even greater, as it includes
+    rerouting all displaced students, not just those who currently
+    walk.</p>
+
+    <p>In particular, given Ephesus&rsquo;s increasing number of
+    school-aged children &mdash; the number of children aged
+    0&ndash;4 is greater than the number aged 5&ndash;9, as seen in
+    the Demographics story &mdash; the additional
+    <strong>net change</strong> in costs may be expected to increase
+    in coming years.</p>
+  </div>
+
+  <!-- Step 4: Random Sampling of Travel Mode -->
+  <div class="step" data-step="4">
     <div class="step-number">4</div>
     <h2>Random Sampling of Travel Mode</h2>
     <p>Proximity to school does not always capture travel mode choice.
@@ -739,8 +803,8 @@ a {{ color: #1565C0; }}
     </div>
   </div>
 
-  <!-- Step 4: Methodology — Reading the traffic maps -->
-  <div class="step" data-step="4">
+  <!-- Step 5: Methodology — Reading the traffic maps -->
+  <div class="step" data-step="5">
     <div class="step-number">5</div>
     <h2>From Walkers to Roads: How We Model Traffic</h2>
 
@@ -768,8 +832,8 @@ a {{ color: #1565C0; }}
 
   </div>
 
-  <!-- Step 5: Seawell Closure — Children 5-9 -->
-  <div class="step" data-step="5">
+  <!-- Step 6: Seawell Closure — Children 5-9 -->
+  <div class="step" data-step="6">
     <div class="step-number">6</div>
     <h2>Seawell Closure: Current Students (Ages 5&ndash;9)</h2>
     <p>If <span class="seawell-label">Seawell</span> closes, its
@@ -805,8 +869,8 @@ a {{ color: #1565C0; }}
     </div>
   </div>
 
-  <!-- Step 6: Seawell Closure — Children 0-4 -->
-  <div class="step" data-step="6">
+  <!-- Step 7: Seawell Closure — Children 0-4 -->
+  <div class="step" data-step="7">
     <div class="step-number">7</div>
     <h2>Seawell Closure: Future Students (Ages 0&ndash;4)</h2>
     <p>Now the same scenario viewed through the lens of children under 5
@@ -827,8 +891,8 @@ a {{ color: #1565C0; }}
     see the Socioeconomic Demographics story.</p>
   </div>
 
-  <!-- Step 7: Ephesus Closure — Children 5-9 -->
-  <div class="step" data-step="7">
+  <!-- Step 8: Ephesus Closure — Children 5-9 -->
+  <div class="step" data-step="8">
     <div class="step-number">8</div>
     <h2>Ephesus Closure: Current Students (Ages 5&ndash;9)</h2>
     <p>If <span class="ephesus-label">Ephesus</span> closes, the
@@ -869,8 +933,8 @@ a {{ color: #1565C0; }}
     </div>
   </div>
 
-  <!-- Step 8: Ephesus Closure — Children 0-4 -->
-  <div class="step" data-step="8">
+  <!-- Step 9: Ephesus Closure — Children 0-4 -->
+  <div class="step" data-step="9">
     <div class="step-number">9</div>
     <h2>Ephesus Closure: Future Students (Ages 0&ndash;4)</h2>
     <p>For children under 5, the Ephesus closure creates even larger
@@ -893,8 +957,8 @@ a {{ color: #1565C0; }}
     </div>
   </div>
 
-  <!-- Step 10: Summary — What the Data Shows -->
-  <div class="step" data-step="10">
+  <!-- Step 11: Summary — What the Data Shows -->
+  <div class="step" data-step="11">
     <div class="step-number">10</div>
     <h2>What the Data Shows</h2>
     <p>Three key findings from the closure analysis:</p>
@@ -992,6 +1056,72 @@ a {{ color: #1565C0; }}
           <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#333;font-weight:bold;">0 (0%)</span>
         </div>
       </div>
+    </div>
+    <div style="text-align:center;margin:24px 0 12px;">
+      <h3 style="margin:0 0 4px;font-size:1.15em;color:#333;">Students within 1 mile of school</h3>
+      <p style="margin:0;font-size:0.82em;color:#777;">Chapel Hill Safe Routes to School Action Plan (2025)</p>
+    </div>
+    <div id="walker-bars-1mi" style="max-width:500px;margin:0 auto;">
+      <div style="display:flex;align-items:center;margin:6px 0;">
+        <div style="width:110px;font-size:0.85em;font-weight:bold;color:#C62828;">Ephesus</div>
+        <div style="flex:1;background:#eee;border-radius:3px;height:22px;position:relative;">
+          <div style="width:100%;background:#C62828;height:100%;border-radius:3px;"></div>
+          <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#fff;font-weight:bold;">192 (47.9%)</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;margin:6px 0;">
+        <div style="width:110px;font-size:0.85em;color:#333;">Scroggs</div>
+        <div style="flex:1;background:#eee;border-radius:3px;height:22px;position:relative;">
+          <div style="width:100%;background:#66c2a5;height:100%;border-radius:3px;"></div>
+          <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#fff;font-weight:bold;">192 (47.4%)</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;margin:6px 0;">
+        <div style="width:110px;font-size:0.85em;color:#333;">Estes Hills</div>
+        <div style="flex:1;background:#eee;border-radius:3px;height:22px;position:relative;">
+          <div style="width:55.2%;background:#377eb8;height:100%;border-radius:3px;"></div>
+          <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#333;font-weight:bold;">106 (29.9%)</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;margin:6px 0;">
+        <div style="width:110px;font-size:0.85em;color:#333;">Northside</div>
+        <div style="flex:1;background:#eee;border-radius:3px;height:22px;position:relative;">
+          <div style="width:43.2%;background:#a65628;height:100%;border-radius:3px;"></div>
+          <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#333;font-weight:bold;">83 (20.8%)</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;margin:6px 0;">
+        <div style="width:110px;font-size:0.85em;color:#333;">Rashkis</div>
+        <div style="flex:1;background:#eee;border-radius:3px;height:22px;position:relative;">
+          <div style="width:40.6%;background:#f781bf;height:100%;border-radius:3px;"></div>
+          <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#333;font-weight:bold;">78 (17.9%)</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;margin:6px 0;">
+        <div style="width:110px;font-size:0.85em;color:#333;">FPG</div>
+        <div style="flex:1;background:#eee;border-radius:3px;height:22px;position:relative;">
+          <div style="width:49.0%;background:#FF8F00;height:100%;border-radius:3px;"></div>
+          <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#333;font-weight:bold;">94 (17.7%)</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;margin:6px 0;">
+        <div style="width:110px;font-size:0.85em;font-weight:bold;color:#1565C0;">Seawell</div>
+        <div style="flex:1;background:#eee;border-radius:3px;height:22px;position:relative;">
+          <div style="width:31.3%;background:#1565C0;height:100%;border-radius:3px;"></div>
+          <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#333;font-weight:bold;">60 (16.0%)</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;margin:6px 0;">
+        <div style="width:110px;font-size:0.85em;color:#333;">Glenwood</div>
+        <div style="flex:1;background:#eee;border-radius:3px;height:22px;position:relative;">
+          <div style="width:14.6%;background:#2E7D32;height:100%;border-radius:3px;min-width:4px;"></div>
+          <span style="position:absolute;right:6px;top:2px;font-size:0.8em;color:#333;font-weight:bold;">28 (7.0%)</span>
+        </div>
+      </div>
+    </div>
+    <div class="source" style="margin:20px 24px 0;">
+      <strong>Source:</strong> Chapel Hill Safe Routes to School Action Plan
+      (adopted June 11, 2025; funded by NCDOT SRTS grant)
     </div>
   </div>
   <div id="tally-panel" style="position:absolute;top:0;left:0;width:100%;height:100%;
@@ -1489,46 +1619,50 @@ function handleStep(idx) {{
       document.getElementById("walker-panel").style.display = "block";
       break;
 
-    case 3: // Random Sampling — tally image panel
+    case 3: // Transportation Cost — same panel as walker
+      document.getElementById("walker-panel").style.display = "block";
+      break;
+
+    case 4: // Random Sampling — tally image panel
       document.getElementById("tally-panel").style.display = "flex";
       break;
 
-    case 4: // Methodology — district + schools + dim
+    case 5: // Methodology — district + schools + dim
       layers.district.addTo(map);
       layers.schools.addTo(map);
       dimOverlay.style.display = "block";
       districtView();
       break;
 
-    case 5: // Seawell Traffic — Children 5-9
+    case 6: // Seawell Traffic — Children 5-9
       showTrafficDiff("no_seawell", "5_9");
       layers.schools.addTo(map);
       if (layers.closedXSeawell) layers.closedXSeawell.addTo(map);
       districtView();
       break;
 
-    case 6: // Seawell Traffic — Children 0-4
+    case 7: // Seawell Traffic — Children 0-4
       showTrafficDiff("no_seawell", "0_4");
       layers.schools.addTo(map);
       if (layers.closedXSeawell) layers.closedXSeawell.addTo(map);
       districtView();
       break;
 
-    case 7: // Ephesus Traffic — Children 5-9
+    case 8: // Ephesus Traffic — Children 5-9
       showTrafficDiff("no_ephesus", "5_9");
       layers.schools.addTo(map);
       if (layers.closedXEphesus) layers.closedXEphesus.addTo(map);
       districtView();
       break;
 
-    case 8: // Ephesus Traffic — Children 0-4
+    case 9: // Ephesus Traffic — Children 0-4
       showTrafficDiff("no_ephesus", "0_4");
       layers.schools.addTo(map);
       if (layers.closedXEphesus) layers.closedXEphesus.addTo(map);
       districtView();
       break;
 
-    case 10: // Summary
+    case 11: // Summary
       layers.district.addTo(map);
       layers.schools.addTo(map);
       dimOverlay.style.display = "block";
