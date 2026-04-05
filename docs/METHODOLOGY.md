@@ -195,6 +195,7 @@ The socioeconomic map includes two planned development layers, each from a diffe
 - **Single data snapshots:** Each dataset reflects a point-in-time extract — CH Active Dev from March 2026, SAPFOTAC from June 2025 — and does not automatically update.
 - **Datasets overlap but are not deduplicated:** Some projects appear in both sources. The two layers are independent; selecting one does not affect the other.
 - **SAPFOTAC student yields are model estimates:** Projected student counts are based on student generation rates applied to planned unit counts, not actual enrollment. Actual yields will vary with household composition and market absorption.
+- **Newer enrollment forecast available:** In April 2026, Carolina Demography (UNC) released a comprehensive 10-year ADM forecast for CHCCS covering 42 developments with field-verified status, probability-weighted completion estimates, and net-new student yield calculations. That forecast estimates *net new* students above the Grade Progression Ratio baseline (unlike SAPFOTAC, which estimates *total potential* students per development), so per-development yields are systematically lower — by design, not error. See [`CAROLINA_DEMOGRAPHY_ENROLLMENT_FORECAST_2026.md`](CAROLINA_DEMOGRAPHY_ENROLLMENT_FORECAST_2026.md) for the full extracted data.
 
 ---
 

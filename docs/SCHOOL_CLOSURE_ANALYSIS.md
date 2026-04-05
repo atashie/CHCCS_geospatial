@@ -200,7 +200,7 @@ The map uses a **tabbed sidebar** (320px right panel) with two tabs:
 
 ## Limitations
 
-1. **No capacity constraints**: Remaining schools assumed to absorb all displaced students.
+1. **No capacity constraints**: Remaining schools assumed to absorb all displaced students. The April 2026 Carolina Demography enrollment forecast projects that by 2030-31, Glenwood (102%), FPG (95%), and Ephesus (96%) will be at or above capacity even without absorbing closure students, while Northside (51%), Rashkis (45%), and Scroggs (56%) will be deeply underutilized. See [`CAROLINA_DEMOGRAPHY_ENROLLMENT_FORECAST_2026.md`](CAROLINA_DEMOGRAPHY_ENROLLMENT_FORECAST_2026.md) for school-by-school capacity projections.
 2. **No turn penalties**: Dijkstra models intersection control delays (signals, stops) explicitly but does not differentiate left-turn vs. right-turn costs. Stop sign coverage in OSM is incomplete.
 3. **Static road network**: OSM snapshot fixed at download time.
 4. **No school choice or magnet effects**: Assumes geographic attendance.

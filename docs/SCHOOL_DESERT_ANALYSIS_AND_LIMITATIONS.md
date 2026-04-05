@@ -32,7 +32,7 @@ Three separate road network graphs are downloaded, one per travel mode:
 | Bike | `bike` | Roads and paths accessible to cyclists (falls back to `all` if the bike-specific network fails) |
 | Walk | `walk` | All pedestrian-accessible paths including sidewalks, trails, footways |
 
-Each network is downloaded for the district polygon plus a 500-meter buffer (in UTM) to capture roads that cross the district boundary. Networks are cached as GraphML files in `data/cache/`.
+Each network is downloaded for the district polygon plus a buffer (in UTM) to capture roads that cross the district boundary: **2,500 m for drive** (to include major roads outside city limits that are commonly used for travel) and **500 m for bike and walk**. Networks are cached as GraphML files in `data/cache/`.
 
 **Bidirectional edges:** After loading or downloading each network, `_ensure_bidirectional()` adds a reverse edge for every edge that lacks one. This makes all three networks (drive, bike, walk) fully traversable in both directions. Because the graph is symmetric, Dijkstra run outward from a school gives the same travel time as a resident traveling inward toward the school — no graph reversal is needed.
 
@@ -230,7 +230,7 @@ The analysis computes travel time to the **geographically nearest** school. CHCC
 
 ### 7. No Capacity Constraints
 
-The model treats all open schools as equally available regardless of capacity. In a real closure scenario, students would be redistributed according to capacity and policy, and some schools might become overcrowded. This analysis does not model redistribution — it only measures raw geographic access.
+The model treats all open schools as equally available regardless of capacity. In a real closure scenario, students would be redistributed according to capacity and policy, and some schools might become overcrowded. This analysis does not model redistribution — it only measures raw geographic access. For school-by-school capacity utilization projections through 2035-36, see [`CAROLINA_DEMOGRAPHY_ENROLLMENT_FORECAST_2026.md`](CAROLINA_DEMOGRAPHY_ENROLLMENT_FORECAST_2026.md).
 
 ### 8. Mode-Specific Limitations
 

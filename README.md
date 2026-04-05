@@ -69,6 +69,7 @@ Most modules are independent, but some depend on cached data:
 | MLS home sales | Triangle MLS (2023-2025) | Committed in `data/raw/MLS/`, geocoded to `data/cache/mls_home_sales.gpkg` |
 | Planned developments | Town of Chapel Hill (2025) | Committed in `data/raw/properties/planned/`, geocoded to `data/cache/planned_developments.gpkg` |
 | SAPFOTAC 2025 developments | CHCCS SAPFOTAC Annual Report (2025) | Supplementary planned development data with student yield projections; geocoded in-place in `data/raw/properties/planned/`. Displayed on socioeconomic map as "Planned Developments (SAPFOTAC)" metric. |
+| Enrollment forecast (reference) | Carolina Demography at UNC (April 2026) | 10-year ADM forecast (2025-36) for CHCCS and OCS. School-by-school projections, capacity utilization, and 42-development yield analysis. See [`docs/CAROLINA_DEMOGRAPHY_ENROLLMENT_FORECAST_2026.md`](docs/CAROLINA_DEMOGRAPHY_ENROLLMENT_FORECAST_2026.md). |
 | Attendance zones | CHCCS GIS | Auto-downloaded, cached as GeoPackage |
 
 ## Prerequisites

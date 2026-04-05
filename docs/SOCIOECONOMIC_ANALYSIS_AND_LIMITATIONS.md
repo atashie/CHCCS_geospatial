@@ -686,9 +686,11 @@ SAPFOTAC developments appear as a separate metric ("Planned Developments (SAPFOT
 
 2. **Student yield projections are model estimates.** Projected elementary, middle, and high school students are based on student generation rates applied to planned unit counts, not actual enrollment data. Actual student yields will vary based on household composition, school choice, and market absorption rates.
 
-3. **Report vintage.** The SAPFOTAC 2025 Annual Report reflects data available as of its certification date (June 3, 2025). Projects may have changed scope, been cancelled, or progressed since then.
+3. **Report vintage.** The SAPFOTAC 2025 Annual Report reflects data available as of its certification date (June 3, 2025). Projects may have changed scope, been cancelled, or progressed since then. A more current and comprehensive development list (42 projects, March 2026) with field-verified statuses and probability-weighted completion estimates is available in the Carolina Demography enrollment forecast — see [`CAROLINA_DEMOGRAPHY_ENROLLMENT_FORECAST_2026.md`](CAROLINA_DEMOGRAPHY_ENROLLMENT_FORECAST_2026.md).
 
 4. **Geocoding is approximate.** Same limitations as CH Active Dev — addresses are geocoded to interpolated road segments, not exact project boundaries.
+
+5. **SAPFOTAC yields differ from Carolina Demography yields.** SAPFOTAC estimates *total potential* students per development using district student generation rates. The April 2026 Carolina Demography enrollment forecast estimates *net new* students above Grade Progression Ratio baseline trends, producing systematically lower per-development yields to avoid double-counting. Both approaches are valid for different purposes; they should not be directly compared without understanding this methodological distinction.
 
 ---
 

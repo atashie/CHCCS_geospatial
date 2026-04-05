@@ -68,6 +68,7 @@ CHCCS_geospatial/
 │   ├── SCHOOL_DESERT_ANALYSIS_AND_LIMITATIONS.md
 │   ├── SOCIOECONOMIC_ANALYSIS_AND_LIMITATIONS.md
 │   ├── IMPLEMENTATION_NOTES.md
+│   ├── CAROLINA_DEMOGRAPHY_ENROLLMENT_FORECAST_2026.md  # 10-year ADM forecast reference (April 2026)
 │   └── socioeconomic/
 │       └── SOCIOECONOMIC_ANALYSIS.md
 └── reference/
@@ -165,6 +166,7 @@ python src/socioeconomic_story.py --cache-only  # cached data only
 | Pixel children | `data/cache/closure_analysis/pixel_children.csv` | Computed (dasymetric ACS → pixels) |
 | Closure assignments | `data/processed/school_closure_assignments.csv` | Computed (travel time per pixel) |
 | Closure traffic | `data/processed/school_closure_traffic.csv` | Computed (children per edge) |
+| Enrollment forecast (reference) | `docs/CAROLINA_DEMOGRAPHY_ENROLLMENT_FORECAST_2026.md` | Carolina Demography (UNC) 10-year ADM forecast, April 2026 BOCC agenda. Source PDF at `data/raw/agenda_07APR2026.pdf` pp. 95-162. |
 
 ---
 
@@ -177,6 +179,7 @@ python src/socioeconomic_story.py --cache-only  # cached data only
 - [`docs/GEOSPATIAL_ANALYSIS_GUIDELINES.md`](docs/GEOSPATIAL_ANALYSIS_GUIDELINES.md) — CRS discipline, spatial operations, map visualization standards
 - [`docs/IMPLEMENTATION_NOTES.md`](docs/IMPLEMENTATION_NOTES.md) — Technical implementation details for all modules
 - [`docs/SCHOOL_DESERT_ANALYSIS_AND_LIMITATIONS.md`](docs/SCHOOL_DESERT_ANALYSIS_AND_LIMITATIONS.md) — School desert analysis
+- [`docs/CAROLINA_DEMOGRAPHY_ENROLLMENT_FORECAST_2026.md`](docs/CAROLINA_DEMOGRAPHY_ENROLLMENT_FORECAST_2026.md) — 10-year enrollment forecast reference (Carolina Demography, April 2026)
 - [`docs/SOCIOECONOMIC_ANALYSIS_AND_LIMITATIONS.md`](docs/SOCIOECONOMIC_ANALYSIS_AND_LIMITATIONS.md) — Socioeconomic analysis
 - [`docs/socioeconomic/SOCIOECONOMIC_ANALYSIS.md`](docs/socioeconomic/SOCIOECONOMIC_ANALYSIS.md) — Auto-generated socioeconomic methodology
 - [`data/processed/ROAD_POLLUTION.md`](data/processed/ROAD_POLLUTION.md) — TRAP analysis results and methodology

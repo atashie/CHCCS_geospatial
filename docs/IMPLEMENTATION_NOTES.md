@@ -369,6 +369,7 @@ The SAPFOTAC CSVs are a **supplementary** source to the primary `CH_Development-
 - **SAPFOTAC includes Carrboro projects** (Jade Creek, Newbury) not in the Chapel Hill Active Development page.
 - **CH_Development has more projects** (36 vs 27) and includes project status fields.
 - **Both displayed as separate metrics** on the socioeconomic map under the HOUSING radio group. The two datasets are not deduplicated — some projects appear in both layers.
+- **Carolina Demography supersedes for enrollment forecasting.** The April 2026 Carolina Demography enrollment forecast tracks 42 developments with field-verified statuses, probability-weighted completion estimates, and net-new student yield methodology (see [`CAROLINA_DEMOGRAPHY_ENROLLMENT_FORECAST_2026.md`](CAROLINA_DEMOGRAPHY_ENROLLMENT_FORECAST_2026.md)). SAPFOTAC and CH_Development remain the display datasets on the socioeconomic map.
 
 ### Address Research
 
@@ -404,7 +405,7 @@ Same two-column layout as other editorial stories (45% narrative / 55% Leaflet m
 - **Traffic data extracted from working map** — Reads `school_closure_analysis.html` to extract road GeoJSON and base64-encoded Float32Array traffic arrays, avoiding recomputation
 - **`find_road_deltas()` with `max_roads` parameter** — Reports most-positive delta (traffic increase) for specified roads instead of max-absolute; used for North Fordham Boulevard where the largest absolute delta is a large negative (traffic reduction near closed school) but the meaningful value is the max increase on receiving roads
 - **Capacity overview slide (step 1, slide 2)** — DivIcon markers with per-school directional offsets (`capLabelOffsets` JS object) showing projected enrollment, capacity, and % occupied as center-aligned bold text with white text-shadow halo. Highlighted schools use `SCHOOL_COLORS` for the utilization percentage color; non-highlighted schools use utilization-based coloring (red >100%, amber ≥90%, gray otherwise). Narrative explains 2030 enrollment rationale, Seawell as fewest displaced students, and LEAP controlled-enrollment context. Offsets tuned to prevent label overlap at district zoom level.
-- **Enrollment projections from PMR2 Forecast** — `ENROLLMENT_PROJECTIONS` constant with pre-Woolpert capacity figures; total spare capacity and below-capacity school count computed at generation time and embedded in narrative
+- **Enrollment projections from PMR2 Forecast** — `ENROLLMENT_PROJECTIONS` constant with pre-Woolpert capacity figures; total spare capacity and below-capacity school count computed at generation time and embedded in narrative. Note: the April 2026 Carolina Demography enrollment forecast provides updated school-by-school ADM projections and capacity utilization through 2035-36 (see [`CAROLINA_DEMOGRAPHY_ENROLLMENT_FORECAST_2026.md`](CAROLINA_DEMOGRAPHY_ENROLLMENT_FORECAST_2026.md)); the story currently uses the older PMR2 figures.
 - **11 handleStep cases** — Each Scrollama step triggers layer add/remove, traffic diff rendering, chart display, or choropleth display
 
 ### Key Outputs

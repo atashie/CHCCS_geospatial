@@ -16,3 +16,6 @@ Thumbs.db
 *.log
 .claude/
 output/
+assets/slides/screenshots/
+assets/slides/*.pptx
+data/raw/agendas_2025/
