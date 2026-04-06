@@ -1415,12 +1415,18 @@ METRIC_DOT_SPECS = [
     ("pct_minority", "% Minority (Non-White NH)", "PuBuGn", "", "%", ".0f"),
     ("pct_zero_vehicle", "% Households with No Vehicle", "Reds", "", "%", ".0f"),
     ("pct_elementary_age", "% Population Aged 5-9", "BuPu", "", "%", ".1f"),
-    ("pct_young_children", "% Population Aged 0-4", "PuRd", "", "%", ".1f"),
+    ("pct_young_children", "% Population Aged 0-4", "PuRd", "", "%", ".1f"),  # scale override below
     ("ah_units", "Affordable Housing Units", "Blues", "", " units", ",.0f"),
     ("mls_housing", "Housing Market (2023–2025)", "YlGnBu", "", "", ""),
     ("planned_dev", "Planned Developments (CH Active Dev)", "YlGnBu", "", " units", ",.0f"),
     ("sapfotac_dev", "Planned Developments (SAPFOTAC)", "YlGnBu", "", " units", ",.0f"),
 ]
+
+# Fixed (vmin, vmax) overrides for specific metric color scales.
+# Metrics not listed here use auto-scaling (5th–95th percentile).
+METRIC_SCALE_OVERRIDES: dict[str, tuple[float, float]] = {
+    "pct_young_children": (0.0, 20.0),
+}
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -1569,8 +1575,11 @@ def create_socioeconomic_map(
 
         # Build style function
         vals = bg_wgs[col].dropna()
-        vmin = vals.quantile(0.05)
-        vmax = vals.quantile(0.95)
+        if col in METRIC_SCALE_OVERRIDES:
+            vmin, vmax = METRIC_SCALE_OVERRIDES[col]
+        else:
+            vmin = vals.quantile(0.05)
+            vmax = vals.quantile(0.95)
 
         import matplotlib.colors as mcolors
         norm = mcolors.Normalize(vmin=vmin, vmax=vmax)
@@ -1629,8 +1638,11 @@ def create_socioeconomic_map(
             if len(vals) == 0:
                 continue
 
-            vmin = vals.quantile(0.05)
-            vmax = vals.quantile(0.95)
+            if col in METRIC_SCALE_OVERRIDES:
+                vmin, vmax = METRIC_SCALE_OVERRIDES[col]
+            else:
+                vmin = vals.quantile(0.05)
+                vmax = vals.quantile(0.95)
             if vmax <= vmin:
                 vmax = vmin + 1
 
@@ -2216,7 +2228,9 @@ FAQ
 
             for metric_idx, (metric_col, display_name, cmap_name, prefix, suffix, fmt) in enumerate(METRIC_DOT_SPECS):
                 vals = enriched_blocks[metric_col].dropna() if metric_col in enriched_blocks.columns else pd.Series(dtype=float)
-                if len(vals) > 0:
+                if metric_col in METRIC_SCALE_OVERRIDES:
+                    vmin, vmax = METRIC_SCALE_OVERRIDES[metric_col]
+                elif len(vals) > 0:
                     vmin = float(vals.quantile(0.05))
                     vmax = float(vals.quantile(0.95))
                 else:
