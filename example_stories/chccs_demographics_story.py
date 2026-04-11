@@ -1913,17 +1913,29 @@ function bgChoropleth(metric, colorFn) {{
   }});
 }}
 
-function ylOrRd(val) {{
-  // YlOrRd-like: 0% → pale yellow, 10%+ → dark red
-  var t = Math.min(val / 10, 1);
-  var r = Math.round(255);
-  var g = Math.round(255 - t * 180);
-  var b = Math.round(200 - t * 200);
-  return "rgb(" + r + "," + g + "," + b + ")";
+function makeYlOrRd(maxVal) {{
+  // YlOrRd-like: 0% → pale yellow, maxVal% → dark red
+  return function(val) {{
+    var t = Math.min(val / maxVal, 1);
+    var r = Math.round(255);
+    var g = Math.round(255 - t * 180);
+    var b = Math.round(200 - t * 200);
+    return "rgb(" + r + "," + g + "," + b + ")";
+  }};
 }}
 
-layers.bgYoungChildren = bgChoropleth("pct_young_children", ylOrRd);
-layers.bgElementaryAge = bgChoropleth("pct_elementary_age", ylOrRd);
+// Compute data-driven max for each metric
+function bgMax(metric) {{
+  var mx = 0;
+  BG.features.forEach(function(f) {{
+    var v = f.properties[metric] || 0;
+    if (v > mx) mx = v;
+  }});
+  return mx;
+}}
+
+layers.bgYoungChildren = bgChoropleth("pct_young_children", makeYlOrRd(bgMax("pct_young_children")));
+layers.bgElementaryAge = bgChoropleth("pct_elementary_age", makeYlOrRd(bgMax("pct_elementary_age")));
 
 // Dots (canvas rendered — deferred)
 var dotCanvas = L.canvas({{ padding: 0.5 }});
@@ -2318,6 +2330,9 @@ def main():
                 dz_wgs = drive_zones.to_crs(CRS_WGS84)
                 mls_joined = gpd.sjoin(mls_wgs, dz_wgs[["school", "geometry"]],
                                        how="left", predicate="within")
+                # Dedupe points that land in overlapping zone polygons (no-op
+                # for Voronoi partition but defends against future zone sources).
+                mls_joined = mls_joined[~mls_joined.index.duplicated(keep="first")]
                 mls_agg = (mls_joined.dropna(subset=["school"]).groupby("school")
                            .agg(mls_total_sales=("close_price", "size"),
                                 mls_median_price=("close_price", "median"))
@@ -2331,6 +2346,7 @@ def main():
                 dz_wgs2 = drive_zones.to_crs(CRS_WGS84)
                 ah_joined = gpd.sjoin(ah_wgs, dz_wgs2[["school", "geometry"]],
                                       how="left", predicate="within")
+                ah_joined = ah_joined[~ah_joined.index.duplicated(keep="first")]
                 ah_agg = (ah_joined.dropna(subset=["school"]).groupby("school")
                           .size().reset_index(name="ah_total_units"))
                 drive_demo = drive_demo.merge(ah_agg, on="school", how="left")
@@ -2342,6 +2358,7 @@ def main():
                 dz_wgs3 = drive_zones.to_crs(CRS_WGS84)
                 dev_joined = gpd.sjoin(dev_wgs, dz_wgs3[["school", "geometry"]],
                                        how="left", predicate="within")
+                dev_joined = dev_joined[~dev_joined.index.duplicated(keep="first")]
                 dev_agg = (dev_joined.dropna(subset=["school"]).groupby("school")
                            .agg(dev_total_units=("expected_units", "sum"),
                                 dev_count=("expected_units", "size"))
@@ -2356,6 +2373,7 @@ def main():
                 dz_wgs4 = drive_zones.to_crs(CRS_WGS84)
                 sap_joined = gpd.sjoin(sap_wgs, dz_wgs4[["school", "geometry"]],
                                        how="left", predicate="within")
+                sap_joined = sap_joined[~sap_joined.index.duplicated(keep="first")]
                 sap_agg = (sap_joined.dropna(subset=["school"]).groupby("school")
                            .agg(sapfotac_total_units=("total_units_remaining", "sum"),
                                 sapfotac_count=("total_units_remaining", "size"),

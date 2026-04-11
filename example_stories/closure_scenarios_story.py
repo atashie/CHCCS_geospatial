@@ -37,13 +37,15 @@ from pathlib import Path
 import geopandas as gpd
 import numpy as np
 import pandas as pd
-from shapely.geometry import Point, box, mapping
+from shapely.geometry import Point, mapping
 
 # ---------------------------------------------------------------------------
 # Path setup — import from src/
 # ---------------------------------------------------------------------------
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
+
+from school_socioeconomic_analysis import _build_nearest_zones  # noqa: E402
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
@@ -340,43 +342,26 @@ def load_block_groups() -> gpd.GeoDataFrame:
 
 
 def build_nearest_walk_zones(district: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
-    """Build dissolved nearest-walk-time zone polygons from school_desert_grid.csv.
+    """Build nearest-walk zone polygons via the shared Voronoi partition.
 
-    Replicates the _build_nearest_zones pattern from
-    school_socioeconomic_analysis.py: reads baseline/walk rows, buffers each
-    grid point by 55 m squares, dissolves by nearest_school, clips to the
-    district boundary, and adds a color property from ZONE_COLORS.
+    Delegates to ``_build_nearest_zones()`` in
+    ``src/school_socioeconomic_analysis.py`` so all editorial and
+    methodology outputs share an identical, gap-free, pairwise-disjoint
+    nearest-school partition of the district. Adds a per-school color
+    column from ``ZONE_COLORS`` for Leaflet styling.
     """
     if not GRID_CSV.exists():
         raise FileNotFoundError(
             f"Grid CSV not found: {GRID_CSV}\n"
             "Run: python src/school_desert.py"
         )
-    df = pd.read_csv(GRID_CSV)
-    df = df[(df["scenario"] == "baseline") & (df["mode"] == "walk")].copy()
-    df = df.dropna(subset=["nearest_school"])
-    if df.empty:
-        raise RuntimeError("No baseline/walk rows with nearest_school in grid CSV")
-
-    pts = gpd.GeoDataFrame(
-        df, geometry=gpd.points_from_xy(df["lon"], df["lat"]), crs=CRS_WGS84,
-    ).to_crs(CRS_UTM17N)
-
-    half = 55
-    pts["geometry"] = [box(g.x - half, g.y - half, g.x + half, g.y + half)
-                       for g in pts.geometry]
-    dissolved = pts.dissolve(by="nearest_school").reset_index()
-    dissolved = dissolved.rename(columns={"nearest_school": "school"})
-
-    dist_utm = district.to_crs(CRS_UTM17N)
-    dissolved = gpd.clip(dissolved, dist_utm)
-    mask = dissolved.geometry.geom_type.isin(["Polygon", "MultiPolygon"])
-    dissolved = dissolved[mask].copy()
-
-    dissolved = dissolved[["school", "geometry"]].to_crs(CRS_WGS84)
-    dissolved["color"] = dissolved["school"].map(ZONE_COLORS).fillna("#888")
-    _progress(f"Built {len(dissolved)} nearest-walk zones")
-    return dissolved
+    zones = _build_nearest_zones(GRID_CSV, "walk", district)
+    if zones is None or len(zones) == 0:
+        raise RuntimeError("No baseline/walk zones built from grid CSV")
+    zones = zones.reset_index(drop=True)
+    zones["color"] = zones["school"].map(ZONE_COLORS).fillna("#888")
+    _progress(f"Built {len(zones)} nearest-walk zones (Voronoi partition)")
+    return zones
 
 
 # ---------------------------------------------------------------------------

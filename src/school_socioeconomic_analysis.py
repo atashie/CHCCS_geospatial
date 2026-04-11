@@ -38,7 +38,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import requests
-from shapely.geometry import Point, box
+from shapely.geometry import MultiPoint, Point, box
+from shapely.ops import voronoi_diagram
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 matplotlib.use("Agg")
@@ -596,14 +597,68 @@ def _load_walk_zones() -> gpd.GeoDataFrame | None:
 GRID_CSV = DATA_PROCESSED / "school_desert_grid.csv"
 
 
+def voronoi_zones_from_labelled_points(
+    labelled_pts: gpd.GeoDataFrame,
+    label_col: str,
+    district: gpd.GeoDataFrame,
+    out_crs: str = CRS_WGS84,
+) -> gpd.GeoDataFrame:
+    """Build a gap-free nearest-label partition from labelled points.
+
+    Given a GeoDataFrame of points each carrying a label in *label_col*,
+    generates a Voronoi diagram, transfers labels to each cell via
+    contains-sjoin, dissolves by label, and clips to the district boundary.
+    The result is a pairwise-disjoint, gap-free partition of the convex hull
+    of the input points intersected with the district polygon.
+
+    Returns a GeoDataFrame with columns [school, geometry] in *out_crs*.
+    The *label_col* is renamed to "school" in the output.
+    """
+    if labelled_pts is None or len(labelled_pts) == 0:
+        return gpd.GeoDataFrame(
+            {"school": [], "geometry": []}, crs=out_crs,
+        )
+
+    pts_utm = labelled_pts.to_crs(CRS_UTM17N)
+    dist_utm = district.to_crs(CRS_UTM17N)
+    bounds = dist_utm.total_bounds
+    envelope = box(bounds[0] - 1000, bounds[1] - 1000,
+                   bounds[2] + 1000, bounds[3] + 1000)
+
+    mp = MultiPoint(list(pts_utm.geometry))
+    vor = voronoi_diagram(mp, envelope=envelope, edges=False)
+    vor_gdf = gpd.GeoDataFrame(geometry=list(vor.geoms), crs=CRS_UTM17N)
+
+    # Each Voronoi cell contains exactly one generating point; match via
+    # contains to pull in its label.
+    joined = gpd.sjoin(
+        vor_gdf, pts_utm[[label_col, "geometry"]],
+        how="left", predicate="contains",
+    )
+    joined = joined[~joined.index.duplicated(keep="first")]
+    joined = joined.dropna(subset=[label_col])
+
+    dissolved = joined.dissolve(by=label_col).reset_index()
+    dissolved = dissolved.rename(columns={label_col: "school"})
+
+    dissolved = gpd.clip(dissolved, dist_utm)
+    mask = dissolved.geometry.geom_type.isin(["Polygon", "MultiPolygon"])
+    dissolved = dissolved[mask].copy()
+
+    return dissolved[["school", "geometry"]].to_crs(out_crs).reset_index(drop=True)
+
+
 def _build_nearest_zones(
     grid_csv: Path, mode: str, district: gpd.GeoDataFrame,
 ) -> gpd.GeoDataFrame | None:
-    """Create dissolved zone polygons from school_desert_grid.csv nearest_school.
+    """Create a true spatial partition of the district into nearest-school zones.
 
-    Reads baseline rows for *mode*, buffers each grid point by 55 m,
-    dissolves by nearest_school, clips to the district boundary, and
-    returns a GeoDataFrame with columns [school, geometry] in WGS84.
+    Reads baseline rows for *mode* from school_desert_grid.csv and delegates
+    to voronoi_zones_from_labelled_points(). The result is a gap-free,
+    non-overlapping partition: every location inside the district belongs to
+    exactly one school's zone.
+
+    Returns a GeoDataFrame with columns [school, geometry] in WGS84.
     """
     if not grid_csv.exists():
         _progress(f"Grid CSV not found: {grid_csv}")
@@ -618,23 +673,12 @@ def _build_nearest_zones(
 
     pts = gpd.GeoDataFrame(
         df, geometry=gpd.points_from_xy(df["lon"], df["lat"]), crs=CRS_WGS84,
-    ).to_crs(CRS_UTM17N)
-
-    half = 55
-    pts["geometry"] = [box(g.x - half, g.y - half, g.x + half, g.y + half)
-                       for g in pts.geometry]
-    dissolved = pts.dissolve(by="nearest_school").reset_index()
-    dissolved = dissolved.rename(columns={"nearest_school": "school"})
-
-    dist_utm = district.to_crs(CRS_UTM17N)
-    dissolved = gpd.clip(dissolved, dist_utm)
-    # Keep only polygon geometries after clipping
-    mask = dissolved.geometry.geom_type.isin(["Polygon", "MultiPolygon"])
-    dissolved = dissolved[mask].copy()
-
-    dissolved = dissolved[["school", "geometry"]].to_crs(CRS_WGS84)
-    _progress(f"Built {len(dissolved)} nearest-{mode} zones")
-    return dissolved
+    )
+    zones = voronoi_zones_from_labelled_points(
+        pts, "nearest_school", district, out_crs=CRS_WGS84,
+    )
+    _progress(f"Built {len(zones)} nearest-{mode} zones")
+    return zones
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -1130,39 +1174,81 @@ def export_dot_zone_demographics(
     zone_types: list,
     master_school_names: list,
     output_path,
-) -> pd.DataFrame:
-    """Export per-zone demographics using dot-level aggregation (matches JS).
+) -> tuple[pd.DataFrame, dict]:
+    """Export per-zone demographics using dot-level aggregation.
 
-    For each dot assigned to a zone, looks up the parent block's Census
-    metrics from enriched_blocks and computes simple means — identical to
-    the interactive map's JS ``updateHistograms()`` function.
+    Population-denominated percentages (minority, elementary-age, young
+    children) are correctly computed as dot-weighted means of block values.
 
-    Returns the DataFrame and saves it to *output_path*.
+    Extensive metrics with non-population denominators (poverty, zero-vehicle,
+    renter) are aggregated by attributing each dot a fraction
+    ``block_num / n_dots_in_block`` of its parent block's raw numerator and
+    denominator, then summing per zone. This gives
+    ``zone_pct = Σ num / Σ den × 100`` — the universe-correct formula —
+    while keeping the dot-based zone attribution consistent with the rest of
+    the map.
+
+    Returns ``(df, extensive_by_zone)``:
+        df — pandas DataFrame, also written to *output_path*
+        extensive_by_zone — dict mapping metric name to {"pct": ...,
+            "count": ...} where pct/count are nested lists indexed by
+            [zone_type_idx][school_idx], aligned with *master_school_names*
+            and *zone_types*. Used by the interactive map's JS to replace
+            the population-dot-weighted fallthrough for universe-mismatched
+            percentages.
     """
     _progress("Computing dot-based zone demographics (matching interactive map) ...")
 
-    # Build block GEOID → enriched_blocks row lookup
     eb_lookup = (
         enriched_blocks.set_index("GEOID20")
         if enriched_blocks is not None and "GEOID20" in enriched_blocks.columns
         else None
     )
 
-    # Metrics to average across dots (all available in enriched_blocks)
-    mean_metrics = [
+    # Population-denominated percentages: dot-weighted mean is provably
+    # correct because dots are placed 1-per-person and the denominator of
+    # each percentage is total population. Block values in this list are
+    # treated as inherited block-group percentages and averaged across dots.
+    # NOTE: median_hh_income is stored here for convenience but is handled
+    # specially below — the dot-weighted mean is written to
+    # ``median_hh_income_avg`` while the primary ``median_hh_income`` column
+    # holds ``np.median`` over dot-replicated block medians (legacy semantic
+    # that predates the universe-mismatch fix; the map displays the mean in
+    # its histogram "Avg: $…" label).
+    popweighted_metrics = [
         "median_hh_income",
-        "pct_below_185_poverty", "pct_minority", "pct_zero_vehicle",
-        "pct_elementary_age", "pct_young_children", "pct_renter",
-    ]
-    available_metrics = [
-        m for m in mean_metrics
-        if eb_lookup is not None and m in eb_lookup.columns
+        "pct_minority",
+        "pct_elementary_age",
+        "pct_young_children",
     ]
 
-    # Pre-build per-block metric arrays for vectorised lookup
+    # Extensive-metric (numerator, denominator) pairs for metrics whose
+    # denominator is NOT total population. For these, dot-weighted mean of
+    # block percentages is biased; correct aggregation is Σ num / Σ den.
+    # Only add a percentage here if its ACS/Census denominator is non-
+    # population (households, poverty_universe, etc.). Adding a
+    # population-denominated pct here would silently short-circuit the
+    # JS fallthrough and display wrong (but close) numbers.
+    #   (num_col, den_col, pct_col)
+    extensive_specs = [
+        ("below_185_pov", "poverty_universe", "pct_below_185_poverty"),
+        ("vehicles_zero", "vehicles_total_hh", "pct_zero_vehicle"),
+        ("tenure_renter", "tenure_total", "pct_renter"),
+    ]
+
+    available_popweighted = [
+        m for m in popweighted_metrics
+        if eb_lookup is not None and m in eb_lookup.columns
+    ]
+    available_extensive = [
+        (n, d, p) for (n, d, p) in extensive_specs
+        if eb_lookup is not None and n in eb_lookup.columns and d in eb_lookup.columns
+    ]
+
+    # Per-block arrays — population-weighted metrics
     n_blocks = len(block_geoids)
     block_metric_arrays = {}
-    for metric in available_metrics:
+    for metric in available_popweighted:
         arr = np.full(n_blocks, np.nan)
         for bidx, geoid in enumerate(block_geoids):
             if geoid in eb_lookup.index:
@@ -1171,16 +1257,60 @@ def export_dot_zone_demographics(
                     arr[bidx] = val
         block_metric_arrays[metric] = arr
 
-    # Dot attribute arrays
+    # Per-block arrays — extensive metric raw counts
+    block_num_arrays: dict[str, np.ndarray] = {}
+    block_den_arrays: dict[str, np.ndarray] = {}
+    for num_col, den_col, _ in available_extensive:
+        num_arr = np.zeros(n_blocks, dtype=np.float64)
+        den_arr = np.zeros(n_blocks, dtype=np.float64)
+        for bidx, geoid in enumerate(block_geoids):
+            if geoid in eb_lookup.index:
+                nv = eb_lookup.at[geoid, num_col]
+                dv = eb_lookup.at[geoid, den_col]
+                if not pd.isna(nv):
+                    num_arr[bidx] = float(nv)
+                if not pd.isna(dv):
+                    den_arr[bidx] = float(dv)
+        block_num_arrays[num_col] = num_arr
+        block_den_arrays[den_col] = den_arr
+
+    # Dot arrays
     dot_race = np.array([d[2] for d in dot_data], dtype=np.int32)
     dot_block = np.array([d[3] for d in dot_data], dtype=np.int32)
 
-    # Race index → story column name
-    # RACE_CATEGORIES order: white_alone, black_alone, hispanic_total,
-    #                        asian_alone, two_plus, other_race
+    # Per-block dot count (how many dots total landed in each block, across
+    # all zone types). Used to attribute a block's num/den proportionally
+    # to the fraction of its dots that fall in a given zone.
+    dots_per_block = np.bincount(dot_block, minlength=n_blocks).astype(np.float64)
+    inv_dots_per_block = np.where(dots_per_block > 0,
+                                  1.0 / dots_per_block, 0.0)
+    # Each dot carries (block_num / n_dots_in_block) and (block_den / ...)
+    # so that summing per dot in a zone recovers Σ num_i × (dots_in_zone_i / n_dots_in_block_i).
+    per_dot_num: dict[str, np.ndarray] = {}
+    per_dot_den: dict[str, np.ndarray] = {}
+    for num_col, den_col, _ in available_extensive:
+        per_dot_num[num_col] = block_num_arrays[num_col][dot_block] * inv_dots_per_block[dot_block]
+        per_dot_den[den_col] = block_den_arrays[den_col][dot_block] * inv_dots_per_block[dot_block]
+
     race_col_names = [
         "white_nh", "black_nh", "hispanic", "asian_nh", "two_plus_nh",
     ]
+
+    n_schools = len(master_school_names)
+    n_zone_types = len(zone_types)
+
+    # Nested result structure for JS precomputed lookup.
+    # extensive_by_zone[pct_col] = {
+    #     "pct":   [zone_type][school] -> float,
+    #     "count": [zone_type][school] -> int  (numerator count, for right barplot)
+    # }
+    extensive_by_zone: dict[str, dict] = {
+        pct_col: {
+            "pct":   [[0.0] * n_schools for _ in range(n_zone_types)],
+            "count": [[0]   * n_schools for _ in range(n_zone_types)],
+        }
+        for _, _, pct_col in available_extensive
+    }
 
     records = []
     for zt_idx, zt in enumerate(zone_types):
@@ -1195,31 +1325,41 @@ def export_dot_zone_demographics(
             rec["total_pop"] = n_dots
             rec["race_total"] = n_dots
 
-            # Race counts from dot indices
+            # Race counts
             zone_races = dot_race[mask]
             for ri, rname in enumerate(race_col_names):
                 rec[rname] = int((zone_races == ri).sum())
 
-            # Metric means from block-level values
+            # Population-weighted metrics: dot-weighted mean is correct
             zone_blocks = dot_block[mask]
-            for metric in available_metrics:
+            for metric in available_popweighted:
                 vals = block_metric_arrays[metric][zone_blocks]
                 valid = vals[~np.isnan(vals)]
                 rec[metric] = float(valid.mean()) if len(valid) > 0 else np.nan
-                # For MHI, also store the true median (matches histogram red line)
                 if metric == "median_hh_income" and len(valid) > 0:
                     rec["median_hh_income_avg"] = rec[metric]
                     rec["median_hh_income"] = float(np.median(valid))
 
-            # Derived count fields (pop × pct / 100)
+            # Extensive metrics: sum raw num/den per zone via per-dot
+            # attribution, then compute correct percentage.
+            for num_col, den_col, pct_col in available_extensive:
+                zone_num = float(per_dot_num[num_col][mask].sum())
+                zone_den = float(per_dot_den[den_col][mask].sum())
+                rec[num_col] = int(round(zone_num))
+                rec[den_col] = int(round(zone_den))
+                pct = (zone_num / zone_den * 100.0) if zone_den > 0 else 0.0
+                rec[pct_col] = pct
+                extensive_by_zone[pct_col]["pct"][zt_idx][si] = round(pct, 1)
+                extensive_by_zone[pct_col]["count"][zt_idx][si] = int(round(zone_num))
+
+            # Split age-group counts (still derived from the pop-weighted
+            # pct, which is correct because those percentages are
+            # population-denominated).
             def _safe_pct(key):
                 v = rec.get(key, 0)
                 return 0 if (v is None or (isinstance(v, float) and np.isnan(v))) else v
 
             pop = n_dots
-            rec["below_185_pov"] = round(pop * _safe_pct("pct_below_185_poverty") / 100)
-            rec["poverty_universe"] = pop
-
             young_n = round(pop * _safe_pct("pct_young_children") / 100)
             rec["male_under_5"] = young_n // 2
             rec["female_under_5"] = young_n - rec["male_under_5"]
@@ -1228,17 +1368,11 @@ def export_dot_zone_demographics(
             rec["male_5_9"] = elem_n // 2
             rec["female_5_9"] = elem_n - rec["male_5_9"]
 
-            rec["tenure_renter"] = round(pop * _safe_pct("pct_renter") / 100)
-            rec["tenure_total"] = pop
-
-            rec["vehicles_zero"] = round(pop * _safe_pct("pct_zero_vehicle") / 100)
-            rec["vehicles_total_hh"] = pop
-
             records.append(rec)
 
     df = pd.DataFrame(records)
 
-    # Derived percentages from race counts
+    # Derived race percentages
     df["pct_black"] = np.where(
         df["race_total"] > 0, df["black_nh"] / df["race_total"] * 100, 0,
     )
@@ -1250,11 +1384,12 @@ def export_dot_zone_demographics(
     pct_cols = [c for c in df.columns if c.startswith("pct_")]
     for col in pct_cols:
         df[col] = df[col].round(1)
-    df["median_hh_income"] = df["median_hh_income"].round(0)
+    if "median_hh_income" in df.columns:
+        df["median_hh_income"] = df["median_hh_income"].round(0)
 
     df.to_csv(output_path, index=False)
     _progress(f"  Exported dot-zone demographics ({len(df)} rows) to {output_path}")
-    return df
+    return df, extensive_by_zone
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -2296,8 +2431,9 @@ FAQ
             all_dot_zones.append(indices)
 
         # ── Export dot-based zone demographics (matches JS aggregation) ──
+        extensive_by_zone: dict = {}
         if enriched_blocks is not None and len(all_dot_zones) > 0:
-            export_dot_zone_demographics(
+            _, extensive_by_zone = export_dot_zone_demographics(
                 dot_data, block_geoids, enriched_blocks,
                 all_dot_zones, zone_types, master_school_names,
                 OUTPUT_DOT_ZONE_CSV,
@@ -2448,6 +2584,9 @@ FAQ
         metric_names = ["Race/Ethnicity"] + [spec[1] for spec in METRIC_DOT_SPECS]
         metric_prefixes = [""] + [spec[3] for spec in METRIC_DOT_SPECS]
         metric_suffixes = [""] + [spec[4] for spec in METRIC_DOT_SPECS]
+        # Metric column names parallel to metric_names; used by the JS to
+        # look up precomputed per-zone-type aggregations by column name.
+        metric_columns = [""] + [spec[0] for spec in METRIC_DOT_SPECS]
 
         # Build category dropdown + radio buttons for sub-metrics
         acs_radios = ""
@@ -2497,6 +2636,7 @@ FAQ
         metric_prefixes_js = _json.dumps(metric_prefixes, separators=(",", ":"))
         metric_suffixes_js = _json.dumps(metric_suffixes, separators=(",", ":"))
         metric_ranges_js = _json.dumps(metric_ranges, separators=(",", ":"))
+        metric_columns_js = _json.dumps(metric_columns, separators=(",", ":"))
 
         # Multi-zone-type arrays
         all_dot_zones_js = _json.dumps(all_dot_zones, separators=(",", ":"))
@@ -2505,14 +2645,32 @@ FAQ
         zone_fg_names_js = "[" + ",".join(zt["fg_name"] for zt in zone_types) + "]"
         zone_type_labels_js = _json.dumps([zt["label"] for zt in zone_types], separators=(",", ":"))
 
-        # Zone-level affordable housing totals (in master_school_names order)
-        ah_by_zone_list = []
-        if zone_demographics is not None and "ah_total_units" in zone_demographics.columns:
-            zd_dict = zone_demographics.set_index("school")["ah_total_units"].to_dict()
-            ah_by_zone_list = [int(zd_dict.get(s, 0)) for s in master_school_names]
-        else:
-            ah_by_zone_list = [0] * len(master_school_names)
-        ah_by_zone_js = _json.dumps(ah_by_zone_list, separators=(",", ":"))
+        # Zone-level affordable housing totals — per zone type (nested lists)
+        # Direct point-in-polygon count: each AH unit attributed to exactly
+        # one zone. Mirrors the MLS/dev pattern below.
+        def _ah_by_zone_type(ah_gdf, zone_gdf, school_names):
+            n = len(school_names)
+            if ah_gdf is None or zone_gdf is None or len(ah_gdf) == 0 or len(zone_gdf) == 0:
+                return [0] * n
+            ah_wgs = ah_gdf.to_crs(CRS_WGS84)
+            zones_wgs = zone_gdf.to_crs(CRS_WGS84)
+            joined = gpd.sjoin(ah_wgs, zones_wgs[["school", "geometry"]],
+                               how="left", predicate="within")
+            # Dedupe: an AH point falling in overlapping zone slivers should
+            # count once (assign to the first match).
+            joined = joined[~joined.index.duplicated(keep="first")]
+            valid = joined.dropna(subset=["school"])
+            counts = valid.groupby("school").size()
+            return [int(counts.get(s, 0)) for s in school_names]
+
+        all_ah_counts = []
+        for zt_gdf in active_zone_gdfs:
+            all_ah_counts.append(
+                _ah_by_zone_type(affordable_housing, zt_gdf, master_school_names)
+            )
+        if not all_ah_counts:
+            all_ah_counts = [[0] * len(master_school_names)]
+        ah_by_zone_js = _json.dumps(all_ah_counts, separators=(",", ":"))
 
         # Zone-level MLS aggregates — per zone type (nested lists)
         def _mls_by_zone_type(mls_gdf, zone_gdf, school_names):
@@ -2525,6 +2683,8 @@ FAQ
             zones_wgs = zone_gdf.to_crs(CRS_WGS84)
             joined = gpd.sjoin(mls_wgs, zones_wgs[["school", "geometry"]],
                                how="left", predicate="within")
+            # Dedupe points that match multiple overlapping zone polygons.
+            joined = joined[~joined.index.duplicated(keep="first")]
             valid = joined.dropna(subset=["school"])
             agg_cols = dict(
                 sales=("close_price", "size"),
@@ -2582,6 +2742,7 @@ FAQ
             zones_wgs = zone_gdf.to_crs(CRS_WGS84)
             joined = gpd.sjoin(dev_wgs, zones_wgs[["school", "geometry"]],
                                how="left", predicate="within")
+            joined = joined[~joined.index.duplicated(keep="first")]
             valid = joined.dropna(subset=["school"])
             agg = valid.groupby("school").agg(
                 total_units=("expected_units", "sum"),
@@ -2617,6 +2778,7 @@ FAQ
             zones_wgs = zone_gdf.to_crs(CRS_WGS84)
             joined = gpd.sjoin(sap_wgs, zones_wgs[["school", "geometry"]],
                                how="left", predicate="within")
+            joined = joined[~joined.index.duplicated(keep="first")]
             valid = joined.dropna(subset=["school"])
             agg = valid.groupby("school").agg(
                 total_units=("total_units_remaining", "sum"),
@@ -2648,6 +2810,17 @@ FAQ
         sapfotac_units_by_zone_js = _json.dumps(all_sapfotac_units, separators=(",", ":"))
         sapfotac_counts_by_zone_js = _json.dumps(all_sapfotac_counts, separators=(",", ":"))
         sapfotac_elem_by_zone_js = _json.dumps(all_sapfotac_elem, separators=(",", ":"))
+
+        # Universe-correct aggregation for extensive-metric percentages
+        # (poverty, zero-vehicle, renter). Keyed by pct column name.
+        # Each entry is {"pct": [[…11 schools…] per zone type],
+        #                "count": [[…11 schools…] per zone type]}.
+        # The JS looks these up by metric name to bypass the fallthrough
+        # dot-weighted mean for metrics whose source denominator isn't
+        # total population.
+        extensive_by_zone_js = _json.dumps(
+            extensive_by_zone, separators=(",", ":"),
+        )
 
         # BG / Block layer JS refs
         bg_layers_js = "[" + ",".join(bg_fg_names) + "]"
@@ -2776,11 +2949,13 @@ FAQ
             var sapfotacUnitsByZone = {sapfotac_units_by_zone_js};
             var sapfotacCountsByZone = {sapfotac_counts_by_zone_js};
             var sapfotacElemByZone = {sapfotac_elem_by_zone_js};
+            var extensiveByZone = {extensive_by_zone_js};
             var blockColors = {block_colors_js};
             var blockValues = {block_values_js};
             var raceColors = {race_colors_js};
             var legends = {legends_js};
             var metricNames = {metric_names_js};
+            var metricColumns = {metric_columns_js};
             var metricPrefixes = {metric_prefixes_js};
             var metricSuffixes = {metric_suffixes_js};
             var metricRanges = {metric_ranges_js};
@@ -3253,33 +3428,11 @@ FAQ
                 var zoneNames = allZoneNames[currentZoneType];
                 var nZones = zoneNames.length;
 
-                // Special case: Affordable Housing - compute zone totals dynamically
-                // NOTE: dotZones[i] are master school indices (0..nSchools-1),
-                // so we must use nSchools (not nZones) for array sizing and
-                // masterSchools for labels to keep labels aligned with values.
+                // Affordable Housing: use precomputed per-zone-type totals
+                // from a direct point-in-polygon sjoin (ahByZone is indexed
+                // [zoneType][masterSchoolIdx]).
                 if (isHousing) {{
-                    // Sum ah_units per zone (using unique blocks per zone)
-                    var ahMi = mi;  // blockValues index for ah_units
-                    var zoneTotals = [];
-                    var seenBlocks = [];  // Track which blocks counted per zone
-                    for (var zi = 0; zi < nSchools; zi++) {{
-                        zoneTotals.push(0);
-                        seenBlocks.push({{}});
-                    }}
-                    for (var i = 0; i < dots.length; i++) {{
-                        var zi = dotZones[i];
-                        if (zi >= 0 && zi < nSchools) {{
-                            var bi = dots[i][3];  // block index
-                            if (!seenBlocks[zi][bi]) {{
-                                seenBlocks[zi][bi] = true;
-                                var ahVal = blockValues[bi] && blockValues[bi][ahMi];
-                                if (ahVal !== null && ahVal !== undefined) {{
-                                    zoneTotals[zi] += ahVal;
-                                }}
-                            }}
-                        }}
-                    }}
-                    drawBarplot('bar-ah', masterSchools, zoneTotals, 'count');
+                    drawBarplot('bar-ah', masterSchools, ahByZone[currentZoneType], 'count');
                     return;
                 }}
 
@@ -3306,6 +3459,30 @@ FAQ
                     drawBarplot('bar-mls-price', masterSchools, mlsPriceByZone[currentZoneType], 'dollar');
                     drawBarplot('bar-mls-ppsf', masterSchools, mlsPpsfByZone[currentZoneType], 'dollar');
                     drawBedroomHistogram('hist-bedrooms', mlsBedroomsByZone[currentZoneType], masterSchools);
+                    return;
+                }}
+
+                // Extensive metrics (% below poverty, % zero-vehicle, etc.):
+                // use the precomputed universe-correct aggregation instead
+                // of the population-dot-weighted mean below. The dot-weighted
+                // fallthrough is only correct when the percentage denominator
+                // is total population; for household-based or universe-
+                // restricted denominators it is biased. The explicit allow-
+                // list below prevents accidental reuse for a metric whose
+                // denominator is actually population.
+                var extensiveAllowed = {{
+                    'pct_below_185_poverty': true,
+                    'pct_zero_vehicle': true,
+                    'pct_renter': true
+                }};
+                var metricCol = metricColumns[currentMetric];
+                if (metricCol && extensiveAllowed[metricCol]
+                        && extensiveByZone && extensiveByZone[metricCol]) {{
+                    var extData = extensiveByZone[metricCol];
+                    drawBarplot('bar-left', masterSchools,
+                                extData.pct[currentZoneType], 'pct');
+                    drawBarplot('bar-right', masterSchools,
+                                extData.count[currentZoneType], 'count');
                     return;
                 }}
 

@@ -26,9 +26,12 @@ from pathlib import Path
 import folium
 import geopandas as gpd
 import pandas as pd
-from shapely.geometry import Point, box
+from shapely.geometry import Point
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(PROJECT_ROOT / "src"))
+from school_socioeconomic_analysis import _build_nearest_zones  # noqa: E402
+
 RAW_TXT = PROJECT_ROOT / "data" / "raw" / "charter_schools.txt"
 CACHE_GPKG = PROJECT_ROOT / "data" / "cache" / "charter_private_schools.gpkg"
 MAP_OUT = PROJECT_ROOT / "assets" / "maps" / "alternative_schools_map.html"
@@ -316,42 +319,14 @@ def load_attendance_zones() -> gpd.GeoDataFrame | None:
 
 
 def build_drive_zones(district: gpd.GeoDataFrame) -> gpd.GeoDataFrame | None:
-    """Build nearest-drive zones from school_desert_grid.csv.
-
-    Buffers each baseline drive-mode grid point by 55 m, dissolves by
-    nearest_school, and clips to the district.
-    """
+    """Build nearest-drive zones via the shared Voronoi partition helper."""
     if not GRID_CSV.exists():
         _progress(f"  Grid CSV not found: {GRID_CSV}")
         return None
-    df = pd.read_csv(GRID_CSV, usecols=[
-        "lat", "lon", "mode", "scenario", "nearest_school",
-    ])
-    df = df[(df["scenario"] == "baseline") & (df["mode"] == "drive")]
-    df = df.dropna(subset=["nearest_school"])
-    if df.empty:
-        _progress("  No baseline/drive rows with nearest_school")
+    zones = _build_nearest_zones(GRID_CSV, "drive", district)
+    if zones is None or len(zones) == 0:
         return None
-
-    pts = gpd.GeoDataFrame(
-        df, geometry=gpd.points_from_xy(df["lon"], df["lat"]), crs=CRS_WGS84,
-    ).to_crs(CRS_UTM17N)
-
-    half = 55
-    pts["geometry"] = [
-        box(g.x - half, g.y - half, g.x + half, g.y + half)
-        for g in pts.geometry
-    ]
-    dissolved = pts.dissolve(by="nearest_school").reset_index()
-    dissolved = dissolved.rename(columns={"nearest_school": "school"})
-
-    dist_utm = district.to_crs(CRS_UTM17N)
-    dissolved = gpd.clip(dissolved, dist_utm)
-    mask = dissolved.geometry.geom_type.isin(["Polygon", "MultiPolygon"])
-    dissolved = dissolved[mask][["school", "geometry"]]
-    dissolved = dissolved.to_crs(CRS_WGS84).reset_index(drop=True)
-    _progress(f"  Built {len(dissolved)} nearest-drive zones")
-    return dissolved
+    return zones.reset_index(drop=True)
 
 
 def filter_by_distance(

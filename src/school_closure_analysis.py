@@ -829,7 +829,13 @@ def build_zone_polygons(
     reachable: np.ndarray,
     district_gdf: gpd.GeoDataFrame,
 ) -> gpd.GeoDataFrame | None:
-    """Convert pixel nearest-school assignments to dissolved zone polygons."""
+    """Convert pixel nearest-school assignments to dissolved zone polygons.
+
+    Uses a Voronoi partition over the reachable grid points so that adjacent
+    school zones share exact boundaries with no overlap slivers or gaps.
+    """
+    from school_socioeconomic_analysis import voronoi_zones_from_labelled_points
+
     df = grid[["grid_id", "lon", "lat"]].copy()
     df["nearest_school"] = nearest_schools
     df = df[reachable & (df["nearest_school"] != None)].copy()
@@ -838,20 +844,10 @@ def build_zone_polygons(
 
     pts = gpd.GeoDataFrame(
         df, geometry=gpd.points_from_xy(df["lon"], df["lat"]), crs=CRS_WGS84,
-    ).to_crs(CRS_UTM17N)
-
-    half = 55  # slightly over half of 100m grid cell
-    pts["geometry"] = [box(g.x - half, g.y - half, g.x + half, g.y + half)
-                       for g in pts.geometry]
-    dissolved = pts.dissolve(by="nearest_school").reset_index()
-    dissolved = dissolved.rename(columns={"nearest_school": "school"})
-
-    dist_utm = district_gdf.to_crs(CRS_UTM17N)
-    dissolved = gpd.clip(dissolved, dist_utm)
-    mask = dissolved.geometry.geom_type.isin(["Polygon", "MultiPolygon"])
-    dissolved = dissolved[mask].copy()
-    dissolved = dissolved[["school", "geometry"]].to_crs(CRS_WGS84)
-    return dissolved
+    )
+    return voronoi_zones_from_labelled_points(
+        pts, "nearest_school", district_gdf, out_crs=CRS_WGS84,
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════════════

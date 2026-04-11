@@ -28,14 +28,19 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import pandas as pd
-from shapely.geometry import box
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+# Import the canonical nearest-zone builder from the socioeconomic pipeline
+# so both outputs share identical zone definitions (no duplicated logic).
+sys.path.insert(0, str(PROJECT_ROOT / "src"))
+from school_socioeconomic_analysis import _build_nearest_zones  # noqa: E402
+
 CSV_IN = PROJECT_ROOT / "data" / "processed" / "census_dot_zone_demographics.csv"
 GRID_CSV = PROJECT_ROOT / "data" / "processed" / "school_desert_grid.csv"
 DISTRICT_CACHE = PROJECT_ROOT / "data" / "cache" / "chccs_district_boundary.gpkg"
@@ -87,7 +92,7 @@ def _load_demo(zone_type: str = "Nearest Drive") -> pd.DataFrame:
 
 
 def _build_drive_zones() -> gpd.GeoDataFrame | None:
-    """Build nearest-drive zone polygons from school_desert_grid.csv."""
+    """Build nearest-drive zone polygons via the shared Voronoi partition."""
     if not GRID_CSV.exists():
         _progress(f"Grid CSV not found: {GRID_CSV}")
         return None
@@ -95,32 +100,12 @@ def _build_drive_zones() -> gpd.GeoDataFrame | None:
         _progress(f"District boundary not found: {DISTRICT_CACHE}")
         return None
 
-    _progress("Building drive zone polygons from grid CSV ...")
-    df = pd.read_csv(GRID_CSV, usecols=[
-        "lat", "lon", "mode", "scenario", "nearest_school",
-    ])
-    df = df[(df["scenario"] == "baseline") & (df["mode"] == "drive")]
-    df = df.dropna(subset=["nearest_school"])
-    if df.empty:
+    _progress("Building drive zone polygons (Voronoi partition) ...")
+    district = gpd.read_file(DISTRICT_CACHE)
+    zones = _build_nearest_zones(GRID_CSV, "drive", district)
+    if zones is None or len(zones) == 0:
         return None
-
-    pts = gpd.GeoDataFrame(
-        df, geometry=gpd.points_from_xy(df["lon"], df["lat"]), crs=CRS_WGS84,
-    ).to_crs(CRS_UTM17N)
-    half = 55
-    pts["geometry"] = [
-        box(g.x - half, g.y - half, g.x + half, g.y + half)
-        for g in pts.geometry
-    ]
-    dissolved = pts.dissolve(by="nearest_school").reset_index()
-    dissolved = dissolved.rename(columns={"nearest_school": "school"})
-
-    district = gpd.read_file(DISTRICT_CACHE).to_crs(CRS_UTM17N)
-    dissolved = gpd.clip(dissolved, district)
-    mask = dissolved.geometry.geom_type.isin(["Polygon", "MultiPolygon"])
-    dissolved = dissolved[mask][["school", "geometry"]].to_crs(CRS_WGS84)
-    _progress(f"  Built {len(dissolved)} drive zones")
-    return dissolved.reset_index(drop=True)
+    return zones.reset_index(drop=True)
 
 
 def _spatial_join_count(
@@ -292,7 +277,7 @@ def main() -> None:
     # Charts from census CSV (always available)
     draw_bar_chart(
         df, "below_185_pov",
-        "Households below 185% Poverty",
+        "Residents Below 185% Poverty",
         "Count of residents below the Free/Reduced-price Lunch threshold "
         "(ACS 5-Year 2020\u20132024)",
         "{:,.0f}", OUT_DIR / "bars_households_poverty_drive.png",

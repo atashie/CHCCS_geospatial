@@ -327,10 +327,28 @@ square-buffer-and-dissolve logic were refactored to share it**:
 - `src/alternative_schools_map.py` — imports `_build_nearest_zones`.
 - `src/school_closure_analysis.py` — `build_zone_polygons()` imports `voronoi_zones_from_labelled_points` directly (its inputs come from numpy arrays rather than the CSV, so it skips the `_build_nearest_zones` wrapper).
 - `example_stories/closure_scenarios_story.py` — editorial scrollytelling page; `build_nearest_walk_zones()` now delegates to `_build_nearest_zones(GRID_CSV, "walk", district)` and overlays the `ZONE_COLORS` mapping for Leaflet styling. Closed the last remaining `half = 55` instance in the repository (2026-04-10).
+- `example_stories/chccs_demographics_story.py` — editorial scrollytelling page; already imported `_build_nearest_zones` before this work, but the four in-script sjoin calls that join MLS / AH / planned dev / SAPFOTAC points to drive zones now carry the same defensive `joined[~joined.index.duplicated(keep="first")]` guard as the helpers in `src/school_socioeconomic_analysis.py`. No-op under the Voronoi partition; insurance against future zone sources with genuine overlap.
 
 All five scripts previously contained an identical `half = 55` square-buffer
 block. That dead code has been deleted; a single source of truth now governs
 every nearest-school partition in the project.
+
+**Editorial story / generator drift hazard (2026-04-10):** While regenerating
+`example_stories/chccs_demographics.html` from the post-R1 CSV, Codex's review
+surfaced a silent regression: the age-choropleth colour scale reverted from a
+data-driven `makeYlOrRd(bgMax("pct_young_children"))` factory to a hardcoded
+0–10 % cap. Root cause was commit `fb804e8` (2026-03-31, "Demographics story:
+use data-driven color scale for age choropleths"), which **hand-edited the
+rendered HTML file without updating the generator script**. Any subsequent
+regeneration would silently revert that change. Fixed by porting the
+`makeYlOrRd(maxVal)` factory and `bgMax(metric)` helper into
+`example_stories/chccs_demographics_story.py` at ~line 1916 so the generator
+reproduces the committed HTML. **General hazard for `example_stories/`:** the
+pattern of hand-editing `.html` outputs without back-propagating to the
+`.py` generator leaves silent regressions waiting to be triggered. When
+reviewing editorial stories, prefer `git log --format="%h %s" --follow
+example_stories/<file>.html` and look for commits that touch only the `.html`
+without the matching `.py` sibling.
 
 **Why Voronoi is correct:** The grid points themselves carry a ground-truth `nearest_school` label (computed upstream by Dijkstra in `school_desert.py`). A Voronoi diagram over those points partitions space into "closest grid point" cells, so when dissolved by label the boundary between schools exactly traces the locus where the nearest labelled grid point switches from one school to another. This is what "nearest-school zone" was always supposed to mean; the square-buffer approach was an approximation that happened to leak overlap slivers.
 
