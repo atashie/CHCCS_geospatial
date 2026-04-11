@@ -690,5 +690,6 @@ For deeper implementation details, code-level documentation, and complete lists 
 - **[Socioeconomic Analysis & Limitations](SOCIOECONOMIC_ANALYSIS_AND_LIMITATIONS.md)** — Census variable selection, dasymetric method details (26 documented limitations)
 - **[Socioeconomic Methodology Walkthrough](../assets/maps/socioeconomic_methodology.html)** — Interactive scrollytelling page explaining Census data, dasymetric interpolation, and dot-density mapping
 - **[School Desert Analysis & Limitations](SCHOOL_DESERT_ANALYSIS_AND_LIMITATIONS.md)** — Travel-time heatmap methodology (13 documented limitations)
+- **[Calibrated Enrollment Allocation](../data/processed/NAIVE_ENROLLMENT_ALLOCATION.md)** — Auto-generated methodology for the 14-parameter softmax choice model fit at block-group-fragment granularity (calibrated MAE and RMSE variants, multi-seed differential evolution + L-BFGS-B refinement, Hessian stability diagnostics)
 - **[Geospatial Analysis Guidelines](GEOSPATIAL_ANALYSIS_GUIDELINES.md)** — Coordinate reference system standards and spatial operation conventions
 - **[Implementation Notes](IMPLEMENTATION_NOTES.md)** — Technical implementation details for all modules

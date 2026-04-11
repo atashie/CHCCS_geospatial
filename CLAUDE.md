@@ -49,6 +49,10 @@ CHCCS_geospatial/
 │   ├── school_closure_analysis.py        # School closure impact (travel + traffic)
 │   ├── closure_story.py                  # Scrollytelling closure methodology walkthrough
 │   ├── socioeconomic_story.py            # Scrollytelling socioeconomic methodology walkthrough
+│   ├── naive_enrollment_allocation.py    # Calibrated enrollment allocation (see IMPLEMENTATION_NOTES.md)
+│   ├── bar_charts_drive_zones.py         # Static drive-zone bar charts (reads census_dot_zone_demographics.csv)
+│   ├── district_schools_map.py           # Static district + nearest-drive-zone map (PNG)
+│   ├── alternative_schools_map.py        # Charter/private schools overlay (Leaflet HTML)
 │   ├── data_processing.py                # Shared data loading utilities
 │   └── maps.py                           # Map visualizations (TODO: needs restructuring)
 ├── data/
@@ -136,6 +140,22 @@ python src/closure_story.py --cache-only  # cached data only
 # Generate socioeconomic methodology scrollytelling page
 python src/socioeconomic_story.py
 python src/socioeconomic_story.py --cache-only  # cached data only
+
+# Calibrated enrollment allocation (see docs/IMPLEMENTATION_NOTES.md for details)
+python src/naive_enrollment_allocation.py
+
+# Drive-zone static bar charts (poverty, zero-vehicle, AH, MLS, etc.)
+# Reads data/processed/census_dot_zone_demographics.csv — run the
+# socioeconomic pipeline first to refresh the inputs.
+python src/bar_charts_drive_zones.py
+python src/bar_charts_drive_zones.py --cache-only  # skip AH/MLS spatial joins
+
+# Static district + nearest-drive-zone PNG map
+python src/district_schools_map.py
+
+# Charter / private alternative schools Leaflet HTML map
+python src/alternative_schools_map.py
+python src/alternative_schools_map.py --cache-only  # use cached gpkg
 ```
 
 ---
@@ -152,7 +172,7 @@ python src/socioeconomic_story.py --cache-only  # cached data only
 | School desert grid | `data/processed/school_desert_grid.csv` | Computed (Dijkstra) |
 | Pollution scores | `data/processed/road_pollution_scores.csv` | Computed (TRAP model) |
 | Zone demographics | `data/processed/census_school_demographics.csv` | Computed (dasymetric) |
-| Dot-zone demographics | `data/processed/census_dot_zone_demographics.csv` | Computed (dot-level, matches interactive map JS) |
+| Dot-zone demographics | `data/processed/census_dot_zone_demographics.csv` | Computed. Population-denominated pcts use dot-weighted block means; extensive-denominator pcts (poverty, zero-vehicle, renter) use per-dot attribution of block raw num/den (Σnum/Σden). Mirrors the interactive map's `updateHistograms()` routing. |
 | NCDOT AADT stations | `data/cache/ncdot_aadt_orange_county.gpkg` | NCDOT ArcGIS (Orange County) |
 | Affordable housing | `data/cache/affordable_housing.gpkg` | Town of Chapel Hill ArcGIS (2025) |
 | MLS home sales | `data/cache/mls_home_sales.gpkg` | Triangle MLS (2023-2025), geocoded via Census + Nominatim |
@@ -167,6 +187,7 @@ python src/socioeconomic_story.py --cache-only  # cached data only
 | Closure assignments | `data/processed/school_closure_assignments.csv` | Computed (travel time per pixel) |
 | Closure traffic | `data/processed/school_closure_traffic.csv` | Computed (children per edge) |
 | Enrollment forecast (reference) | `docs/CAROLINA_DEMOGRAPHY_ENROLLMENT_FORECAST_2026.md` | Carolina Demography (UNC) 10-year ADM forecast, April 2026 BOCC agenda. Source PDF at `data/raw/agenda_07APR2026.pdf` pp. 95-162. |
+| Calibrated enrollment allocation | `data/processed/naive_enrollment_allocation.csv` | Calibrated softmax choice model fit to per-school ADM at block-group-fragment granularity. See [`docs/IMPLEMENTATION_NOTES.md`](docs/IMPLEMENTATION_NOTES.md) → "Calibrated Enrollment Allocation Model" and [`data/processed/NAIVE_ENROLLMENT_ALLOCATION.md`](data/processed/NAIVE_ENROLLMENT_ALLOCATION.md) (auto-generated) for parameters, methodology, and limitations. |
 
 ---
 
@@ -183,6 +204,7 @@ python src/socioeconomic_story.py --cache-only  # cached data only
 - [`docs/SOCIOECONOMIC_ANALYSIS_AND_LIMITATIONS.md`](docs/SOCIOECONOMIC_ANALYSIS_AND_LIMITATIONS.md) — Socioeconomic analysis
 - [`docs/socioeconomic/SOCIOECONOMIC_ANALYSIS.md`](docs/socioeconomic/SOCIOECONOMIC_ANALYSIS.md) — Auto-generated socioeconomic methodology
 - [`data/processed/ROAD_POLLUTION.md`](data/processed/ROAD_POLLUTION.md) — TRAP analysis results and methodology
+- [`data/processed/NAIVE_ENROLLMENT_ALLOCATION.md`](data/processed/NAIVE_ENROLLMENT_ALLOCATION.md) — Auto-generated calibrated enrollment allocation methodology (rewritten on every run; do not hand-edit)
 - [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) — Public-facing methodology guide (data sources, methods, limitations for all three maps)
 
 If you change a formula, constant, data source, output file, or analysis pipeline, update every document that references the changed item. Stale documentation is worse than no documentation.

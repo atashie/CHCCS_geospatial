@@ -21,6 +21,7 @@ Objective spatial analysis of all 11 Chapel Hill-Carrboro City Schools (CHCCS) e
 | `sapfotac_geocode.py` | SAPFOTAC 2025 planned development geocoding (supplementary source) | lat/lon columns in SAPFOTAC CSVs |
 | `childcare_geocode.py` | Childcare facility geocoding and proximity analysis by distance bands | CSVs in `data/processed/` |
 | `property_data.py` | Orange County residential parcel classification and centroid extraction | `combined_data_centroids.gpkg` |
+| `naive_enrollment_allocation.py` | Calibrated softmax choice model fit at block-group-fragment granularity, estimating magnet intercepts, race bonuses, white-biased opt-out, 5-9/0-4 age-bucket mix, and income effects against observed 2025-26 per-school ADM | `naive_enrollment_allocation.csv`, `naive_calibrated_vs_actual.png` |
 
 ## Quick Start
 
@@ -44,6 +45,7 @@ python src/sapfotac_geocode.py        # Geocode SAPFOTAC 2025 data (supplementar
 python src/school_closure_analysis.py   # School closure impact (travel + traffic)
 python src/closure_story.py            # School closure methodology scrollytelling page
 python src/socioeconomic_story.py     # Socioeconomic methodology scrollytelling page
+python src/naive_enrollment_allocation.py  # Naive residency vs magnet redistribution scenario
 ```
 
 ## Execution Order

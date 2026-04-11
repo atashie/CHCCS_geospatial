@@ -1,0 +1,557 @@
+scheme,source_zone,destination_magnet,race,count
+mae_fit,Carrboro Elementary,FPG Elementary,white_nh,5.843773495588507
+mae_fit,Carrboro Elementary,FPG Elementary,black_nh,0.8366081133300186
+mae_fit,Carrboro Elementary,FPG Elementary,asian_nh,0.5630251922469189
+mae_fit,Carrboro Elementary,FPG Elementary,hispanic,12.898847597901366
+mae_fit,Carrboro Elementary,FPG Elementary,aian_nh,1.1080842882950915e-06
+mae_fit,Carrboro Elementary,FPG Elementary,other_nh,0.08695619416068104
+mae_fit,Carrboro Elementary,FPG Elementary,two_plus_nh,0.16655150123499068
+mae_fit,Ephesus Elementary,FPG Elementary,white_nh,6.057402657530003
+mae_fit,Ephesus Elementary,FPG Elementary,black_nh,2.0768006276005155
+mae_fit,Ephesus Elementary,FPG Elementary,asian_nh,0.9666151826173717
+mae_fit,Ephesus Elementary,FPG Elementary,hispanic,75.73461006076688
+mae_fit,Ephesus Elementary,FPG Elementary,aian_nh,0.0035157397003126025
+mae_fit,Ephesus Elementary,FPG Elementary,nhpi_nh,5.353080807990507e-07
+mae_fit,Ephesus Elementary,FPG Elementary,other_nh,0.04077783855589465
+mae_fit,Ephesus Elementary,FPG Elementary,two_plus_nh,1.1859218516846874
+mae_fit,Estes Hills Elementary,FPG Elementary,white_nh,4.301402441508638
+mae_fit,Estes Hills Elementary,FPG Elementary,black_nh,0.5669299600502126
+mae_fit,Estes Hills Elementary,FPG Elementary,asian_nh,0.9986064833863717
+mae_fit,Estes Hills Elementary,FPG Elementary,hispanic,30.14772919148669
+mae_fit,Estes Hills Elementary,FPG Elementary,aian_nh,0.014943294087310328
+mae_fit,Estes Hills Elementary,FPG Elementary,nhpi_nh,0.011786870107567331
+mae_fit,Estes Hills Elementary,FPG Elementary,other_nh,0.062261840435767477
+mae_fit,Estes Hills Elementary,FPG Elementary,two_plus_nh,0.9145067010149455
+mae_fit,Glenwood Elementary,FPG Elementary,white_nh,1.215959205622497
+mae_fit,Glenwood Elementary,FPG Elementary,black_nh,0.17492383787761107
+mae_fit,Glenwood Elementary,FPG Elementary,asian_nh,0.1102372633696614
+mae_fit,Glenwood Elementary,FPG Elementary,hispanic,7.169898380136395
+mae_fit,Glenwood Elementary,FPG Elementary,aian_nh,0.09496133845183073
+mae_fit,Glenwood Elementary,FPG Elementary,other_nh,0.0015687371254542843
+mae_fit,Glenwood Elementary,FPG Elementary,two_plus_nh,0.02962369404125961
+mae_fit,McDougle Elementary,FPG Elementary,white_nh,9.214060649953481
+mae_fit,McDougle Elementary,FPG Elementary,black_nh,1.5921294697967368
+mae_fit,McDougle Elementary,FPG Elementary,asian_nh,0.9603881482489126
+mae_fit,McDougle Elementary,FPG Elementary,hispanic,90.45217969243068
+mae_fit,McDougle Elementary,FPG Elementary,aian_nh,0.0001793295599340178
+mae_fit,McDougle Elementary,FPG Elementary,other_nh,0.03656172050955353
+mae_fit,McDougle Elementary,FPG Elementary,two_plus_nh,0.971302989986986
+mae_fit,Morris Grove Elementary,FPG Elementary,white_nh,5.375600264891908
+mae_fit,Morris Grove Elementary,FPG Elementary,black_nh,1.3806724178052296
+mae_fit,Morris Grove Elementary,FPG Elementary,asian_nh,1.9011930639067172
+mae_fit,Morris Grove Elementary,FPG Elementary,hispanic,42.449395972118594
+mae_fit,Morris Grove Elementary,FPG Elementary,aian_nh,0.050817310899290605
+mae_fit,Morris Grove Elementary,FPG Elementary,nhpi_nh,0.004750336870157291
+mae_fit,Morris Grove Elementary,FPG Elementary,other_nh,0.03835955026719374
+mae_fit,Morris Grove Elementary,FPG Elementary,two_plus_nh,0.7056294564396725
+mae_fit,Northside Elementary,FPG Elementary,white_nh,9.155561494423107
+mae_fit,Northside Elementary,FPG Elementary,black_nh,2.2957456108583436
+mae_fit,Northside Elementary,FPG Elementary,asian_nh,1.5286604633704028
+mae_fit,Northside Elementary,FPG Elementary,hispanic,66.9370592130018
+mae_fit,Northside Elementary,FPG Elementary,aian_nh,0.06108907211055098
+mae_fit,Northside Elementary,FPG Elementary,nhpi_nh,0.0018686864011230315
+mae_fit,Northside Elementary,FPG Elementary,other_nh,0.046901394734715315
+mae_fit,Northside Elementary,FPG Elementary,two_plus_nh,0.740570732419037
+mae_fit,Rashkis Elementary,FPG Elementary,white_nh,5.338893429205681
+mae_fit,Rashkis Elementary,FPG Elementary,black_nh,1.0648036324132577
+mae_fit,Rashkis Elementary,FPG Elementary,asian_nh,1.8372777894182437
+mae_fit,Rashkis Elementary,FPG Elementary,hispanic,32.32302192142409
+mae_fit,Rashkis Elementary,FPG Elementary,aian_nh,0.0028987122564635647
+mae_fit,Rashkis Elementary,FPG Elementary,other_nh,0.017512106032642805
+mae_fit,Rashkis Elementary,FPG Elementary,two_plus_nh,0.3968685526678255
+mae_fit,Scroggs Elementary,FPG Elementary,white_nh,5.678408428023158
+mae_fit,Scroggs Elementary,FPG Elementary,black_nh,1.3598423974511378
+mae_fit,Scroggs Elementary,FPG Elementary,asian_nh,1.083524420476632
+mae_fit,Scroggs Elementary,FPG Elementary,hispanic,46.23065990489237
+mae_fit,Scroggs Elementary,FPG Elementary,aian_nh,0.08315326292246801
+mae_fit,Scroggs Elementary,FPG Elementary,other_nh,0.05935895025351906
+mae_fit,Scroggs Elementary,FPG Elementary,two_plus_nh,0.39143691040677253
+mae_fit,Seawell Elementary,FPG Elementary,white_nh,2.1238068859020838
+mae_fit,Seawell Elementary,FPG Elementary,black_nh,0.5887921974474987
+mae_fit,Seawell Elementary,FPG Elementary,asian_nh,0.5100862103803023
+mae_fit,Seawell Elementary,FPG Elementary,hispanic,11.475868303668896
+mae_fit,Seawell Elementary,FPG Elementary,aian_nh,0.011480103629465025
+mae_fit,Seawell Elementary,FPG Elementary,nhpi_nh,0.0003846181950253732
+mae_fit,Seawell Elementary,FPG Elementary,other_nh,0.05008341698382233
+mae_fit,Seawell Elementary,FPG Elementary,two_plus_nh,0.19441530057666354
+mae_fit,Ephesus Elementary,Carrboro Elementary,white_nh,24.325877223256725
+mae_fit,Ephesus Elementary,Carrboro Elementary,black_nh,0.38926601983001874
+mae_fit,Ephesus Elementary,Carrboro Elementary,asian_nh,0.5717085231435723
+mae_fit,Ephesus Elementary,Carrboro Elementary,hispanic,0.12048936333090314
+mae_fit,Ephesus Elementary,Carrboro Elementary,aian_nh,0.004774997729421016
+mae_fit,Ephesus Elementary,Carrboro Elementary,nhpi_nh,9.967203233431756e-08
+mae_fit,Ephesus Elementary,Carrboro Elementary,other_nh,0.01566788619588281
+mae_fit,Ephesus Elementary,Carrboro Elementary,two_plus_nh,0.6014696114670797
+mae_fit,Estes Hills Elementary,Carrboro Elementary,white_nh,22.00528292936382
+mae_fit,Estes Hills Elementary,Carrboro Elementary,black_nh,0.18935356430953312
+mae_fit,Estes Hills Elementary,Carrboro Elementary,asian_nh,0.7981343259796941
+mae_fit,Estes Hills Elementary,Carrboro Elementary,hispanic,0.11112939703820592
+mae_fit,Estes Hills Elementary,Carrboro Elementary,aian_nh,0.013367411852502984
+mae_fit,Estes Hills Elementary,Carrboro Elementary,nhpi_nh,0.0022277064998850633
+mae_fit,Estes Hills Elementary,Carrboro Elementary,other_nh,0.03351139366347805
+mae_fit,Estes Hills Elementary,Carrboro Elementary,two_plus_nh,0.6511339352191132
+mae_fit,Glenwood Elementary,Carrboro Elementary,white_nh,3.3971808873363245
+mae_fit,Glenwood Elementary,Carrboro Elementary,black_nh,0.04482116906117609
+mae_fit,Glenwood Elementary,Carrboro Elementary,asian_nh,0.027049221944503144
+mae_fit,Glenwood Elementary,Carrboro Elementary,hispanic,0.015529171525284857
+mae_fit,Glenwood Elementary,Carrboro Elementary,aian_nh,0.03341599253651597
+mae_fit,Glenwood Elementary,Carrboro Elementary,other_nh,0.0003296226582043748
+mae_fit,Glenwood Elementary,Carrboro Elementary,two_plus_nh,0.0056131481725353065
+mae_fit,McDougle Elementary,Carrboro Elementary,white_nh,42.15890249232307
+mae_fit,McDougle Elementary,Carrboro Elementary,black_nh,0.5621175546290089
+mae_fit,McDougle Elementary,Carrboro Elementary,asian_nh,0.570646235178706
+mae_fit,McDougle Elementary,Carrboro Elementary,hispanic,0.2856387724493251
+mae_fit,McDougle Elementary,Carrboro Elementary,aian_nh,0.00014202843988700268
+mae_fit,McDougle Elementary,Carrboro Elementary,other_nh,0.02047185138801036
+mae_fit,McDougle Elementary,Carrboro Elementary,two_plus_nh,0.5678803238500173
+mae_fit,Morris Grove Elementary,Carrboro Elementary,white_nh,20.381111193599512
+mae_fit,Morris Grove Elementary,Carrboro Elementary,black_nh,0.6634303836902857
+mae_fit,Morris Grove Elementary,Carrboro Elementary,asian_nh,1.049119825078589
+mae_fit,Morris Grove Elementary,Carrboro Elementary,hispanic,0.135069787106932
+mae_fit,Morris Grove Elementary,Carrboro Elementary,aian_nh,0.021176828263996327
+mae_fit,Morris Grove Elementary,Carrboro Elementary,nhpi_nh,0.0011294125836360503
+mae_fit,Morris Grove Elementary,Carrboro Elementary,other_nh,0.010865117967513748
+mae_fit,Morris Grove Elementary,Carrboro Elementary,two_plus_nh,0.3651388246059867
+mae_fit,Northside Elementary,Carrboro Elementary,white_nh,29.347400741393564
+mae_fit,Northside Elementary,Carrboro Elementary,black_nh,0.47035338565740314
+mae_fit,Northside Elementary,Carrboro Elementary,asian_nh,0.7335932589571876
+mae_fit,Northside Elementary,Carrboro Elementary,hispanic,0.15178989624151493
+mae_fit,Northside Elementary,Carrboro Elementary,aian_nh,0.019341849541709366
+mae_fit,Northside Elementary,Carrboro Elementary,nhpi_nh,0.0006059977798883506
+mae_fit,Northside Elementary,Carrboro Elementary,other_nh,0.008355600569488206
+mae_fit,Northside Elementary,Carrboro Elementary,two_plus_nh,0.28040444788804075
+mae_fit,Rashkis Elementary,Carrboro Elementary,white_nh,12.725302039133382
+mae_fit,Rashkis Elementary,Carrboro Elementary,black_nh,0.22198634330114986
+mae_fit,Rashkis Elementary,Carrboro Elementary,asian_nh,0.7334014744238315
+mae_fit,Rashkis Elementary,Carrboro Elementary,hispanic,0.05246875906493709
+mae_fit,Rashkis Elementary,Carrboro Elementary,aian_nh,0.0010516366879489425
+mae_fit,Rashkis Elementary,Carrboro Elementary,other_nh,0.004925446942954622
+mae_fit,Rashkis Elementary,Carrboro Elementary,two_plus_nh,0.11534346578149797
+mae_fit,Scroggs Elementary,Carrboro Elementary,white_nh,22.83005951188315
+mae_fit,Scroggs Elementary,Carrboro Elementary,black_nh,0.41611345635158326
+mae_fit,Scroggs Elementary,Carrboro Elementary,asian_nh,0.5319795270289603
+mae_fit,Scroggs Elementary,Carrboro Elementary,hispanic,0.09715934603293118
+mae_fit,Scroggs Elementary,Carrboro Elementary,aian_nh,0.04760382074084405
+mae_fit,Scroggs Elementary,Carrboro Elementary,other_nh,0.013796407845520931
+mae_fit,Scroggs Elementary,Carrboro Elementary,two_plus_nh,0.14953227363599694
+mae_fit,Seawell Elementary,Carrboro Elementary,white_nh,5.73024080059465
+mae_fit,Seawell Elementary,Carrboro Elementary,black_nh,0.16478839209535345
+mae_fit,Seawell Elementary,Carrboro Elementary,asian_nh,0.2381138770514535
+mae_fit,Seawell Elementary,Carrboro Elementary,hispanic,0.03446183000503044
+mae_fit,Seawell Elementary,Carrboro Elementary,aian_nh,0.004370138969068139
+mae_fit,Seawell Elementary,Carrboro Elementary,nhpi_nh,0.00012472813637963393
+mae_fit,Seawell Elementary,Carrboro Elementary,other_nh,0.021546378075951063
+mae_fit,Seawell Elementary,Carrboro Elementary,two_plus_nh,0.07850228001750004
+mae_fit,Carrboro Elementary,Glenwood Elementary,white_nh,23.070693751804903
+mae_fit,Carrboro Elementary,Glenwood Elementary,black_nh,3.302853813119667
+mae_fit,Carrboro Elementary,Glenwood Elementary,asian_nh,2.317348081165232
+mae_fit,Carrboro Elementary,Glenwood Elementary,hispanic,0.35802863307772426
+mae_fit,Carrboro Elementary,Glenwood Elementary,aian_nh,4.374617408724235e-06
+mae_fit,Carrboro Elementary,Glenwood Elementary,other_nh,0.3432952572200143
+mae_fit,Carrboro Elementary,Glenwood Elementary,two_plus_nh,0.6575303922707678
+mae_fit,Ephesus Elementary,Glenwood Elementary,white_nh,23.91408252711038
+mae_fit,Ephesus Elementary,Glenwood Elementary,black_nh,8.199022651904228
+mae_fit,Ephesus Elementary,Glenwood Elementary,asian_nh,3.9784788842648897
+mae_fit,Ephesus Elementary,Glenwood Elementary,hispanic,2.1021380949676813
+mae_fit,Ephesus Elementary,Glenwood Elementary,aian_nh,0.013879825081893601
+mae_fit,Ephesus Elementary,Glenwood Elementary,nhpi_nh,2.1133483021380548e-06
+mae_fit,Ephesus Elementary,Glenwood Elementary,other_nh,0.16098725008657197
+mae_fit,Ephesus Elementary,Glenwood Elementary,two_plus_nh,4.681913129323895
+mae_fit,Estes Hills Elementary,Glenwood Elementary,white_nh,16.981551134078977
+mae_fit,Estes Hills Elementary,Glenwood Elementary,black_nh,2.238188645900667
+mae_fit,Estes Hills Elementary,Glenwood Elementary,asian_nh,4.110151463879247
+mae_fit,Estes Hills Elementary,Glenwood Elementary,hispanic,0.8367995815828941
+mae_fit,Estes Hills Elementary,Glenwood Elementary,aian_nh,0.058994785097634034
+mae_fit,Estes Hills Elementary,Glenwood Elementary,nhpi_nh,0.046533506260855576
+mae_fit,Estes Hills Elementary,Glenwood Elementary,other_nh,0.24580416304665095
+mae_fit,Estes Hills Elementary,Glenwood Elementary,two_plus_nh,3.6103904521652717
+mae_fit,McDougle Elementary,Glenwood Elementary,white_nh,36.37628522496757
+mae_fit,McDougle Elementary,Glenwood Elementary,black_nh,6.285584381159338
+mae_fit,McDougle Elementary,Glenwood Elementary,asian_nh,3.9528491143295312
+mae_fit,McDougle Elementary,Glenwood Elementary,hispanic,2.5106483357048557
+mae_fit,McDougle Elementary,Glenwood Elementary,aian_nh,0.000707977022211231
+mae_fit,McDougle Elementary,Glenwood Elementary,other_nh,0.14434239409719757
+mae_fit,McDougle Elementary,Glenwood Elementary,two_plus_nh,3.8346171081268925
+mae_fit,Morris Grove Elementary,Glenwood Elementary,white_nh,21.222387817916786
+mae_fit,Morris Grove Elementary,Glenwood Elementary,black_nh,5.45077090116421
+mae_fit,Morris Grove Elementary,Glenwood Elementary,asian_nh,7.825095855811572
+mae_fit,Morris Grove Elementary,Glenwood Elementary,hispanic,1.178252483372654
+mae_fit,Morris Grove Elementary,Glenwood Elementary,aian_nh,0.2006221866629216
+mae_fit,Morris Grove Elementary,Glenwood Elementary,nhpi_nh,0.018753904002617318
+mae_fit,Morris Grove Elementary,Glenwood Elementary,other_nh,0.15144006476970226
+mae_fit,Morris Grove Elementary,Glenwood Elementary,two_plus_nh,2.7857618205191588
+mae_fit,Northside Elementary,Glenwood Elementary,white_nh,36.14533580452899
+mae_fit,Northside Elementary,Glenwood Elementary,black_nh,9.063397813099064
+mae_fit,Northside Elementary,Glenwood Elementary,asian_nh,6.291793760430873
+mae_fit,Northside Elementary,Glenwood Elementary,hispanic,1.8579476678345184
+mae_fit,Northside Elementary,Glenwood Elementary,aian_nh,0.2411741788603522
+mae_fit,Northside Elementary,Glenwood Elementary,nhpi_nh,0.007377406347288666
+mae_fit,Northside Elementary,Glenwood Elementary,other_nh,0.18516250078377872
+mae_fit,Northside Elementary,Glenwood Elementary,two_plus_nh,2.923706844915767
+mae_fit,Rashkis Elementary,Glenwood Elementary,white_nh,21.077472522114498
+mae_fit,Rashkis Elementary,Glenwood Elementary,black_nh,4.203749260261461
+mae_fit,Rashkis Elementary,Glenwood Elementary,asian_nh,7.562027807112153
+mae_fit,Rashkis Elementary,Glenwood Elementary,hispanic,0.8971783926923544
+mae_fit,Rashkis Elementary,Glenwood Elementary,aian_nh,0.01144385606217605
+mae_fit,Rashkis Elementary,Glenwood Elementary,other_nh,0.06913622431349048
+mae_fit,Rashkis Elementary,Glenwood Elementary,two_plus_nh,1.5668014588918258
+mae_fit,Scroggs Elementary,Glenwood Elementary,white_nh,22.417847293274868
+mae_fit,Scroggs Elementary,Glenwood Elementary,black_nh,5.368535848625658
+mae_fit,Scroggs Elementary,Glenwood Elementary,asian_nh,4.459664098984076
+mae_fit,Scroggs Elementary,Glenwood Elementary,hispanic,1.2832076545134738
+mae_fit,Scroggs Elementary,Glenwood Elementary,aian_nh,0.32828162569883745
+mae_fit,Scroggs Elementary,Glenwood Elementary,other_nh,0.23434381290810924
+mae_fit,Scroggs Elementary,Glenwood Elementary,two_plus_nh,1.5453578222983284
+mae_fit,Seawell Elementary,Glenwood Elementary,white_nh,8.38459914464687
+mae_fit,Seawell Elementary,Glenwood Elementary,black_nh,2.324498798767269
+mae_fit,Seawell Elementary,Glenwood Elementary,asian_nh,2.0994572128048627
+mae_fit,Seawell Elementary,Glenwood Elementary,hispanic,0.3185315130640848
+mae_fit,Seawell Elementary,Glenwood Elementary,aian_nh,0.04532241971293226
+mae_fit,Seawell Elementary,Glenwood Elementary,nhpi_nh,0.0015184381454039825
+mae_fit,Seawell Elementary,Glenwood Elementary,other_nh,0.19772483929262
+mae_fit,Seawell Elementary,Glenwood Elementary,two_plus_nh,0.767534173536205
+mae_fit,Carrboro Elementary,Seawell Elementary,white_nh,13.355505496215317
+mae_fit,Carrboro Elementary,Seawell Elementary,black_nh,0.14847219798548478
+mae_fit,Carrboro Elementary,Seawell Elementary,asian_nh,0.13426880301801453
+mae_fit,Carrboro Elementary,Seawell Elementary,hispanic,0.013577461799601231
+mae_fit,Carrboro Elementary,Seawell Elementary,aian_nh,1.0419652080556184e-07
+mae_fit,Carrboro Elementary,Seawell Elementary,other_nh,0.02089244355582542
+mae_fit,Carrboro Elementary,Seawell Elementary,two_plus_nh,0.03452894631247913
+mae_fit,Ephesus Elementary,Seawell Elementary,white_nh,29.354191650831915
+mae_fit,Ephesus Elementary,Seawell Elementary,black_nh,0.36641284447686234
+mae_fit,Ephesus Elementary,Seawell Elementary,asian_nh,0.5587350899799304
+mae_fit,Ephesus Elementary,Seawell Elementary,hispanic,0.11341562864018007
+mae_fit,Ephesus Elementary,Seawell Elementary,aian_nh,0.004494665373493741
+mae_fit,Ephesus Elementary,Seawell Elementary,nhpi_nh,9.382044931215626e-08
+mae_fit,Ephesus Elementary,Seawell Elementary,other_nh,0.014748050062217292
+mae_fit,Ephesus Elementary,Seawell Elementary,two_plus_nh,0.5661583081417748
+mae_fit,Estes Hills Elementary,Seawell Elementary,white_nh,26.553915672227777
+mae_fit,Estes Hills Elementary,Seawell Elementary,black_nh,0.1782369243038102
+mae_fit,Estes Hills Elementary,Seawell Elementary,asian_nh,0.7800227500375145
+mae_fit,Estes Hills Elementary,Seawell Elementary,hispanic,0.10460517075584597
+mae_fit,Estes Hills Elementary,Seawell Elementary,aian_nh,0.012582632828594063
+mae_fit,Estes Hills Elementary,Seawell Elementary,nhpi_nh,0.0020969214719510285
+mae_fit,Estes Hills Elementary,Seawell Elementary,other_nh,0.03154399420730528
+mae_fit,Estes Hills Elementary,Seawell Elementary,two_plus_nh,0.6129069201653691
+mae_fit,Glenwood Elementary,Seawell Elementary,white_nh,4.099399907522146
+mae_fit,Glenwood Elementary,Seawell Elementary,black_nh,0.04218979107309531
+mae_fit,Glenwood Elementary,Seawell Elementary,asian_nh,0.026435410432483052
+mae_fit,Glenwood Elementary,Seawell Elementary,hispanic,0.014617479104478262
+mae_fit,Glenwood Elementary,Seawell Elementary,aian_nh,0.03145419392545242
+mae_fit,Glenwood Elementary,Seawell Elementary,other_nh,0.0003102710476743637
+mae_fit,Glenwood Elementary,Seawell Elementary,two_plus_nh,0.005283609366332251
+mae_fit,McDougle Elementary,Seawell Elementary,white_nh,50.873417315665705
+mae_fit,McDougle Elementary,Seawell Elementary,black_nh,0.5291165466020721
+mae_fit,McDougle Elementary,Seawell Elementary,asian_nh,0.5576969078685801
+mae_fit,McDougle Elementary,Seawell Elementary,hispanic,0.2688693843653222
+mae_fit,McDougle Elementary,Seawell Elementary,aian_nh,0.0001336901810189662
+mae_fit,McDougle Elementary,Seawell Elementary,other_nh,0.019269982265762663
+mae_fit,McDougle Elementary,Seawell Elementary,two_plus_nh,0.5345409930082996
+mae_fit,Morris Grove Elementary,Seawell Elementary,white_nh,24.594017249329006
+mae_fit,Morris Grove Elementary,Seawell Elementary,black_nh,0.6244814641321221
+mae_fit,Morris Grove Elementary,Seawell Elementary,asian_nh,1.0253127881352357
+mae_fit,Morris Grove Elementary,Seawell Elementary,hispanic,0.12714005943376872
+mae_fit,Morris Grove Elementary,Seawell Elementary,aian_nh,0.01993357109515298
+mae_fit,Morris Grove Elementary,Seawell Elementary,nhpi_nh,0.0010631066064763516
+mae_fit,Morris Grove Elementary,Seawell Elementary,other_nh,0.01022724455063357
+mae_fit,Morris Grove Elementary,Seawell Elementary,two_plus_nh,0.3437021176706886
+mae_fit,Northside Elementary,Seawell Elementary,white_nh,35.41369620138617
+mae_fit,Northside Elementary,Seawell Elementary,black_nh,0.44273970284719216
+mae_fit,Northside Elementary,Seawell Elementary,asian_nh,0.7169462741229431
+mae_fit,Northside Elementary,Seawell Elementary,hispanic,0.1428785581361249
+mae_fit,Northside Elementary,Seawell Elementary,aian_nh,0.018206320991274703
+mae_fit,Northside Elementary,Seawell Elementary,nhpi_nh,0.0005704206351546298
+mae_fit,Northside Elementary,Seawell Elementary,other_nh,0.007865056840346805
+mae_fit,Northside Elementary,Seawell Elementary,two_plus_nh,0.2639423584917235
+mae_fit,Rashkis Elementary,Seawell Elementary,white_nh,15.355703370660777
+mae_fit,Rashkis Elementary,Seawell Elementary,black_nh,0.20895388587863342
+mae_fit,Rashkis Elementary,Seawell Elementary,asian_nh,0.7167588416391447
+mae_fit,Rashkis Elementary,Seawell Elementary,hispanic,0.04938840349730464
+mae_fit,Rashkis Elementary,Seawell Elementary,aian_nh,0.0009898968072164698
+mae_fit,Rashkis Elementary,Seawell Elementary,other_nh,0.004636281958224737
+mae_fit,Rashkis Elementary,Seawell Elementary,two_plus_nh,0.1085718383723128
+mae_fit,Scroggs Elementary,Seawell Elementary,white_nh,27.549178850208634
+mae_fit,Scroggs Elementary,Seawell Elementary,black_nh,0.3916841116351776
+mae_fit,Scroggs Elementary,Seawell Elementary,asian_nh,0.5199076397665713
+mae_fit,Scroggs Elementary,Seawell Elementary,hispanic,0.09145527873967457
+mae_fit,Scroggs Elementary,Seawell Elementary,aian_nh,0.04480907779527232
+mae_fit,Scroggs Elementary,Seawell Elementary,other_nh,0.012986443164105813
+mae_fit,Scroggs Elementary,Seawell Elementary,two_plus_nh,0.14075347688448023
+rmse_fit,Carrboro Elementary,FPG Elementary,white_nh,5.640645687250001
+rmse_fit,Carrboro Elementary,FPG Elementary,black_nh,0.8860434105700922
+rmse_fit,Carrboro Elementary,FPG Elementary,asian_nh,0.5981448133522886
+rmse_fit,Carrboro Elementary,FPG Elementary,hispanic,13.166390436970369
+rmse_fit,Carrboro Elementary,FPG Elementary,aian_nh,5.940648245004605e-07
+rmse_fit,Carrboro Elementary,FPG Elementary,other_nh,0.09789204989994695
+rmse_fit,Carrboro Elementary,FPG Elementary,two_plus_nh,0.18151655042665107
+rmse_fit,Ephesus Elementary,FPG Elementary,white_nh,6.728400541618814
+rmse_fit,Ephesus Elementary,FPG Elementary,black_nh,2.1433116969930794
+rmse_fit,Ephesus Elementary,FPG Elementary,asian_nh,0.90323359927911
+rmse_fit,Ephesus Elementary,FPG Elementary,hispanic,76.14924687441379
+rmse_fit,Ephesus Elementary,FPG Elementary,aian_nh,0.0028059408733175253
+rmse_fit,Ephesus Elementary,FPG Elementary,nhpi_nh,6.604200821005489e-07
+rmse_fit,Ephesus Elementary,FPG Elementary,other_nh,0.05158197196712214
+rmse_fit,Ephesus Elementary,FPG Elementary,two_plus_nh,1.3594566832346662
+rmse_fit,Estes Hills Elementary,FPG Elementary,white_nh,4.795697541262331
+rmse_fit,Estes Hills Elementary,FPG Elementary,black_nh,0.6175839642261775
+rmse_fit,Estes Hills Elementary,FPG Elementary,asian_nh,1.0083827543908201
+rmse_fit,Estes Hills Elementary,FPG Elementary,hispanic,32.04320650389623
+rmse_fit,Estes Hills Elementary,FPG Elementary,aian_nh,0.011483628405581946
+rmse_fit,Estes Hills Elementary,FPG Elementary,nhpi_nh,0.014426131421087991
+rmse_fit,Estes Hills Elementary,FPG Elementary,other_nh,0.06431141183796894
+rmse_fit,Estes Hills Elementary,FPG Elementary,two_plus_nh,1.0263279956557114
+rmse_fit,Glenwood Elementary,FPG Elementary,white_nh,1.3352341317284842
+rmse_fit,Glenwood Elementary,FPG Elementary,black_nh,0.1968718835884602
+rmse_fit,Glenwood Elementary,FPG Elementary,asian_nh,0.1270592216178395
+rmse_fit,Glenwood Elementary,FPG Elementary,hispanic,8.02957090891179
+rmse_fit,Glenwood Elementary,FPG Elementary,aian_nh,0.10923220252079968
+rmse_fit,Glenwood Elementary,FPG Elementary,other_nh,0.0011839005503899724
+rmse_fit,Glenwood Elementary,FPG Elementary,two_plus_nh,0.03348054547893575
+rmse_fit,McDougle Elementary,FPG Elementary,white_nh,10.061132405779617
+rmse_fit,McDougle Elementary,FPG Elementary,black_nh,1.6746238594378213
+rmse_fit,McDougle Elementary,FPG Elementary,asian_nh,1.007338403949208
+rmse_fit,McDougle Elementary,FPG Elementary,hispanic,96.78613311099063
+rmse_fit,McDougle Elementary,FPG Elementary,aian_nh,0.00018432604008951456
+rmse_fit,McDougle Elementary,FPG Elementary,other_nh,0.03812844212413603
+rmse_fit,McDougle Elementary,FPG Elementary,two_plus_nh,1.040665709739272
+rmse_fit,Morris Grove Elementary,FPG Elementary,white_nh,5.232769928037324
+rmse_fit,Morris Grove Elementary,FPG Elementary,black_nh,1.3727451203412042
+rmse_fit,Morris Grove Elementary,FPG Elementary,asian_nh,1.8808547962589568
+rmse_fit,Morris Grove Elementary,FPG Elementary,hispanic,41.110495229119536
+rmse_fit,Morris Grove Elementary,FPG Elementary,aian_nh,0.04093431119452343
+rmse_fit,Morris Grove Elementary,FPG Elementary,nhpi_nh,0.005117736536134653
+rmse_fit,Morris Grove Elementary,FPG Elementary,other_nh,0.031184491027183955
+rmse_fit,Morris Grove Elementary,FPG Elementary,two_plus_nh,0.714877902051959
+rmse_fit,Northside Elementary,FPG Elementary,white_nh,8.443824724369264
+rmse_fit,Northside Elementary,FPG Elementary,black_nh,2.0671333951527004
+rmse_fit,Northside Elementary,FPG Elementary,asian_nh,1.3885888014506773
+rmse_fit,Northside Elementary,FPG Elementary,hispanic,63.59564737817868
+rmse_fit,Northside Elementary,FPG Elementary,aian_nh,0.04843738097043778
+rmse_fit,Northside Elementary,FPG Elementary,nhpi_nh,0.0014029226019233224
+rmse_fit,Northside Elementary,FPG Elementary,other_nh,0.04818470031267072
+rmse_fit,Northside Elementary,FPG Elementary,two_plus_nh,0.6668169857973029
+rmse_fit,Rashkis Elementary,FPG Elementary,white_nh,5.059162737079703
+rmse_fit,Rashkis Elementary,FPG Elementary,black_nh,0.9776225805882263
+rmse_fit,Rashkis Elementary,FPG Elementary,asian_nh,1.8681288741064808
+rmse_fit,Rashkis Elementary,FPG Elementary,hispanic,33.084488335341646
+rmse_fit,Rashkis Elementary,FPG Elementary,aian_nh,0.0026526982623119467
+rmse_fit,Rashkis Elementary,FPG Elementary,other_nh,0.005736080538327886
+rmse_fit,Rashkis Elementary,FPG Elementary,two_plus_nh,0.40990185890997044
+rmse_fit,Scroggs Elementary,FPG Elementary,white_nh,5.905520211347476
+rmse_fit,Scroggs Elementary,FPG Elementary,black_nh,1.4678053950539458
+rmse_fit,Scroggs Elementary,FPG Elementary,asian_nh,1.1696410316137738
+rmse_fit,Scroggs Elementary,FPG Elementary,hispanic,49.75003848450527
+rmse_fit,Scroggs Elementary,FPG Elementary,aian_nh,0.08746591175751371
+rmse_fit,Scroggs Elementary,FPG Elementary,other_nh,0.05408365908796029
+rmse_fit,Scroggs Elementary,FPG Elementary,two_plus_nh,0.3703467280022955
+rmse_fit,Seawell Elementary,FPG Elementary,white_nh,1.9233373086835857
+rmse_fit,Seawell Elementary,FPG Elementary,black_nh,0.5700565187089895
+rmse_fit,Seawell Elementary,FPG Elementary,asian_nh,0.36792799870465676
+rmse_fit,Seawell Elementary,FPG Elementary,hispanic,10.682320118921364
+rmse_fit,Seawell Elementary,FPG Elementary,aian_nh,0.008972023364770489
+rmse_fit,Seawell Elementary,FPG Elementary,nhpi_nh,0.00028826300570686014
+rmse_fit,Seawell Elementary,FPG Elementary,other_nh,0.04477547551043771
+rmse_fit,Seawell Elementary,FPG Elementary,two_plus_nh,0.18673223181108214
+rmse_fit,Ephesus Elementary,Carrboro Elementary,white_nh,28.171898339147248
+rmse_fit,Ephesus Elementary,Carrboro Elementary,black_nh,0.5673122909703427
+rmse_fit,Ephesus Elementary,Carrboro Elementary,asian_nh,0.2390765296560946
+rmse_fit,Ephesus Elementary,Carrboro Elementary,hispanic,0.13580947226574464
+rmse_fit,Ephesus Elementary,Carrboro Elementary,aian_nh,0.0007427033349383292
+rmse_fit,Ephesus Elementary,Carrboro Elementary,nhpi_nh,1.7480631972704343e-07
+rmse_fit,Ephesus Elementary,Carrboro Elementary,other_nh,0.013653210930771377
+rmse_fit,Ephesus Elementary,Carrboro Elementary,two_plus_nh,0.35983402998397035
+rmse_fit,Estes Hills Elementary,Carrboro Elementary,white_nh,20.079646382828983
+rmse_fit,Estes Hills Elementary,Carrboro Elementary,black_nh,0.1634680453166165
+rmse_fit,Estes Hills Elementary,Carrboro Elementary,asian_nh,0.2669084162471623
+rmse_fit,Estes Hills Elementary,Carrboro Elementary,hispanic,0.057147918641577825
+rmse_fit,Estes Hills Elementary,Carrboro Elementary,aian_nh,0.0030395968764424814
+rmse_fit,Estes Hills Elementary,Carrboro Elementary,nhpi_nh,0.0038184467885928304
+rmse_fit,Estes Hills Elementary,Carrboro Elementary,other_nh,0.01702256113122551
+rmse_fit,Estes Hills Elementary,Carrboro Elementary,two_plus_nh,0.27165833477197776
+rmse_fit,Glenwood Elementary,Carrboro Elementary,white_nh,5.590642231439477
+rmse_fit,Glenwood Elementary,Carrboro Elementary,black_nh,0.05210993784194171
+rmse_fit,Glenwood Elementary,Carrboro Elementary,asian_nh,0.03363125307721296
+rmse_fit,Glenwood Elementary,Carrboro Elementary,hispanic,0.014320454008667181
+rmse_fit,Glenwood Elementary,Carrboro Elementary,aian_nh,0.02891262672935033
+rmse_fit,Glenwood Elementary,Carrboro Elementary,other_nh,0.00031336614943363217
+rmse_fit,Glenwood Elementary,Carrboro Elementary,two_plus_nh,0.008861951803481956
+rmse_fit,McDougle Elementary,Carrboro Elementary,white_nh,42.126088891272964
+rmse_fit,McDougle Elementary,Carrboro Elementary,black_nh,0.44325550014218734
+rmse_fit,McDougle Elementary,Carrboro Elementary,asian_nh,0.2666319875585875
+rmse_fit,McDougle Elementary,Carrboro Elementary,hispanic,0.17261462456908822
+rmse_fit,McDougle Elementary,Carrboro Elementary,aian_nh,4.878918368960472e-05
+rmse_fit,McDougle Elementary,Carrboro Elementary,other_nh,0.010092201653599982
+rmse_fit,McDougle Elementary,Carrboro Elementary,two_plus_nh,0.2754533784118897
+rmse_fit,Morris Grove Elementary,Carrboro Elementary,white_nh,21.90967400542814
+rmse_fit,Morris Grove Elementary,Carrboro Elementary,black_nh,0.36335134093267735
+rmse_fit,Morris Grove Elementary,Carrboro Elementary,asian_nh,0.49784268193245035
+rmse_fit,Morris Grove Elementary,Carrboro Elementary,hispanic,0.07331910545166659
+rmse_fit,Morris Grove Elementary,Carrboro Elementary,aian_nh,0.010834885983050288
+rmse_fit,Morris Grove Elementary,Carrboro Elementary,nhpi_nh,0.0013546115774809545
+rmse_fit,Morris Grove Elementary,Carrboro Elementary,other_nh,0.008254210095617722
+rmse_fit,Morris Grove Elementary,Carrboro Elementary,two_plus_nh,0.18922073767718475
+rmse_fit,Northside Elementary,Carrboro Elementary,white_nh,35.35440113249808
+rmse_fit,Northside Elementary,Carrboro Elementary,black_nh,0.5471486876083466
+rmse_fit,Northside Elementary,Carrboro Elementary,asian_nh,0.3675449983648784
+rmse_fit,Northside Elementary,Carrboro Elementary,hispanic,0.1134205742451123
+rmse_fit,Northside Elementary,Carrboro Elementary,aian_nh,0.012820870434054778
+rmse_fit,Northside Elementary,Carrboro Elementary,nhpi_nh,0.0003713390061127279
+rmse_fit,Northside Elementary,Carrboro Elementary,other_nh,0.012753988494744302
+rmse_fit,Northside Elementary,Carrboro Elementary,two_plus_nh,0.1764995135338115
+rmse_fit,Rashkis Elementary,Carrboro Elementary,white_nh,21.182778496703513
+rmse_fit,Rashkis Elementary,Carrboro Elementary,black_nh,0.2587665185030883
+rmse_fit,Rashkis Elementary,Carrboro Elementary,asian_nh,0.49447426283542406
+rmse_fit,Rashkis Elementary,Carrboro Elementary,hispanic,0.05900500773717629
+rmse_fit,Rashkis Elementary,Carrboro Elementary,aian_nh,0.0007021416113001772
+rmse_fit,Rashkis Elementary,Carrboro Elementary,other_nh,0.0015182807969342678
+rmse_fit,Rashkis Elementary,Carrboro Elementary,two_plus_nh,0.10849675433463957
+rmse_fit,Scroggs Elementary,Carrboro Elementary,white_nh,24.726487967648968
+rmse_fit,Scroggs Elementary,Carrboro Elementary,black_nh,0.38851280592314696
+rmse_fit,Scroggs Elementary,Carrboro Elementary,asian_nh,0.30959180327744357
+rmse_fit,Scroggs Elementary,Carrboro Elementary,hispanic,0.08872742343629592
+rmse_fit,Scroggs Elementary,Carrboro Elementary,aian_nh,0.023151316185405564
+rmse_fit,Scroggs Elementary,Carrboro Elementary,other_nh,0.014315381465185382
+rmse_fit,Scroggs Elementary,Carrboro Elementary,two_plus_nh,0.0980269230140963
+rmse_fit,Seawell Elementary,Carrboro Elementary,white_nh,8.05303768658913
+rmse_fit,Seawell Elementary,Carrboro Elementary,black_nh,0.15088802532318715
+rmse_fit,Seawell Elementary,Carrboro Elementary,asian_nh,0.09738671055176262
+rmse_fit,Seawell Elementary,Carrboro Elementary,hispanic,0.019051537834866145
+rmse_fit,Seawell Elementary,Carrboro Elementary,aian_nh,0.002374801171872588
+rmse_fit,Seawell Elementary,Carrboro Elementary,nhpi_nh,7.630021634230082e-05
+rmse_fit,Seawell Elementary,Carrboro Elementary,other_nh,0.011851602184950386
+rmse_fit,Seawell Elementary,Carrboro Elementary,two_plus_nh,0.04942607758608814
+rmse_fit,Carrboro Elementary,Glenwood Elementary,white_nh,22.35681235631289
+rmse_fit,Carrboro Elementary,Glenwood Elementary,black_nh,3.511850835523874
+rmse_fit,Carrboro Elementary,Glenwood Elementary,asian_nh,2.370758969003511
+rmse_fit,Carrboro Elementary,Glenwood Elementary,hispanic,0.35162146662220756
+rmse_fit,Carrboro Elementary,Glenwood Elementary,aian_nh,2.354587851327683e-06
+rmse_fit,Carrboro Elementary,Glenwood Elementary,other_nh,0.38799710390157893
+rmse_fit,Carrboro Elementary,Glenwood Elementary,two_plus_nh,0.7194444895957142
+rmse_fit,Ephesus Elementary,Glenwood Elementary,white_nh,26.66815054650654
+rmse_fit,Ephesus Elementary,Glenwood Elementary,black_nh,8.495058914811263
+rmse_fit,Ephesus Elementary,Glenwood Elementary,asian_nh,3.579984493379007
+rmse_fit,Ephesus Elementary,Glenwood Elementary,hispanic,2.033640882543895
+rmse_fit,Ephesus Elementary,Glenwood Elementary,aian_nh,0.01112140295028041
+rmse_fit,Ephesus Elementary,Glenwood Elementary,nhpi_nh,2.61758824618908e-06
+rmse_fit,Ephesus Elementary,Glenwood Elementary,other_nh,0.20444618084135832
+rmse_fit,Ephesus Elementary,Glenwood Elementary,two_plus_nh,5.388233840376273
+rmse_fit,Estes Hills Elementary,Glenwood Elementary,white_nh,19.007843426503992
+rmse_fit,Estes Hills Elementary,Glenwood Elementary,black_nh,2.4478064335226786
+rmse_fit,Estes Hills Elementary,Glenwood Elementary,asian_nh,3.996745279395232
+rmse_fit,Estes Hills Elementary,Glenwood Elementary,hispanic,0.8557454922908124
+rmse_fit,Estes Hills Elementary,Glenwood Elementary,aian_nh,0.045515591595044494
+rmse_fit,Estes Hills Elementary,Glenwood Elementary,nhpi_nh,0.05717826133589571
+rmse_fit,Estes Hills Elementary,Glenwood Elementary,other_nh,0.25489957117515827
+rmse_fit,Estes Hills Elementary,Glenwood Elementary,two_plus_nh,4.067871603205075
+rmse_fit,McDougle Elementary,Glenwood Elementary,white_nh,39.87750015862047
+rmse_fit,McDougle Elementary,Glenwood Elementary,black_nh,6.637405266826596
+rmse_fit,McDougle Elementary,Glenwood Elementary,asian_nh,3.992605975465873
+rmse_fit,McDougle Elementary,Glenwood Elementary,hispanic,2.5847693212574687
+rmse_fit,McDougle Elementary,Glenwood Elementary,aian_nh,0.0007305799582445639
+rmse_fit,McDougle Elementary,Glenwood Elementary,other_nh,0.15112284537471687
+rmse_fit,McDougle Elementary,Glenwood Elementary,two_plus_nh,4.12469942064966
+rmse_fit,Morris Grove Elementary,Glenwood Elementary,white_nh,20.740188600983178
+rmse_fit,Morris Grove Elementary,Glenwood Elementary,black_nh,5.440902827469552
+rmse_fit,Morris Grove Elementary,Glenwood Elementary,asian_nh,7.454805722770599
+rmse_fit,Morris Grove Elementary,Glenwood Elementary,hispanic,1.0978963972873415
+rmse_fit,Morris Grove Elementary,Glenwood Elementary,aian_nh,0.16224396373264308
+rmse_fit,Morris Grove Elementary,Glenwood Elementary,nhpi_nh,0.020284251444126926
+rmse_fit,Morris Grove Elementary,Glenwood Elementary,other_nh,0.12360035587730306
+rmse_fit,Morris Grove Elementary,Glenwood Elementary,two_plus_nh,2.833432908217678
+rmse_fit,Northside Elementary,Glenwood Elementary,white_nh,33.46726871340752
+rmse_fit,Northside Elementary,Glenwood Elementary,black_nh,8.193124687012205
+rmse_fit,Northside Elementary,Glenwood Elementary,asian_nh,5.5036995754373255
+rmse_fit,Northside Elementary,Glenwood Elementary,hispanic,1.6983846035063663
+rmse_fit,Northside Elementary,Glenwood Elementary,aian_nh,0.1919825313323784
+rmse_fit,Northside Elementary,Glenwood Elementary,nhpi_nh,0.005560511881206524
+rmse_fit,Northside Elementary,Glenwood Elementary,other_nh,0.1909810264754899
+rmse_fit,Northside Elementary,Glenwood Elementary,two_plus_nh,2.6429425023397544
+rmse_fit,Rashkis Elementary,Glenwood Elementary,white_nh,20.052093016337718
+rmse_fit,Rashkis Elementary,Glenwood Elementary,black_nh,3.8748267133511667
+rmse_fit,Rashkis Elementary,Glenwood Elementary,asian_nh,7.404366274984143
+rmse_fit,Rashkis Elementary,Glenwood Elementary,hispanic,0.8835539525132744
+rmse_fit,Rashkis Elementary,Glenwood Elementary,aian_nh,0.010514022786873365
+rmse_fit,Rashkis Elementary,Glenwood Elementary,other_nh,0.022735070303381566
+rmse_fit,Rashkis Elementary,Glenwood Elementary,two_plus_nh,1.6246542421319587
+rmse_fit,Scroggs Elementary,Glenwood Elementary,white_nh,23.406647847061812
+rmse_fit,Scroggs Elementary,Glenwood Elementary,black_nh,5.817676133599411
+rmse_fit,Scroggs Elementary,Glenwood Elementary,asian_nh,4.635895696682568
+rmse_fit,Scroggs Elementary,Glenwood Elementary,hispanic,1.328623936847056
+rmse_fit,Scroggs Elementary,Glenwood Elementary,aian_nh,0.34667289618219327
+rmse_fit,Scroggs Elementary,Glenwood Elementary,other_nh,0.21436166793908643
+rmse_fit,Scroggs Elementary,Glenwood Elementary,two_plus_nh,1.467876687138353
+rmse_fit,Seawell Elementary,Glenwood Elementary,white_nh,7.623186013142145
+rmse_fit,Seawell Elementary,Glenwood Elementary,black_nh,2.2594304496163597
+rmse_fit,Seawell Elementary,Glenwood Elementary,asian_nh,1.4582900050373557
+rmse_fit,Seawell Elementary,Glenwood Elementary,hispanic,0.2852819142136379
+rmse_fit,Seawell Elementary,Glenwood Elementary,aian_nh,0.0355607946225073
+rmse_fit,Seawell Elementary,Glenwood Elementary,nhpi_nh,0.001142536206878294
+rmse_fit,Seawell Elementary,Glenwood Elementary,other_nh,0.17746849556855915
+rmse_fit,Seawell Elementary,Glenwood Elementary,two_plus_nh,0.7401169474112468
+rmse_fit,Carrboro Elementary,Seawell Elementary,white_nh,27.239035815867698
+rmse_fit,Carrboro Elementary,Seawell Elementary,black_nh,0.20362600825941596
+rmse_fit,Carrboro Elementary,Seawell Elementary,asian_nh,0.13746261103125146
+rmse_fit,Carrboro Elementary,Seawell Elementary,hispanic,0.02038790342184933
+rmse_fit,Carrboro Elementary,Seawell Elementary,aian_nh,1.3652496866099085e-07
+rmse_fit,Carrboro Elementary,Seawell Elementary,other_nh,0.02249705502423675
+rmse_fit,Carrboro Elementary,Seawell Elementary,two_plus_nh,0.041715214125475436
+rmse_fit,Ephesus Elementary,Seawell Elementary,white_nh,32.49187300505861
+rmse_fit,Ephesus Elementary,Seawell Elementary,black_nh,0.4925650370037832
+rmse_fit,Ephesus Elementary,Seawell Elementary,asian_nh,0.20757657034958626
+rmse_fit,Ephesus Elementary,Seawell Elementary,hispanic,0.11791565033364985
+rmse_fit,Ephesus Elementary,Seawell Elementary,aian_nh,0.0006448471176801202
+rmse_fit,Ephesus Elementary,Seawell Elementary,nhpi_nh,1.517743978322294e-07
+rmse_fit,Ephesus Elementary,Seawell Elementary,other_nh,0.011854307502897775
+rmse_fit,Ephesus Elementary,Seawell Elementary,two_plus_nh,0.31242344845220427
+rmse_fit,Estes Hills Elementary,Seawell Elementary,white_nh,23.158727622936333
+rmse_fit,Estes Hills Elementary,Seawell Elementary,black_nh,0.1419300182137682
+rmse_fit,Estes Hills Elementary,Seawell Elementary,asian_nh,0.23174141653186478
+rmse_fit,Estes Hills Elementary,Seawell Elementary,hispanic,0.049618291562538185
+rmse_fit,Estes Hills Elementary,Seawell Elementary,aian_nh,0.002639109308491508
+rmse_fit,Estes Hills Elementary,Seawell Elementary,nhpi_nh,0.0033153404459176938
+rmse_fit,Estes Hills Elementary,Seawell Elementary,other_nh,0.014779722891530973
+rmse_fit,Estes Hills Elementary,Seawell Elementary,two_plus_nh,0.23586550097561776
+rmse_fit,Glenwood Elementary,Seawell Elementary,white_nh,6.447930317433747
+rmse_fit,Glenwood Elementary,Seawell Elementary,black_nh,0.04524409900846424
+rmse_fit,Glenwood Elementary,Seawell Elementary,asian_nh,0.02920010667868112
+rmse_fit,Glenwood Elementary,Seawell Elementary,hispanic,0.012433636765784212
+rmse_fit,Glenwood Elementary,Seawell Elementary,aian_nh,0.02510319145467537
+rmse_fit,Glenwood Elementary,Seawell Elementary,other_nh,0.00027207802730221326
+rmse_fit,Glenwood Elementary,Seawell Elementary,two_plus_nh,0.007694329362301839
+rmse_fit,McDougle Elementary,Seawell Elementary,white_nh,48.58584657580739
+rmse_fit,McDougle Elementary,Seawell Elementary,black_nh,0.38485357237056694
+rmse_fit,McDougle Elementary,Seawell Elementary,asian_nh,0.23150140920365425
+rmse_fit,McDougle Elementary,Seawell Elementary,hispanic,0.14987147342223167
+rmse_fit,McDougle Elementary,Seawell Elementary,aian_nh,4.236087680799221e-05
+rmse_fit,McDougle Elementary,Seawell Elementary,other_nh,0.008762485424831008
+rmse_fit,McDougle Elementary,Seawell Elementary,two_plus_nh,0.23916052179691333
+rmse_fit,Morris Grove Elementary,Seawell Elementary,white_nh,25.26937790263776
+rmse_fit,Morris Grove Elementary,Seawell Elementary,black_nh,0.3154773297538773
+rmse_fit,Morris Grove Elementary,Seawell Elementary,asian_nh,0.43224852158357235
+rmse_fit,Morris Grove Elementary,Seawell Elementary,hispanic,0.06365881449195039
+rmse_fit,Morris Grove Elementary,Seawell Elementary,aian_nh,0.009407316041125453
+rmse_fit,Morris Grove Elementary,Seawell Elementary,nhpi_nh,0.001176132286234109
+rmse_fit,Morris Grove Elementary,Seawell Elementary,other_nh,0.007166661759135917
+rmse_fit,Morris Grove Elementary,Seawell Elementary,two_plus_nh,0.1642896181509278
+rmse_fit,Northside Elementary,Seawell Elementary,white_nh,40.775765194735534
+rmse_fit,Northside Elementary,Seawell Elementary,black_nh,0.4750581255650348
+rmse_fit,Northside Elementary,Seawell Elementary,asian_nh,0.3191184442884139
+rmse_fit,Northside Elementary,Seawell Elementary,hispanic,0.09847664194702703
+rmse_fit,Northside Elementary,Seawell Elementary,aian_nh,0.011131633529337784
+rmse_fit,Northside Elementary,Seawell Elementary,nhpi_nh,0.00032241256570347376
+rmse_fit,Northside Elementary,Seawell Elementary,other_nh,0.011073563740553547
+rmse_fit,Northside Elementary,Seawell Elementary,two_plus_nh,0.15324450183554436
+rmse_fit,Rashkis Elementary,Seawell Elementary,white_nh,24.431017765415177
+rmse_fit,Rashkis Elementary,Seawell Elementary,black_nh,0.224672269207855
+rmse_fit,Rashkis Elementary,Seawell Elementary,asian_nh,0.4293239146191556
+rmse_fit,Rashkis Elementary,Seawell Elementary,hispanic,0.05123069653534108
+rmse_fit,Rashkis Elementary,Seawell Elementary,aian_nh,0.000609629677087408
+rmse_fit,Rashkis Elementary,Seawell Elementary,other_nh,0.0013182369725234038
+rmse_fit,Rashkis Elementary,Seawell Elementary,two_plus_nh,0.09420156880829127
+rmse_fit,Scroggs Elementary,Seawell Elementary,white_nh,28.51813169400635
+rmse_fit,Scroggs Elementary,Seawell Elementary,black_nh,0.337323600549283
+rmse_fit,Scroggs Elementary,Seawell Elementary,asian_nh,0.2688009769303479
+rmse_fit,Scroggs Elementary,Seawell Elementary,hispanic,0.07703698175373067
+rmse_fit,Scroggs Elementary,Seawell Elementary,aian_nh,0.020100972771179948
+rmse_fit,Scroggs Elementary,Seawell Elementary,other_nh,0.012429232564416491
+rmse_fit,Scroggs Elementary,Seawell Elementary,two_plus_nh,0.0851112089942883
