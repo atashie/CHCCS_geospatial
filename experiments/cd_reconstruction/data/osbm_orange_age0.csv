@@ -1,0 +1,42 @@
+year,age0
+# OSBM Vintage 2025 population projections, Orange County NC (FIPS 37135).
+# Age 0 = births proxy (both sexes summed).
+# Source: NC OSBM "Sex and Single Years of Age" data file.
+# https://www.osbm.nc.gov/facts-figures/population-demographics/state-demographer/countystate-population-projections
+# 2010-2024 are estimates; 2025-2060 are projections.
+# Downloaded 2026-05-07.
+#
+# NOTE: OSBM age-0 counts (~2300) are roughly 2x NC DPH births (~1160)
+# because OSBM includes UNC student population in county totals.
+# The model uses the OSBM TREND SHAPE, not absolute levels.
+2010,2450
+2011,2520
+2012,2590
+2013,2472
+2014,2402
+2015,2414
+2016,2368
+2017,2346
+2018,2314
+2019,2282
+2020,2256
+2021,2282
+2022,2358
+2023,2334
+2024,2272
+2025,2284
+2026,2352
+2027,2360
+2028,2362
+2029,2362
+2030,2364
+2031,2366
+2032,2356
+2033,2348
+2034,2332
+2035,2318
+2036,2300
+2037,2282
+2038,2254
+2039,2238
+2040,2214

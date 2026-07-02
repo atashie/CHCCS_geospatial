@@ -1,0 +1,24 @@
+year,births
+# Annual resident live births, Orange County NC, 2010-2023.
+# Source: NC State Center for Health Statistics (SCHS), Vital Statistics Volume 1.
+# https://schs.dph.ncdhhs.gov/data/vital.cfm
+# County-level tables for each year.
+#
+# These are FULL Orange County births (not just CH+Carrboro).
+# The model calibrates B2K ratios from historical K enrollment / births,
+# so the share factor is absorbed into the ratio. What matters is accurate
+# year-to-year trend, which actual data provides.
+2010,1212
+2011,1312
+2012,1286
+2013,1192
+2014,1215
+2015,1207
+2016,1166
+2017,1179
+2018,1134
+2019,1164
+2020,1105
+2021,1193
+2022,1181
+2023,1163
